@@ -9,7 +9,7 @@ import {
   Building2,
   ChevronDown,
   File,
-  Export,
+  Download as Export,
   Users,
   CreditCard
 } from 'lucide-react';

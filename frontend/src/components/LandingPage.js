@@ -31,35 +31,28 @@ const LandingPage = ({ onLogin }) => {
   const features = [
     {
       icon: Brain,
-      title: "AI-Powered Analysis",
-      description: "Advanced machine learning algorithms analyze financial documents and generate comprehensive insights in seconds.",
+      title: "5 Specialized AI Agents",
+      description: "Coordinator, Document Processing, Financial Analysis, Research, and Insights agents work together to deliver comprehensive analysis in seconds.",
       color: "from-blue-500 to-purple-600"
     },
     {
-      icon: BarChart3,
-      title: "Real-Time Data",
-      description: "Live market data integration with automated financial metrics calculation and trend analysis.",
+      icon: Zap,
+      title: "Real-Time Processing",
+      description: "Upload documents and watch as our AI agents instantly extract, analyze, and synthesize financial data with 99.9% accuracy.",
       color: "from-green-500 to-teal-600"
+    },
+    {
+      icon: Target,
+      title: "Precision Analysis",
+      description: "Advanced machine learning algorithms trained specifically for financial document analysis and investment decision-making.",
+      color: "from-purple-500 to-pink-600"
     },
     {
       icon: Shield,
       title: "Enterprise Security",
-      description: "SOC 2 compliant with advanced encryption, multi-factor authentication, and complete data ownership.",
-      color: "from-purple-500 to-pink-600"
-    },
-    {
-      icon: Zap,
-      title: "Lightning Fast",
-      description: "Process complex financial analysis that traditionally takes hours in just minutes with our agentic AI system.",
-      color: "from-yellow-500 to-orange-600"
+      description: "SOC 2 compliant with bank-grade encryption. Your data remains private and secure throughout the entire analysis process.",
+      color: "from-orange-500 to-red-600"
     }
-  ];
-
-  const stats = [
-    { number: "10x", label: "Faster Analysis", icon: TrendingUp },
-    { number: "99.9%", label: "Accuracy Rate", icon: Check },
-    { number: "500+", label: "Companies Analyzed", icon: Building2 },
-    { number: "24/7", label: "AI Availability", icon: Brain }
   ];
 
   const testimonials = [

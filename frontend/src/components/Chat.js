@@ -148,28 +148,50 @@ const Chat = ({ companyData }) => {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const currentQuery = inputMessage;
     setInputMessage('');
     setIsTyping(true);
     setAgentActivity([]);
 
-    // Simulate agent processing
-    const processingTime = simulateAgentActivity(inputMessage);
-    
-    setTimeout(() => {
-      const response = generateResponse(inputMessage);
+    try {
+      // Show agent activity simulation
+      simulateAgentActivity(currentQuery);
+      
+      // Get AI response
+      const response = await AgentCoordinator.chatWithAI(currentQuery, companyData);
+      
       const botMessage = {
         id: Date.now() + 1,
         type: 'bot',
-        content: response.content,
+        content: response.response || "I apologize, but I'm having trouble processing your request at the moment. Please try again.",
         timestamp: new Date(),
-        confidence: response.confidence,
-        agentType: response.agentType
+        confidence: response.confidence || 0.85,
+        agentType: response.agentType || 'coordinator',
+        sources: response.sources || []
       };
 
       setMessages(prev => [...prev, botMessage]);
+      
+    } catch (error) {
+      console.error('Chat error:', error);
+      
+      const errorMessage = {
+        id: Date.now() + 1,
+        type: 'bot',
+        content: companyData 
+          ? "I encountered an issue analyzing that query. Could you please rephrase your question or try asking about specific financial metrics?"
+          : "I'd be happy to help! However, I need company data to provide specific analysis. Please upload documents in the Data Room first, then I can give you detailed insights about your company.",
+        timestamp: new Date(),
+        confidence: 0.5,
+        agentType: 'coordinator',
+        isError: true
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false);
       setAgentActivity([]);
-    }, processingTime + 1000);
+    }
   };
 
   const handleKeyPress = (e) => {

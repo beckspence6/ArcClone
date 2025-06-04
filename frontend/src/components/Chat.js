@@ -46,12 +46,18 @@ const Chat = ({ companyData }) => {
     insights: { name: 'Insights Agent', icon: TrendingUp, color: 'orange' }
   };
 
-  const sampleQuestions = [
-    "What is BlueSky's current LTM revenue and how has it changed?",
-    "Analyze the gross margin trends over the past 5 quarters",
-    "What are the key risks in BlueSky's business model?",
-    "Compare BlueSky's performance to industry benchmarks",
-    "Generate a financial summary for the investment committee"
+  const sampleQuestions = companyData?.company?.name ? [
+    `What is ${companyData.company.name}'s current financial performance?`,
+    "What are the key investment risks and opportunities?",
+    "How does this company compare to industry benchmarks?",
+    "Generate an executive summary for the investment committee",
+    "What are the main growth drivers for this business?"
+  ] : [
+    "How does Stratum's AI analysis work?",
+    "What types of documents can I upload?",
+    "How accurate is the financial analysis?",
+    "What security measures protect my data?",
+    "Can you integrate with my existing workflows?"
   ];
 
   useEffect(() => {

@@ -411,12 +411,65 @@ const DataRoom = ({ companyData, onAnalyze }) => {
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900">Documents queue</h3>
               <motion.button
-                className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                onClick={startAIAnalysis}
+                disabled={documents.length === 0 || analyzing}
+                className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center space-x-3 mx-auto"
+                whileHover={{ scale: documents.length > 0 && !analyzing ? 1.02 : 1 }}
+                whileTap={{ scale: documents.length > 0 && !analyzing ? 0.98 : 1 }}
               >
-                Process data
+                {analyzing ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>AI Analysis in Progress...</span>
+                  </>
+                ) : (
+                  <>
+                    <Brain className="w-5 h-5" />
+                    <span>Start AI Analysis ({documents.length} files)</span>
+                  </>
+                )}
               </motion.button>
+
+              {/* AI Analysis Progress */}
+              <AnimatePresence>
+                {analyzing && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-8 bg-white rounded-xl p-6 border border-gray-200"
+                  >
+                    <div className="text-center mb-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">AI Analysis in Progress</h3>
+                      <p className="text-gray-600">{analysisMessage}</p>
+                    </div>
+
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-700">Progress</span>
+                        <span className="text-sm text-gray-500">{Math.round(analysisProgress)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-3">
+                        <div 
+                          className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-500"
+                          style={{ width: `${analysisProgress}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-center space-x-4">
+                      <div className="flex items-center space-x-2">
+                        <Brain className="w-5 h-5 text-blue-500" />
+                        <span className="text-sm text-gray-600">{currentAgent || 'Coordinator'} Agent</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Zap className="w-5 h-5 text-yellow-500" />
+                        <span className="text-sm text-gray-600">Processing...</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             <div className="p-6">

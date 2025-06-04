@@ -191,84 +191,155 @@ const LandingPage = ({ onLogin }) => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
           >
-          <motion.h1 
-            className="text-6xl md:text-8xl font-bold mb-8 bg-gradient-to-r from-white via-blue-100 to-cyan-100 bg-clip-text text-transparent"
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-          >
-            AI-Powered
-            <br />
-            Financial Intelligence
-          </motion.h1>
-
-          <motion.p 
-            className="text-xl md:text-2xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-          >
-            Transform your investment analysis with advanced AI agents that process documents, 
-            analyze financials, and generate insights in minutes, not weeks.
-          </motion.p>
-
-          <motion.div 
-            className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-16"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-          >
-            <div className="flex items-center bg-white/10 backdrop-blur-lg rounded-xl p-2 pr-2 border border-white/20">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="bg-transparent px-4 py-3 text-white placeholder-gray-400 outline-none w-80"
-              />
-              <motion.button
-                onClick={handleGetStarted}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all flex items-center space-x-2"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <span>Get Started</span>
-                <ArrowRight className="w-4 h-4" />
-              </motion.button>
-            </div>
-
-            <motion.button
-              onClick={() => setShowDemo(true)}
-              className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors group"
-              whileHover={{ scale: 1.05 }}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
             >
-              <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-lg flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                <Play className="w-5 h-5 ml-1" />
+              <div className="inline-flex items-center space-x-2 bg-blue-500/10 backdrop-blur-lg rounded-full px-4 py-2 border border-blue-500/20 mb-6">
+                <Zap className="w-4 h-4 text-blue-400" />
+                <span className="text-blue-300 text-sm font-medium">AI-Powered Financial Intelligence</span>
               </div>
-              <span>Watch Demo</span>
-            </motion.button>
+              
+              <h1 className="text-6xl md:text-7xl font-bold mb-6 leading-none">
+                <span className="bg-gradient-to-r from-white via-blue-100 to-cyan-100 bg-clip-text text-transparent">
+                  Transform
+                </span>
+                <br />
+                <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                  Hours Into
+                </span>
+                <br />
+                <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                  Seconds
+                </span>
+              </h1>
+            </motion.div>
+
+            <motion.p 
+              className="text-xl text-gray-300 leading-relaxed max-w-lg"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+            >
+              Revolutionary AI agents analyze financial documents, extract insights, and generate comprehensive investment reports in seconds—not hours.
+            </motion.p>
+
+            <motion.div 
+              className="flex flex-col sm:flex-row items-start gap-6"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+            >
+              <div className="flex items-center bg-white/10 backdrop-blur-lg rounded-2xl p-2 border border-white/20">
+                <input
+                  type="email"
+                  placeholder="Enter your email to get started"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="bg-transparent px-6 py-4 text-white placeholder-gray-400 outline-none w-80"
+                />
+                <motion.button
+                  onClick={handleGetStarted}
+                  className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all flex items-center space-x-2 font-semibold"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <span>Start Analysis</span>
+                  <Rocket className="w-5 h-5" />
+                </motion.button>
+              </div>
+            </motion.div>
+
+            <motion.div 
+              className="flex items-center space-x-8 pt-4"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.8 }}
+            >
+              {[
+                { icon: Clock, label: "10x Faster", value: "Analysis" },
+                { icon: Target, label: "99.9%", value: "Accuracy" },
+                { icon: Brain, label: "5 AI", value: "Agents" }
+              ].map((stat, index) => {
+                const Icon = stat.icon;
+                return (
+                  <div key={index} className="text-center">
+                    <div className="flex items-center justify-center mb-2">
+                      <Icon className="w-5 h-5 text-blue-400 mr-2" />
+                      <span className="text-2xl font-bold text-white">{stat.label}</span>
+                    </div>
+                    <p className="text-sm text-gray-400">{stat.value}</p>
+                  </div>
+                );
+              })}
+            </motion.div>
           </motion.div>
 
-          {/* Stats */}
+          {/* 3D Interactive Spline Model */}
           <motion.div 
-            className="grid grid-cols-2 md:grid-cols-4 gap-8"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.8 }}
+            className="relative"
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
           >
-            {stats.map((stat, index) => {
-              const Icon = stat.icon;
-              return (
-                <div key={index} className="text-center">
-                  <div className="flex items-center justify-center mb-2">
-                    <Icon className="w-6 h-6 text-blue-400 mr-2" />
-                    <span className="text-3xl md:text-4xl font-bold text-white">{stat.number}</span>
+            <div className="relative w-full h-[600px] rounded-3xl overflow-hidden bg-gradient-to-br from-blue-900/20 to-purple-900/20 backdrop-blur-lg border border-white/10">
+              {/* Spline 3D Model */}
+              <iframe 
+                src='https://my.spline.design/stockicon-VZD2Lap19cSFZNNjcZR9zgEC/' 
+                frameBorder='0' 
+                width='100%' 
+                height='100%'
+                className="rounded-3xl"
+                title="Interactive Stock Market Visualization"
+              />
+              
+              {/* Overlay with interaction hint */}
+              <div className="absolute bottom-4 left-4 right-4">
+                <div className="bg-black/20 backdrop-blur-lg rounded-xl p-4 border border-white/10">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                    <span className="text-white text-sm font-medium">Interactive • Click and drag to explore</span>
                   </div>
-                  <p className="text-gray-400">{stat.label}</p>
                 </div>
-              );
-            })}
+              </div>
+            </div>
           </motion.div>
+        </div>
+
+        {/* Value Propositions Floating Cards */}
+        <motion.div 
+          className="absolute top-1/4 left-8 hidden xl:block"
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, delay: 1 }}
+        >
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-4 border border-white/20">
+            <div className="flex items-center space-x-3">
+              <Lightbulb className="w-6 h-6 text-yellow-400" />
+              <div>
+                <p className="text-white font-semibold">AI Insights</p>
+                <p className="text-gray-300 text-sm">Instant Analysis</p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div 
+          className="absolute top-1/3 right-8 hidden xl:block"
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, delay: 1.2 }}
+        >
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-4 border border-white/20">
+            <div className="flex items-center space-x-3">
+              <Award className="w-6 h-6 text-purple-400" />
+              <div>
+                <p className="text-white font-semibold">Enterprise Grade</p>
+                <p className="text-gray-300 text-sm">SOC 2 Compliant</p>
+              </div>
+            </div>
+          </div>
         </motion.div>
 
         {/* Scroll Indicator */}

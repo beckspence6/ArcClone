@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   User, 
@@ -15,11 +15,16 @@ import {
   Clock,
   CheckCircle,
   AlertTriangle,
-  Zap
+  Zap,
+  Save,
+  X,
+  Plus,
+  Trash2,
+  LogOut
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const Settings = ({ user, setUser }) => {
+const Settings = ({ user, setUser, onLogout }) => {
   const [activeTab, setActiveTab] = useState('general');
   const [settings, setSettings] = useState({
     notifications: {

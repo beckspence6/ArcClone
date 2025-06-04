@@ -146,15 +146,7 @@ const Dashboard = ({ companyData }) => {
     setAnimatedMetrics(metrics);
   };
 
-  const revenueData = realTimeData?.historicalData || [
-    { quarter: 'Q1 2023', revenue: 45.2, margin: 73.1, actual: true },
-    { quarter: 'Q2 2023', revenue: 47.8, margin: 74.5, actual: true },
-    { quarter: 'Q3 2023', revenue: 49.1, margin: 75.2, actual: true },
-    { quarter: 'Q4 2023', revenue: 52.3, margin: 76.8, actual: true },
-    { quarter: 'Q1 2024', revenue: 55.7, margin: 75.9, actual: true },
-    { quarter: 'Q2 2024', revenue: 58.2, margin: 77.1, projected: true },
-    { quarter: 'Q3 2024', revenue: 61.4, margin: 78.3, projected: true }
-  ];
+  const revenueData = realTimeData?.historicalData || currentData?.financials?.historicalData || [];
 
   const riskMetrics = [
     { name: 'Financial Risk', value: 15, color: '#ef4444' },

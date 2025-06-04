@@ -11,10 +11,12 @@ import {
   File,
   Download as Export,
   Users,
-  CreditCard
+  CreditCard,
+  LogOut
 } from 'lucide-react';
+import StratumLogo from './Logo';
 
-const Sidebar = ({ currentView, setCurrentView, user }) => {
+const Sidebar = ({ currentView, setCurrentView, user, companyData, onLogout }) => {
   const navigation = [
     { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
     { id: 'dataroom', name: 'Data room', icon: FolderOpen },

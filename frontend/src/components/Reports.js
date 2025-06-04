@@ -321,7 +321,7 @@ const Reports = ({ companyData }) => {
 
                 <div className="h-80">
                   <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={revenueData}>
+                    <ComposedChart data={reportData?.revenueData || []}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis 
                         dataKey="quarter" 

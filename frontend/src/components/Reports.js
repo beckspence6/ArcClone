@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FileText, 
@@ -14,11 +14,21 @@ import {
   Info,
   ChevronUp,
   ChevronDown,
-  ExternalLink
+  ExternalLink,
+  Printer,
+  Mail,
+  Loader2,
+  CheckCircle,
+  AlertTriangle,
+  Brain
 } from 'lucide-react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart } from 'recharts';
+import toast from 'react-hot-toast';
+import AgentCoordinator from '../services/agentCoordinator';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
-const Reports = () => {
+const Reports = ({ companyData }) => {
   const [selectedReport, setSelectedReport] = useState('opportunity-memo');
   const [showFormula, setShowFormula] = useState(false);
   const [expandedSection, setExpandedSection] = useState('definition');

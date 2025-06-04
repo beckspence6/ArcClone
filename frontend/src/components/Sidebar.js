@@ -129,16 +129,27 @@ const Sidebar = ({ currentView, setCurrentView, user, companyData, onLogout }) =
 
       {/* User Profile */}
       <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center space-x-3">
-          <img 
-            src={user.avatar} 
-            alt={user.name}
-            className="w-8 h-8 rounded-full"
-          />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
-            <p className="text-xs text-gray-500 truncate">{user.role}</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <img 
+              src={user?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face'} 
+              alt={user?.name || 'User'}
+              className="w-8 h-8 rounded-full"
+            />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">{user?.name || 'Demo User'}</p>
+              <p className="text-xs text-gray-500 truncate">{user?.role || 'Analyst'}</p>
+            </div>
           </div>
+          <motion.button
+            onClick={onLogout}
+            className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            title="Logout"
+          >
+            <LogOut className="w-4 h-4" />
+          </motion.button>
         </div>
       </div>
     </div>

@@ -38,12 +38,7 @@ const Sidebar = ({ currentView, setCurrentView, user, companyData, onLogout }) =
     <div className="w-64 bg-white border-r border-gray-200 h-screen flex flex-col">
       {/* Logo */}
       <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-teal-500 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">arc</span>
-          </div>
-          <span className="text-xl font-semibold text-gray-900">Arc Intelligence</span>
-        </div>
+        <StratumLogo size="medium" />
       </div>
 
       {/* Company Selector */}
@@ -53,7 +48,9 @@ const Sidebar = ({ currentView, setCurrentView, user, companyData, onLogout }) =
             <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
               <Building2 className="w-4 h-4 text-white" />
             </div>
-            <span className="font-medium text-gray-900">{user.company}</span>
+            <span className="font-medium text-gray-900">
+              {companyData?.company?.name || user?.company || 'Demo Company'}
+            </span>
           </div>
           <ChevronDown className="w-4 h-4 text-gray-500" />
         </div>

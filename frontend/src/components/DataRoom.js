@@ -142,33 +142,76 @@ const DataRoom = ({ companyData, onAnalyze }) => {
           
           // Add document to list
           const newDoc = {
-            id: documents.length + 1,
+            id: Date.now() + Math.random(),
             name: file.name,
-            type: file.type.split('/')[1].toUpperCase(),
+            type: file.type.split('/')[1]?.toUpperCase() || 'Unknown',
             size: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
             date: new Date().toISOString().split('T')[0],
-            status: 'processing',
-            description: 'Document uploaded and being processed by AI agents'
+            status: 'uploaded',
+            description: 'Ready for AI analysis',
+            file: file
           };
           
           setDocuments(prev => [newDoc, ...prev]);
-          
-          // Simulate processing completion
-          setTimeout(() => {
-            setDocuments(prev => prev.map(doc => 
-              doc.id === newDoc.id 
-                ? { ...doc, status: 'processed', description: 'AI analysis complete - financial data extracted and classified' }
-                : doc
-            ));
-            toast.success('Document processed successfully!');
-          }, 3000);
-          
-          toast.success('File uploaded successfully!');
+          toast.success(`${file.name} uploaded successfully!`);
           return 100;
         }
-        return prev + 10;
+        return prev + 15;
       });
-    }, 200);
+    }, 100);
+  };
+
+  const removeFile = (fileId) => {
+    setDocuments(prev => prev.filter(f => f.id !== fileId));
+    toast.success('File removed');
+  };
+
+  const startAIAnalysis = async () => {
+    if (documents.length === 0) {
+      toast.error('Please upload documents before starting analysis');
+      return;
+    }
+
+    setAnalyzing(true);
+    setAnalysisProgress(0);
+
+    try {
+      const files = documents.map(doc => doc.file);
+      
+      await AgentCoordinator.analyzeCompany(
+        files,
+        companyData?.company || {},
+        (progress, message, agent) => {
+          setAnalysisProgress(progress);
+          setAnalysisMessage(message);
+          setCurrentAgent(agent);
+        }
+      );
+
+      const analysisResult = AgentCoordinator.getAnalysisStatus();
+      
+      if (analysisResult.status === 'completed') {
+        toast.success('Analysis completed successfully!');
+        
+        // Update document statuses
+        setDocuments(prev => prev.map(doc => ({
+          ...doc,
+          status: 'processed',
+          description: 'AI analysis completed - insights extracted'
+        })));
+
+        // Trigger dashboard update
+        if (onAnalyze) {
+          onAnalyze(files, analysisResult.results);
+        }
+      }
+    } catch (error) {
+      toast.error('Analysis failed: ' + error.message);
+      console.error('Analysis error:', error);
+    } finally {
+      setAnalyzing(false);
+      setAnalysisProgress(0);
+    }
   };
 
   const connectToCloud = (integration) => {

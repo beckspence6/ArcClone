@@ -1,0 +1,417 @@
+import React, { useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Upload, 
+  FileText, 
+  Download, 
+  Calendar, 
+  FileType,
+  HardDrive,
+  ChevronRight,
+  Cloud,
+  Plus,
+  MoreHorizontal,
+  Loader2,
+  CheckCircle,
+  AlertCircle
+} from 'lucide-react';
+import toast from 'react-hot-toast';
+
+const DataRoom = () => {
+  const [activeTab, setActiveTab] = useState('import');
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [documents, setDocuments] = useState([]);
+  const [dragActive, setDragActive] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const cloudIntegrations = [
+    { 
+      name: 'SharePoint', 
+      icon: Cloud, 
+      color: 'blue', 
+      connected: false,
+      description: 'Connect to Microsoft SharePoint'
+    },
+    { 
+      name: 'Google Drive', 
+      icon: Cloud, 
+      color: 'green', 
+      connected: false,
+      description: 'Sync with Google Drive'
+    },
+    { 
+      name: 'Dropbox', 
+      icon: Cloud, 
+      color: 'blue', 
+      connected: false,
+      description: 'Import from Dropbox'
+    },
+    { 
+      name: 'Box', 
+      icon: Cloud, 
+      color: 'blue', 
+      connected: false,
+      description: 'Connect to Box storage'
+    },
+    { 
+      name: 'Other', 
+      icon: Plus, 
+      color: 'gray', 
+      connected: false,
+      description: 'Add custom integration'
+    }
+  ];
+
+  const mockDocuments = [
+    {
+      id: 1,
+      name: 'Financial_Statements_Q3_2024.xlsx',
+      type: 'Excel',
+      size: '2.4 MB',
+      date: '2024-10-15',
+      status: 'processed',
+      description: 'Quarterly financial statements with P&L, balance sheet, and cash flow'
+    },
+    {
+      id: 2,
+      name: 'Business_Plan_2024.pdf',
+      type: 'PDF',
+      size: '5.1 MB',
+      date: '2024-10-10',
+      status: 'processing',
+      description: 'Comprehensive business plan and market analysis'
+    },
+    {
+      id: 3,
+      name: 'Revenue_Model_Analysis.pptx',
+      type: 'PowerPoint',
+      size: '8.7 MB',
+      date: '2024-10-08',
+      status: 'processed',
+      description: 'Revenue model breakdown and projections'
+    }
+  ];
+
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFiles(e.dataTransfer.files);
+    }
+  };
+
+  const handleFiles = (files) => {
+    Array.from(files).forEach(file => {
+      simulateUpload(file);
+    });
+  };
+
+  const simulateUpload = (file) => {
+    setUploading(true);
+    setUploadProgress(0);
+    
+    const interval = setInterval(() => {
+      setUploadProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setUploading(false);
+          
+          // Add document to list
+          const newDoc = {
+            id: documents.length + 1,
+            name: file.name,
+            type: file.type.split('/')[1].toUpperCase(),
+            size: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
+            date: new Date().toISOString().split('T')[0],
+            status: 'processing',
+            description: 'Document uploaded and being processed by AI agents'
+          };
+          
+          setDocuments(prev => [newDoc, ...prev]);
+          
+          // Simulate processing completion
+          setTimeout(() => {
+            setDocuments(prev => prev.map(doc => 
+              doc.id === newDoc.id 
+                ? { ...doc, status: 'processed', description: 'AI analysis complete - financial data extracted and classified' }
+                : doc
+            ));
+            toast.success('Document processed successfully!');
+          }, 3000);
+          
+          toast.success('File uploaded successfully!');
+          return 100;
+        }
+        return prev + 10;
+      });
+    }, 200);
+  };
+
+  const connectToCloud = (integration) => {
+    toast.success(`Connecting to ${integration.name}...`);
+    // Simulate connection
+    setTimeout(() => {
+      toast.success(`Connected to ${integration.name}!`);
+    }, 2000);
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'processed':
+        return <CheckCircle className="w-5 h-5 text-green-500" />;
+      case 'processing':
+        return <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />;
+      case 'error':
+        return <AlertCircle className="w-5 h-5 text-red-500" />;
+      default:
+        return <FileText className="w-5 h-5 text-gray-400" />;
+    }
+  };
+
+  return (
+    <div className="p-8 bg-gray-50 min-h-screen">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
+            <span>Data room</span>
+            <ChevronRight className="w-4 h-4" />
+            <span className="text-gray-900 font-medium">Import</span>
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900">Data Room</h1>
+          <p className="text-gray-600 mt-1">Upload and process financial documents with AI analysis</p>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg mb-8 w-fit">
+        <button
+          onClick={() => setActiveTab('import')}
+          className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'import'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          Import
+        </button>
+        <button
+          onClick={() => setActiveTab('connect')}
+          className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'connect'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          Connect
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Left Column - Upload/Connect */}
+        <div>
+          {activeTab === 'import' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-xl border border-gray-200 p-8"
+            >
+              <h3 className="text-lg font-semibold text-gray-900 mb-6">Import</h3>
+              
+              {/* Upload Area */}
+              <div
+                className={`border-2 border-dashed rounded-xl p-12 text-center transition-colors ${
+                  dragActive 
+                    ? 'border-blue-400 bg-blue-50' 
+                    : 'border-gray-300 hover:border-gray-400'
+                }`}
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+              >
+                <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                  <Upload className="w-8 h-8 text-gray-600" />
+                </div>
+                
+                <h4 className="text-lg font-medium text-gray-900 mb-2">
+                  Drag and drop your files here
+                </h4>
+                <p className="text-gray-600 mb-6">
+                  Support for Excel, PDF, Word, and PowerPoint files
+                </p>
+                
+                <motion.button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="inline-flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Upload className="w-5 h-5" />
+                  <span>Choose Files</span>
+                </motion.button>
+                
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => handleFiles(e.target.files)}
+                  accept=".pdf,.xlsx,.xls,.docx,.doc,.pptx,.ppt"
+                />
+              </div>
+
+              {/* Upload Progress */}
+              <AnimatePresence>
+                {uploading && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200"
+                  >
+                    <div className="flex items-center space-x-3 mb-2">
+                      <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+                      <span className="text-sm font-medium text-blue-900">Uploading...</span>
+                    </div>
+                    <div className="w-full bg-blue-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                    <p className="text-sm text-blue-700 mt-2">{uploadProgress}% complete</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          )}
+
+          {activeTab === 'connect' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-xl border border-gray-200 p-8"
+            >
+              <h3 className="text-lg font-semibold text-gray-900 mb-6">Connect</h3>
+              
+              <div className="space-y-4">
+                {cloudIntegrations.map((integration) => {
+                  const Icon = integration.icon;
+                  return (
+                    <motion.div
+                      key={integration.name}
+                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                      whileHover={{ scale: 1.01 }}
+                    >
+                      <div className="flex items-center space-x-4">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                          integration.color === 'blue' ? 'bg-blue-100 text-blue-600' :
+                          integration.color === 'green' ? 'bg-green-100 text-green-600' :
+                          'bg-gray-100 text-gray-600'
+                        }`}>
+                          <Icon className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-gray-900">{integration.name}</h4>
+                          <p className="text-sm text-gray-600">{integration.description}</p>
+                        </div>
+                      </div>
+                      <motion.button
+                        onClick={() => connectToCloud(integration)}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        Connect
+                      </motion.button>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+        </div>
+
+        {/* Right Column - Documents Queue */}
+        <div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="bg-white rounded-xl border border-gray-200"
+          >
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Documents queue</h3>
+              <motion.button
+                className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Process data
+              </motion.button>
+            </div>
+
+            <div className="p-6">
+              {/* Table Header */}
+              <div className="grid grid-cols-6 gap-4 text-sm font-medium text-gray-600 mb-4">
+                <div className="col-span-2">Document</div>
+                <div>File</div>
+                <div>Date</div>
+                <div>File Type</div>
+                <div>File Size</div>
+              </div>
+
+              {/* Documents List */}
+              <div className="space-y-3">
+                {[...documents, ...mockDocuments].map((doc) => (
+                  <motion.div
+                    key={doc.id}
+                    className="grid grid-cols-6 gap-4 items-center p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <div className="col-span-2 flex items-center space-x-3">
+                      {getStatusIcon(doc.status)}
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 truncate">{doc.name}</p>
+                        <p className="text-xs text-gray-500 truncate">{doc.description}</p>
+                      </div>
+                    </div>
+                    <div className="text-sm text-gray-600">📄</div>
+                    <div className="text-sm text-gray-600">{doc.date}</div>
+                    <div className="text-sm text-gray-600">{doc.type}</div>
+                    <div className="text-sm text-gray-600">{doc.size}</div>
+                  </motion.div>
+                ))}
+              </div>
+
+              {documents.length === 0 && mockDocuments.length > 0 && (
+                <div className="text-center py-8">
+                  <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">Sample documents shown above</p>
+                  <p className="text-sm text-gray-500">Upload your files to start processing</p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default DataRoom;

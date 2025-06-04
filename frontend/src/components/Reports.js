@@ -32,24 +32,165 @@ const Reports = ({ companyData }) => {
   const [selectedReport, setSelectedReport] = useState('opportunity-memo');
   const [showFormula, setShowFormula] = useState(false);
   const [expandedSection, setExpandedSection] = useState('definition');
+  const [generatingReport, setGeneratingReport] = useState(false);
+  const [reportData, setReportData] = useState(null);
+  const [availableReports, setAvailableReports] = useState([]);
 
-  const revenueData = [
-    { quarter: '9/30/23', revenue: 50, margin: 78, projected: false },
-    { quarter: '12/31/23', revenue: 52, margin: 76, projected: false },
-    { quarter: '3/31/24', revenue: 56, margin: 74, projected: false },
-    { quarter: '6/30/24', revenue: 62, margin: 72, projected: true },
-    { quarter: '9/30/24', revenue: 70, margin: 81, projected: true }
-  ];
-
-  const reports = [
-    {
-      id: 'opportunity-memo',
-      name: 'Opportunity memo',
-      company: 'BlueSky',
-      lastUpdated: '2024-10-15',
-      status: 'Complete'
+  useEffect(() => {
+    if (companyData) {
+      loadAvailableReports();
+      generateDefaultReport();
     }
-  ];
+  }, [companyData]);
+
+  const loadAvailableReports = () => {
+    const reports = [
+      {
+        id: 'opportunity-memo',
+        name: 'Investment Opportunity Memo',
+        company: companyData?.company?.name || 'Company',
+        lastUpdated: new Date().toISOString().split('T')[0],
+        status: 'Generated',
+        type: 'Investment Analysis'
+      },
+      {
+        id: 'financial-analysis',
+        name: 'Financial Analysis Report',
+        company: companyData?.company?.name || 'Company',
+        lastUpdated: new Date().toISOString().split('T')[0],
+        status: 'Available',
+        type: 'Financial Review'
+      },
+      {
+        id: 'risk-assessment',
+        name: 'Risk Assessment Report',
+        company: companyData?.company?.name || 'Company',
+        lastUpdated: new Date().toISOString().split('T')[0],
+        status: 'Available',
+        type: 'Risk Analysis'
+      }
+    ];
+    setAvailableReports(reports);
+  };
+
+  const generateDefaultReport = async () => {
+    setGeneratingReport(true);
+    try {
+      const report = await AgentCoordinator.generateReport(companyData, 'comprehensive');
+      setReportData(report);
+    } catch (error) {
+      console.error('Report generation error:', error);
+      toast.error('Failed to generate report');
+    } finally {
+      setGeneratingReport(false);
+    }
+  };
+
+  const exportToPDF = async () => {
+    setGeneratingReport(true);
+    try {
+      toast.success('Generating PDF report...');
+      
+      // Create PDF
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      
+      // Title Page
+      pdf.setFontSize(24);
+      pdf.text(companyData?.company?.name || 'Investment Report', pageWidth / 2, 30, { align: 'center' });
+      
+      pdf.setFontSize(18);
+      pdf.text('Investment Analysis Report', pageWidth / 2, 45, { align: 'center' });
+      
+      pdf.setFontSize(12);
+      pdf.text(`Generated on ${new Date().toLocaleDateString()}`, pageWidth / 2, 60, { align: 'center' });
+      pdf.text('Powered by Stratum AI', pageWidth / 2, 70, { align: 'center' });
+      
+      // Executive Summary
+      pdf.addPage();
+      pdf.setFontSize(16);
+      pdf.text('Executive Summary', 20, 30);
+      
+      pdf.setFontSize(11);
+      const summaryText = reportData?.executiveSummary || 
+        `${companyData?.company?.name || 'The company'} presents a compelling investment opportunity with strong financial fundamentals and growth potential. Our AI analysis indicates positive indicators across key metrics including revenue growth, profitability, and market position.`;
+      
+      const splitSummary = pdf.splitTextToSize(summaryText, pageWidth - 40);
+      pdf.text(splitSummary, 20, 45);
+      
+      // Financial Metrics
+      if (companyData?.financials) {
+        pdf.addPage();
+        pdf.setFontSize(16);
+        pdf.text('Key Financial Metrics', 20, 30);
+        
+        pdf.setFontSize(11);
+        let yPos = 50;
+        
+        Object.entries(companyData.financials).forEach(([key, value]) => {
+          if (yPos > pageHeight - 30) {
+            pdf.addPage();
+            yPos = 30;
+          }
+          pdf.text(`${key}: ${value}`, 20, yPos);
+          yPos += 10;
+        });
+      }
+      
+      // Save PDF
+      pdf.save(`${companyData?.company?.name || 'Company'}_Investment_Report.pdf`);
+      toast.success('PDF report generated successfully!');
+      
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      toast.error('Failed to generate PDF');
+    } finally {
+      setGeneratingReport(false);
+    }
+  };
+
+  const shareReport = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: `${companyData?.company?.name || 'Company'} Investment Report`,
+        text: 'Investment analysis report generated by Stratum AI',
+        url: window.location.href
+      });
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      toast.success('Report link copied to clipboard!');
+    }
+  };
+
+  // If no company data, show empty state
+  if (!companyData) {
+    return (
+      <div className="p-8 bg-gray-50 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-2xl p-12 max-w-md mx-auto border border-gray-200"
+          >
+            <FileText className="w-16 h-16 text-gray-400 mx-auto mb-6" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">No Reports Available</h2>
+            <p className="text-gray-600 mb-6">
+              Upload documents and complete AI analysis to generate comprehensive investment reports.
+            </p>
+            <motion.button
+              onClick={() => window.location.hash = '#dataroom'}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              Go to Data Room
+            </motion.button>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
 
   const toggleSection = (section) => {
     setExpandedSection(expandedSection === section ? null : section);

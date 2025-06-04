@@ -24,10 +24,13 @@ const Chat = ({ companyData }) => {
     {
       id: 1,
       type: 'bot',
-      content: "Hello! I'm Arc Intelligence AI. I can help you analyze BlueSky's financial data, generate insights, and answer questions about the company's performance. What would you like to know?",
+      content: companyData?.company?.name 
+        ? `Hello! I'm your AI assistant for ${companyData.company.name}. I can help you analyze financial data, generate insights, and answer questions about the company's performance. What would you like to explore?`
+        : "Hello! I'm your AI assistant. Upload documents in the Data Room first, and I'll be able to provide detailed analysis and insights about your company. What can I help you with?",
       timestamp: new Date(),
       confidence: 0.98,
-      agentType: 'coordinator'
+      agentType: 'coordinator',
+      hasCompanyContext: !!companyData
     }
   ]);
   const [inputMessage, setInputMessage] = useState('');

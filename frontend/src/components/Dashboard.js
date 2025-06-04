@@ -33,33 +33,37 @@ const Dashboard = ({ companyData }) => {
   const [selectedTimeframe, setSelectedTimeframe] = useState('1Y');
   const [animatedMetrics, setAnimatedMetrics] = useState({});
 
-  // Default or demo data if no company data provided
-  const defaultData = {
-    company: {
-      name: 'Demo Company',
-      industry: 'Technology',
-      sector: 'Software',
-      description: 'AI-powered enterprise software solutions'
-    },
-    financials: {
-      revenue: '$50.2M',
-      grossMargin: '75.8%',
-      netIncome: '$12.4M',
-      totalAssets: '$85.3M',
-      totalDebt: '$15.2M',
-      cashAndEquivalents: '$22.1M'
-    },
-    keyMetrics: {
-      revenueGrowth: '28%',
-      profitMargin: '24.7%',
-      roa: '14.5%',
-      roe: '18.2%',
-      debtToEquity: '0.18'
-    },
-    confidence: 0.92
-  };
-
-  const currentData = companyData || defaultData;
+  // No default data - everything should come from actual analysis
+  const currentData = companyData;
+  
+  // If no company data, show empty state
+  if (!currentData) {
+    return (
+      <div className="p-8 bg-gray-50 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-2xl p-12 max-w-md mx-auto border border-gray-200"
+          >
+            <Brain className="w-16 h-16 text-gray-400 mx-auto mb-6" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">No Analysis Available</h2>
+            <p className="text-gray-600 mb-6">
+              Upload documents in the Data Room to begin AI analysis and generate your personalized dashboard.
+            </p>
+            <motion.button
+              onClick={() => window.location.hash = '#dataroom'}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              Go to Data Room
+            </motion.button>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
   const isPublicCompany = currentData.realTimeData?.isPublic;
 
   useEffect(() => {

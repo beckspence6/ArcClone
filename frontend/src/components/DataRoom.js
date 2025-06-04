@@ -1,5 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useDropzone } from 'react-dropzone';
 import { 
   Upload, 
   FileText, 
@@ -13,9 +14,15 @@ import {
   MoreHorizontal,
   Loader2,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  X,
+  Brain,
+  Zap,
+  Target,
+  BarChart3
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import AgentCoordinator from '../services/agentCoordinator';
 
 const DataRoom = () => {
   const [activeTab, setActiveTab] = useState('import');

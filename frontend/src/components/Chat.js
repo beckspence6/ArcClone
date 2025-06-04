@@ -10,11 +10,16 @@ import {
   TrendingUp,
   Brain,
   Zap,
-  CheckCircle
+  CheckCircle,
+  AlertTriangle,
+  Copy,
+  ThumbsUp,
+  ThumbsDown
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import AgentCoordinator from '../services/agentCoordinator';
 
-const Chat = () => {
+const Chat = ({ companyData }) => {
   const [messages, setMessages] = useState([
     {
       id: 1,

@@ -21,60 +21,6 @@ import {
 } from 'lucide-react';
 import StratumLogo from './Logo';
 
-// 3D Components
-const AnimatedSphere = ({ position, color }) => {
-  const meshRef = useRef();
-  
-  useFrame((state) => {
-    meshRef.current.rotation.x = state.clock.elapsedTime * 0.2;
-    meshRef.current.rotation.y = state.clock.elapsedTime * 0.3;
-    meshRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime) * 0.1;
-  });
-
-  return (
-    <Sphere ref={meshRef} position={position} args={[1, 100, 200]} scale={0.8}>
-      <MeshDistortMaterial
-        color={color}
-        attach="material"
-        distort={0.3}
-        speed={1.5}
-        roughness={0}
-        metalness={0.8}
-      />
-    </Sphere>
-  );
-};
-
-const FloatingDataCubes = () => {
-  const groupRef = useRef();
-  
-  useFrame((state) => {
-    groupRef.current.rotation.y = state.clock.elapsedTime * 0.1;
-  });
-
-  return (
-    <group ref={groupRef}>
-      {Array.from({ length: 20 }).map((_, i) => (
-        <Box
-          key={i}
-          position={[
-            (Math.random() - 0.5) * 10,
-            (Math.random() - 0.5) * 10,
-            (Math.random() - 0.5) * 10
-          ]}
-          scale={Math.random() * 0.3 + 0.1}
-        >
-          <meshStandardMaterial
-            color={i % 2 ? '#3B82F6' : '#06B6D4'}
-            transparent
-            opacity={0.6}
-          />
-        </Box>
-      ))}
-    </group>
-  );
-};
-
 const LandingPage = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [showDemo, setShowDemo] = useState(false);

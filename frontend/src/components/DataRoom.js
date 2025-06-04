@@ -24,12 +24,16 @@ import {
 import toast from 'react-hot-toast';
 import AgentCoordinator from '../services/agentCoordinator';
 
-const DataRoom = () => {
+const DataRoom = ({ companyData, onAnalyze }) => {
   const [activeTab, setActiveTab] = useState('import');
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [documents, setDocuments] = useState([]);
   const [dragActive, setDragActive] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [currentAgent, setCurrentAgent] = useState('');
+  const [analysisMessage, setAnalysisMessage] = useState('');
   const fileInputRef = useRef(null);
 
   const cloudIntegrations = [

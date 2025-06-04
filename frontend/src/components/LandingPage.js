@@ -1,7 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Sphere, MeshDistortMaterial, Text, Box } from '@react-three/drei';
 import { 
   ChevronRight, 
   Play, 
@@ -14,7 +12,12 @@ import {
   Building2,
   ArrowRight,
   Check,
-  Star
+  Star,
+  Clock,
+  Target,
+  Lightbulb,
+  Rocket,
+  Award
 } from 'lucide-react';
 import StratumLogo from './Logo';
 

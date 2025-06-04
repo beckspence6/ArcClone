@@ -180,23 +180,14 @@ const LandingPage = ({ onLogin }) => {
 
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center pt-20">
-        {/* 3D Background */}
-        <div className="absolute inset-0 w-full h-full">
-          <Canvas camera={{ position: [0, 0, 5], fov: 75 }}>
-            <ambientLight intensity={0.5} />
-            <directionalLight position={[10, 10, 5]} intensity={1} />
-            <AnimatedSphere position={[-3, 0, 0]} color="#3B82F6" />
-            <AnimatedSphere position={[3, 0, -2]} color="#06B6D4" />
-            <FloatingDataCubes />
-            <OrbitControls enableZoom={false} enablePan={false} autoRotate autoRotateSpeed={0.5} />
-          </Canvas>
-        </div>
-
-        {/* Hero Content */}
-        <motion.div 
-          className="relative z-10 max-w-6xl mx-auto px-6 text-center"
-          style={{ y, opacity }}
-        >
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          {/* Hero Content */}
+          <motion.div 
+            className="space-y-8"
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8 }}
+          >
           <motion.h1 
             className="text-6xl md:text-8xl font-bold mb-8 bg-gradient-to-r from-white via-blue-100 to-cyan-100 bg-clip-text text-transparent"
             initial={{ opacity: 0, y: 50 }}

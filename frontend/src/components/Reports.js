@@ -23,6 +23,7 @@ import {
   ExternalLink,
   Archive
 } from 'lucide-react';
+import StratumLogo from './Logo';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart } from 'recharts';
 import toast from 'react-hot-toast';
 import AgentCoordinator from '../services/agentCoordinator';

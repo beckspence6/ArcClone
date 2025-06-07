@@ -51,8 +51,7 @@ const Settings = ({ user, setUser, onLogout }) => {
     { id: 'general', name: 'General', icon: User },
     { id: 'security', name: 'Security', icon: Shield },
     { id: 'notifications', name: 'Notifications', icon: Bell },
-    { id: 'team', name: 'Team', icon: Users },
-    { id: 'billing', name: 'Billing', icon: CreditCard }
+    { id: 'team', name: 'Team', icon: Users }
   ];
 
   const securityFeatures = [

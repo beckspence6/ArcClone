@@ -104,11 +104,36 @@ function App() {
   };
 
   const handleCompanyCreated = async (companyData) => {
-    // Add company to list
+    // Add company to list with complete data structure
     const newCompany = {
       ...companyData,
+      id: companyData.id || Date.now(),
       status: 'analyzing',
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
+      analysisData: {
+        company: {
+          name: companyData.name,
+          industry: companyData.industry || 'Not specified',
+          sector: 'Distressed Credit',
+          description: companyData.description || 'Company under distressed credit analysis'
+        },
+        financials: {
+          revenue: 'N/A',
+          grossMargin: 'N/A',
+          netIncome: 'N/A',
+          totalAssets: 'N/A',
+          totalDebt: 'N/A',
+          cashAndEquivalents: 'N/A'
+        },
+        keyMetrics: {
+          revenueGrowth: 'N/A',
+          roe: 'N/A',
+          roa: 'N/A',
+          profitMargin: 'N/A',
+          debtToEquity: 'N/A'
+        },
+        confidence: 0.85
+      }
     };
     
     setCompanies(prev => [newCompany, ...prev]);
@@ -131,16 +156,27 @@ function App() {
         }
       );
 
-      // Update company with analysis results
+      // Update company with enhanced analysis results
       const analyzedCompany = {
         ...newCompany,
         status: 'completed',
-        analysisData: analysisResult,
+        analysisData: {
+          ...newCompany.analysisData,
+          company: {
+            ...newCompany.analysisData.company,
+            name: companyData.name, // Ensure company name is preserved
+          },
+          ...analysisResult,
+          // Override with real analysis results while preserving company info
+          financials: analysisResult?.financials || newCompany.analysisData.financials,
+          keyMetrics: analysisResult?.keyMetrics || newCompany.analysisData.keyMetrics
+        },
         lastAnalyzed: new Date().toISOString(),
         totalDebt: analysisResult?.financials?.totalDebt || 'N/A',
         liquidity: analysisResult?.financials?.cashAndEquivalents || 'N/A',
         nextMaturity: '2025', // Would be extracted from analysis
-        riskFlags: analysisResult?.insights?.riskFactors?.slice(0, 3) || []
+        riskFlags: analysisResult?.insights?.riskFactors?.slice(0, 3) || [],
+        documents: companyData.files // Store uploaded documents
       };
 
       setCompanies(prev => prev.map(c => 
@@ -154,14 +190,27 @@ function App() {
     } catch (error) {
       console.error('Analysis error:', error);
       
-      // Update company status to error
+      // Update company status to error but keep basic structure for viewing
+      const errorCompany = {
+        ...newCompany,
+        status: 'error', 
+        error: error.message,
+        // Keep basic data so dashboard can still render
+        analysisData: {
+          ...newCompany.analysisData,
+          company: {
+            ...newCompany.analysisData.company,
+            name: companyData.name
+          }
+        }
+      };
+      
       setCompanies(prev => prev.map(c => 
-        c.id === newCompany.id 
-          ? { ...c, status: 'error', error: error.message }
-          : c
+        c.id === newCompany.id ? errorCompany : c
       ));
       
-      setCurrentView('company-management');
+      setCurrentCompany(errorCompany);
+      setCurrentView('dashboard'); // Still show dashboard even with error
     } finally {
       setIsAnalyzing(false);
       setAnalysisProgress(0);

@@ -32,7 +32,6 @@ const Sidebar = ({ currentView, setCurrentView, user, companyData, onLogout, onB
   const settings = [
     { id: 'settings', name: 'General', icon: Settings },
     { id: 'team', name: 'Team', icon: Users },
-    { id: 'plans', name: 'Plans', icon: CreditCard },
   ];
 
   const fileActions = [

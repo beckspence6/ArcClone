@@ -78,7 +78,8 @@ function App() {
   };
 
   const handleOnboardingComplete = (userData) => {
-    setUser(userData);
+    const completedUser = { ...userData, onboardingComplete: true };
+    setUser(completedUser);
     setCurrentView('company-management');
   };
 

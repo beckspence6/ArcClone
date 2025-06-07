@@ -340,68 +340,10 @@ const Settings = ({ user, setUser, onLogout }) => {
     </div>
   );
 
-  const renderTeamTab = () => (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">Team Members</h3>
-        <motion.button
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          Invite Member
-        </motion.button>
-      </div>
-
-      <div className="bg-white rounded-xl border border-gray-200">
-        <div className="p-6 border-b border-gray-200">
-          <div className="grid grid-cols-5 gap-4 text-sm font-medium text-gray-600">
-            <div className="col-span-2">Member</div>
-            <div>Role</div>
-            <div>Status</div>
-            <div>Last Active</div>
-          </div>
-        </div>
-        <div className="divide-y divide-gray-200">
-          {teamMembers.map((member) => (
-            <div key={member.id} className="p-6 hover:bg-gray-50 transition-colors">
-              <div className="grid grid-cols-5 gap-4 items-center">
-                <div className="col-span-2 flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">
-                      {member.name.split(' ').map(n => n[0]).join('')}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">{member.name}</p>
-                    <p className="text-sm text-gray-500">{member.email}</p>
-                  </div>
-                </div>
-                <div>
-                  <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                    member.role === 'Admin' ? 'bg-purple-100 text-purple-800' :
-                    member.role === 'Analyst' ? 'bg-blue-100 text-blue-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {member.role}
-                  </span>
-                </div>
-                <div>
-                  <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                    member.status === 'active' ? 'bg-green-100 text-green-800' :
-                    'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {member.status}
-                  </span>
-                </div>
-                <div className="text-sm text-gray-500">{member.lastActive}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+  const renderTeamTab = () => {
+    // Redirect to full-fledged team management
+    return <TeamManagement user={user} companyData={null} />;
+  };
 
   const renderCurrentTab = () => {
     switch (activeTab) {

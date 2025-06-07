@@ -42,7 +42,7 @@ const Dashboard = ({ companyData }) => {
   const currentData = companyData;
   
   // If no company data, show empty state
-  if (!currentData || !currentData.analysisData) {
+  if (!currentData) {
     return (
       <div className="p-8 bg-gray-50 min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -76,12 +76,15 @@ const Dashboard = ({ companyData }) => {
     { id: 'analytics', name: 'Credit Analytics', icon: BarChart3 }
   ];
 
-  // Render based on selected tab
-  if (dashboardTab === 'analytics') {
-    return <DistressedCreditDashboard companyData={companyData} />;
-  }
+  // Render content based on selected tab
+  const renderTabContent = () => {
+    if (dashboardTab === 'analytics') {
+      return <DistressedCreditDashboard companyData={companyData} />;
+    } else {
+      return <CompanyOverview companyData={companyData} />;
+    }
+  };
 
-  // Default to company overview (Arc Intelligence style)
   return (
     <div className="bg-gray-50 min-h-screen">
       {/* Tab Navigation */}
@@ -107,8 +110,18 @@ const Dashboard = ({ companyData }) => {
         </div>
       </div>
 
-      {/* Company Overview Content */}
-      <CompanyOverview companyData={companyData} />
+      {/* Tab Content */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={dashboardTab}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.3 }}
+        >
+          {renderTabContent()}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
   const isPublicCompany = currentData.realTimeData?.isPublic;

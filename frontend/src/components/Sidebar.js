@@ -19,7 +19,9 @@ import {
 } from 'lucide-react';
 import StratumLogo from './Logo';
 
-const Sidebar = ({ currentView, setCurrentView, user, companyData, onLogout }) => {
+const Sidebar = ({ currentView, setCurrentView, user, companyData, onLogout, onBackToCompanies }) => {
+  const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
+  
   const navigation = [
     { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
     { id: 'dataroom', name: 'Data room', icon: FolderOpen },

@@ -12,7 +12,11 @@ import {
   Shield,
   Zap,
   Chrome,
-  ChevronLeft
+  ChevronLeft,
+  Search,
+  MapPin,
+  TrendingUp,
+  Calendar
 } from 'lucide-react';
 import StratumLogo from './Logo';
 import toast from 'react-hot-toast';

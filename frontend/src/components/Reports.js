@@ -38,6 +38,70 @@ const Reports = ({ companyData }) => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showBulkExport, setShowBulkExport] = useState(false);
 
+  // Enhanced report templates for distressed credit
+  const reportTemplates = [
+    {
+      id: 'distress-summary',
+      title: 'Distressed Credit Summary',
+      description: 'Comprehensive overview of financial distress indicators',
+      type: 'summary',
+      icon: AlertTriangle,
+      color: 'red',
+      estimatedTime: '5-7 minutes',
+      includes: ['Distress Score', 'Covenant Analysis', 'Liquidity Runway', 'Risk Flags']
+    },
+    {
+      id: 'covenant-analysis',
+      title: 'Covenant Tracking Report',
+      description: 'Detailed analysis of debt covenants and compliance status',
+      type: 'financial',
+      icon: CheckCircle,
+      color: 'green',
+      estimatedTime: '3-5 minutes',
+      includes: ['Covenant Status', 'Violation Details', 'Trend Analysis', 'Recommendations']
+    },
+    {
+      id: 'liquidity-forecast',
+      title: 'Liquidity & Cash Flow Forecast',
+      description: 'Cash runway analysis and liquidity projections',
+      type: 'financial',
+      icon: Clock,
+      color: 'blue',
+      estimatedTime: '4-6 minutes',
+      includes: ['Cash Position', 'Burn Rate', 'Runway Analysis', 'Scenarios']
+    },
+    {
+      id: 'capital-structure',
+      title: 'Capital Structure Analysis',
+      description: 'Debt waterfall and recovery analysis by seniority',
+      type: 'strategic',
+      icon: BarChart3,
+      color: 'purple',
+      estimatedTime: '6-8 minutes',
+      includes: ['Debt Ranking', 'Recovery Rates', 'Waterfall Analysis', 'Scenarios']
+    },
+    {
+      id: 'investment-memo',
+      title: 'Investment Committee Memo',
+      description: 'Executive summary for investment decision making',
+      type: 'executive',
+      icon: Building2,
+      color: 'indigo',
+      estimatedTime: '8-10 minutes',
+      includes: ['Executive Summary', 'Key Risks', 'Investment Thesis', 'Recommendations']
+    },
+    {
+      id: 'maturity-analysis',
+      title: 'Debt Maturity Wall Analysis',
+      description: 'Analysis of upcoming debt maturities and refinancing needs',
+      type: 'financial',
+      icon: Calendar,
+      color: 'orange',
+      estimatedTime: '4-6 minutes',
+      includes: ['Maturity Schedule', 'Refinancing Risk', 'Market Conditions', 'Strategy']
+    }
+  ];
+
   useEffect(() => {
     if (companyData) {
       loadAvailableReports();

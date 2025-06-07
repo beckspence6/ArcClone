@@ -253,9 +253,9 @@ const Dashboard = ({ companyData }) => {
               <Building2 className="w-10 h-10 text-white" />
             </div>
             <div>
-              <h2 className="text-4xl font-bold mb-2">{currentData.company.name}</h2>
-              <p className="text-blue-100 text-lg">{currentData.company.industry} • {currentData.company.sector}</p>
-              <p className="text-blue-200 text-sm max-w-2xl mt-2">{currentData.company.description}</p>
+              <h2 className="text-4xl font-bold mb-2">{currentData.company?.name || 'Company Name'}</h2>
+              <p className="text-blue-100 text-lg">{currentData.company?.industry || 'Industry'} • {currentData.company?.sector || 'Sector'}</p>
+              <p className="text-blue-200 text-sm max-w-2xl mt-2">{currentData.company?.description || ''}</p>
               <div className="flex items-center space-x-4 mt-4">
                 <div className="flex items-center space-x-2">
                   <Zap className="w-4 h-4" />

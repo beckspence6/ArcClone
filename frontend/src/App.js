@@ -262,7 +262,7 @@ function App() {
         );
         
       case 'dashboard':
-        return <Dashboard companyData={currentCompany?.analysisData} />;
+        return <Dashboard companyData={currentCompany} />;
         
       case 'dataroom':
         return <DataRoom companyData={currentCompany?.analysisData} />;

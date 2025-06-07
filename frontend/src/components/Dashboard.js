@@ -193,7 +193,7 @@ const Dashboard = ({ companyData }) => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Financial Intelligence Dashboard</h1>
           <p className="text-gray-600 mt-1">
-            AI-powered analysis for {currentData.company.name}
+            AI-powered analysis for {currentData.company?.name || 'Company'}
             {isPublicCompany && realTimeData && (
               <span className="ml-2 text-sm text-green-600">
                 • Live data • Last updated: {realTimeData.lastUpdated?.toLocaleTimeString()}

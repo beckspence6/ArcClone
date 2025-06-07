@@ -13,6 +13,7 @@ import DataRoom from './components/DataRoom';
 import Reports from './components/Reports';
 import Chat from './components/Chat';
 import Settings from './components/Settings';
+import TeamManagement from './components/TeamManagement';
 import Sidebar from './components/Sidebar';
 import LoadingScreen from './components/LoadingScreen';
 

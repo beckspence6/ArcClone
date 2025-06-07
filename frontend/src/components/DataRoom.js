@@ -77,35 +77,7 @@ const DataRoom = ({ companyData, onAnalyze }) => {
     }
   ];
 
-  const mockDocuments = [
-    {
-      id: 1,
-      name: 'Financial_Statements_Q3_2024.xlsx',
-      type: 'Excel',
-      size: '2.4 MB',
-      date: '2024-10-15',
-      status: 'processed',
-      description: 'Quarterly financial statements with P&L, balance sheet, and cash flow'
-    },
-    {
-      id: 2,
-      name: 'Business_Plan_2024.pdf',
-      type: 'PDF',
-      size: '5.1 MB',
-      date: '2024-10-10',
-      status: 'processing',
-      description: 'Comprehensive business plan and market analysis'
-    },
-    {
-      id: 3,
-      name: 'Revenue_Model_Analysis.pptx',
-      type: 'PowerPoint',
-      size: '8.7 MB',
-      date: '2024-10-08',
-      status: 'processed',
-      description: 'Revenue model breakdown and projections'
-    }
-  ];
+  // Remove mock documents - only show user uploads
 
   const handleDrag = (e) => {
     e.preventDefault();

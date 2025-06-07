@@ -4,7 +4,6 @@ import {
   User, 
   Shield, 
   Bell, 
-  CreditCard, 
   Users, 
   Lock, 
   Eye, 
@@ -20,9 +19,11 @@ import {
   X,
   Plus,
   Trash2,
-  LogOut
+  LogOut,
+  ArrowRight
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import TeamManagement from './TeamManagement';
 
 const Settings = ({ user, setUser, onLogout }) => {
   const [activeTab, setActiveTab] = useState('general');

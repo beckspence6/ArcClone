@@ -277,7 +277,7 @@ function App() {
         return <Settings user={user} setUser={setUser} onLogout={handleLogout} />;
         
       case 'team':
-        return <TeamManagement user={user} companyData={currentCompany?.analysisData} />;
+        return <TeamManagement user={user} companyData={currentCompany} />;
         
       default:
         return <LandingPage onLogin={handleLogin} />;

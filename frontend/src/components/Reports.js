@@ -38,6 +38,7 @@ const Reports = ({ companyData }) => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showBulkExport, setShowBulkExport] = useState(false);
   const [availableReports, setAvailableReports] = useState([]);
+  const [expandedSection, setExpandedSection] = useState(null);
   const [reportData, setReportData] = useState(null);
   const [generatingReport, setGeneratingReport] = useState(false);
 

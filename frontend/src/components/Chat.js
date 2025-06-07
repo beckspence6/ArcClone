@@ -108,35 +108,42 @@ const Chat = ({ companyData }) => {
 
   const generateResponse = (query) => {
     const responses = {
-      revenue: {
-        content: "Based on the latest financial data, BlueSky's LTM revenue is **$70.2M** as of Q3 2024, representing a **15% year-over-year growth**. The revenue has shown consistent growth over the past 5 quarters:\n\n• Q3 2023: $52M\n• Q4 2023: $54M\n• Q1 2024: $58M\n• Q2 2024: $62M\n• Q3 2024: $70M\n\nThis represents a strong upward trajectory with accelerating growth in recent quarters.",
-        confidence: 0.96,
-        agentType: 'financial'
-      },
-      margin: {
-        content: "BlueSky's gross margin has shown **significant improvement** over the past 5 quarters:\n\n📈 **Current LTM Gross Margin: 81.3%**\n\n**Quarterly Trends:**\n• Q3 2023: 78%\n• Q4 2023: 76%\n• Q1 2024: 74%\n• Q2 2024: 72%\n• Q3 2024: 81%\n\nKey insights:\n✓ Strong margin expansion in Q3 2024\n✓ Improved operational efficiency\n✓ Better pricing power in the market\n✓ Above industry average of 75-80%",
+      distress: {
+        content: "Based on the distressed credit analysis, the company shows **critical risk indicators**:\n\n🔴 **Distress Score: 73/100 (High Risk)**\n\n**Key Concerns:**\n• **Covenant Violations:** DSCR at 1.15 vs 1.25 requirement\n• **Leverage Ratio:** 6.8x vs 6.0x maximum\n• **Liquidity Runway:** Only 8.3 months remaining\n• **Debt Maturity:** $75M due March 2025\n\n**Immediate Actions Required:**\n✓ Negotiate covenant waivers\n✓ Secure additional liquidity\n✓ Develop restructuring scenarios",
         confidence: 0.94,
         agentType: 'insights'
       },
-      risks: {
-        content: "Based on my analysis of BlueSky's business model and financial data, here are the **key risks** to consider:\n\n🔴 **High Priority Risks:**\n• Customer concentration risk (need to verify top customer %)\n• Working capital challenges (negative working capital)\n• Debt service coverage with $15M long-term debt\n\n🟡 **Medium Priority Risks:**\n• Competitive pressure in SaaS project management space\n• Revenue predictability in subscription model\n• Talent retention in competitive tech market\n\n🟢 **Mitigating Factors:**\n• Strong cash position ($19.7M)\n• Improving margins indicate operational efficiency\n• Growing revenue base provides flexibility",
+      covenant: {
+        content: "**Covenant Analysis Summary:**\n\n🔴 **Active Violations (2):**\n• **DSCR:** 1.15 vs 1.25 minimum (Critical)\n• **Total Leverage:** 6.8x vs 6.0x maximum (Critical)\n\n🟡 **Watch Items (1):**\n• **Tangible Net Worth:** $185.2M vs $200M minimum\n\n🟢 **Compliant (2):**\n• Interest Coverage: 2.1x vs 2.0x minimum\n• Current Ratio: 1.3x vs 1.2x minimum\n\n**Implications:**\n• Potential acceleration rights triggered\n• Default interest rates may apply\n• Amendment/waiver negotiations likely required",
+        confidence: 0.96,
+        agentType: 'financial'
+      },
+      liquidity: {
+        content: "**Liquidity Analysis:**\n\n💧 **Current Runway: 8.3 months**\n\n**Cash Flow Breakdown:**\n• Current Cash: $14.2M\n• Monthly Burn: $8.7M\n• Runway at current burn: 8.3 months\n\n**Liquidity Sources:**\n• Undrawn credit facility: $25M\n• Working capital optimization: ~$15M\n• Asset sales potential: $30-50M\n\n**Recommendations:**\n• Immediate cost reduction program\n• Draw down available credit facilities\n• Accelerate collections\n• Defer non-critical capex",
+        confidence: 0.93,
+        agentType: 'financial'
+      },
+      structure: {
+        content: "**Capital Structure Analysis:**\n\n**Total Capital: $514.8M**\n\n**Debt Ranking & Recovery:**\n🥇 Senior Secured: $185.5M (85% recovery)\n🥈 Senior Unsecured: $124.8M (45% recovery)\n🥉 Subordinated: $67.2M (15% recovery)\n\n**Equity:**\n• Preferred: $45.0M (5% recovery)\n• Common: $92.3M (0% recovery)\n\n**Weighted Recovery Rate: 48%**\n\n**Strategic Implications:**\n• Senior secured lenders in strong position\n• Significant value destruction for equity\n• Potential debt-to-equity conversion scenarios",
         confidence: 0.92,
         agentType: 'research'
       },
       default: {
-        content: "I can help you analyze BlueSky's financial performance in detail. Based on the available data, the company shows strong fundamentals with $70.2M LTM revenue and improving 81.3% gross margins. Would you like me to dive deeper into any specific area like revenue trends, profitability, or risk assessment?",
+        content: "I can help you analyze this distressed credit situation in detail. Based on the available data, the company shows significant stress indicators with a distress score of 73/100. Would you like me to dive deeper into:\n\n🔍 **Covenant violations and implications**\n💧 **Liquidity runway analysis**\n🏗️ **Capital structure and recovery scenarios**\n⚠️ **Critical risk flags and timeline**\n📊 **Maturity wall and refinancing needs**\n\nWhich area would you like to explore first?",
         confidence: 0.90,
         agentType: 'coordinator'
       }
     };
 
-    // Simple keyword matching for demo
-    if (query.toLowerCase().includes('revenue') || query.toLowerCase().includes('ltm')) {
-      return responses.revenue;
-    } else if (query.toLowerCase().includes('margin') || query.toLowerCase().includes('gross')) {
-      return responses.margin;
-    } else if (query.toLowerCase().includes('risk') || query.toLowerCase().includes('challenge')) {
-      return responses.risks;
+    // Enhanced keyword matching for distressed credit
+    if (query.toLowerCase().includes('distress') || query.toLowerCase().includes('risk')) {
+      return responses.distress;
+    } else if (query.toLowerCase().includes('covenant') || query.toLowerCase().includes('violation')) {
+      return responses.covenant;
+    } else if (query.toLowerCase().includes('liquidity') || query.toLowerCase().includes('cash') || query.toLowerCase().includes('runway')) {
+      return responses.liquidity;
+    } else if (query.toLowerCase().includes('capital') || query.toLowerCase().includes('structure') || query.toLowerCase().includes('recovery')) {
+      return responses.structure;
     } else {
       return responses.default;
     }

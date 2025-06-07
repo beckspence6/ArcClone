@@ -24,7 +24,10 @@ import {
   Archive,
   ChevronRight,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Edit3,
+  Info,
+  Calculator
 } from 'lucide-react';
 import StratumLogo from './Logo';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart } from 'recharts';

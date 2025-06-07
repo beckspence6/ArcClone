@@ -11,7 +11,7 @@ import {
   BarChart3,
   Shield,
   Zap,
-  Google,
+  Chrome,
   ChevronLeft
 } from 'lucide-react';
 import StratumLogo from './Logo';

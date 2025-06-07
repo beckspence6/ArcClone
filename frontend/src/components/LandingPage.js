@@ -222,7 +222,7 @@ const LandingPage = ({ onLogin }) => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.3 }}
           >
-            <div className="relative w-full h-[600px] rounded-3xl overflow-hidden bg-gradient-to-br from-blue-900/20 to-purple-900/20 backdrop-blur-lg border border-white/10">
+            <div className="relative w-full h-[600px] rounded-3xl overflow-hidden">
               {/* Spline 3D Model */}
               <iframe 
                 src='https://my.spline.design/stockicon-VZD2Lap19cSFZNNjcZR9zgEC/' 
@@ -231,6 +231,7 @@ const LandingPage = ({ onLogin }) => {
                 height='100%'
                 className="rounded-3xl"
                 title="Interactive Stock Market Visualization"
+                style={{ border: 'none' }}
               />
               
               {/* Overlay with interaction hint */}

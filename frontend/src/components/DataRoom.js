@@ -28,7 +28,10 @@ const DataRoom = ({ companyData, onAnalyze }) => {
   const [activeTab, setActiveTab] = useState('import');
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [documents, setDocuments] = useState([]);
+  // Initialize with user's existing documents if any
+  const [documents, setDocuments] = useState(
+    companyData?.documents || []
+  );
   const [dragActive, setDragActive] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState(0);

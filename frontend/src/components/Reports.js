@@ -31,12 +31,12 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 const Reports = ({ companyData }) => {
-  const [selectedReport, setSelectedReport] = useState('opportunity-memo');
-  const [showFormula, setShowFormula] = useState(false);
-  const [expandedSection, setExpandedSection] = useState('definition');
-  const [generatingReport, setGeneratingReport] = useState(false);
-  const [reportData, setReportData] = useState(null);
-  const [availableReports, setAvailableReports] = useState([]);
+  const [activeTab, setActiveTab] = useState('reports');
+  const [selectedReports, setSelectedReports] = useState([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [shareEmail, setShareEmail] = useState('');
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showBulkExport, setShowBulkExport] = useState(false);
 
   useEffect(() => {
     if (companyData) {

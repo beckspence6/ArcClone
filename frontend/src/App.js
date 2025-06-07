@@ -32,14 +32,32 @@ function App() {
   useEffect(() => {
     const savedUser = localStorage.getItem('stratum_user');
     const savedCompanies = localStorage.getItem('stratum_companies');
+    const savedCurrentCompany = localStorage.getItem('stratum_current_company');
     
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
-      setCurrentView('company-management');
+      const userData = JSON.parse(savedUser);
+      setUser(userData);
+      
+      // Only redirect if user has completed onboarding AND has companies
+      if (userData.onboardingComplete && savedCompanies && JSON.parse(savedCompanies).length > 0) {
+        setCurrentView('company-management');
+      } else if (userData.onboardingComplete) {
+        setCurrentView('company-management'); 
+      } else {
+        // User exists but hasn't completed onboarding, stay on landing
+        setCurrentView('landing');
+      }
+    } else {
+      // No user, always show landing page
+      setCurrentView('landing');
     }
     
     if (savedCompanies) {
       setCompanies(JSON.parse(savedCompanies));
+    }
+
+    if (savedCurrentCompany) {
+      setCurrentCompany(JSON.parse(savedCurrentCompany));
     }
   }, []);
 

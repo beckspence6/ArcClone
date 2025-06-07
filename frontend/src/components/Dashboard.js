@@ -36,13 +36,13 @@ const Dashboard = ({ companyData }) => {
   const [insights, setInsights] = useState([]);
   const [selectedTimeframe, setSelectedTimeframe] = useState('1Y');
   const [animatedMetrics, setAnimatedMetrics] = useState({});
-  const [dashboardMode, setDashboardMode] = useState('distressed'); // 'distressed' or 'general'
+  const [dashboardTab, setDashboardTab] = useState('overview'); // 'overview' or 'analytics'
 
   // No default data - everything should come from actual analysis
   const currentData = companyData;
   
   // If no company data, show empty state
-  if (!currentData || !currentData.keyMetrics || !currentData.financials) {
+  if (!currentData || !currentData.analysisData) {
     return (
       <div className="p-8 bg-gray-50 min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -70,16 +70,47 @@ const Dashboard = ({ companyData }) => {
     );
   }
 
-  // Check if this should be a distressed credit analysis
-  const isDistressedCredit = currentData?.analysisType === 'distressed' || 
-                            currentData?.company?.sector?.toLowerCase().includes('distressed') ||
-                            currentData?.riskLevel === 'high' ||
-                            true; // Default to distressed for now
+  // Dashboard tabs
+  const tabs = [
+    { id: 'overview', name: 'Company Overview', icon: Building2 },
+    { id: 'analytics', name: 'Credit Analytics', icon: BarChart3 }
+  ];
 
-  // If this is distressed credit analysis, use the specialized dashboard
-  if (isDistressedCredit) {
+  // Render based on selected tab
+  if (dashboardTab === 'analytics') {
     return <DistressedCreditDashboard companyData={companyData} />;
   }
+
+  // Default to company overview (Arc Intelligence style)
+  return (
+    <div className="bg-gray-50 min-h-screen">
+      {/* Tab Navigation */}
+      <div className="bg-white border-b border-gray-200 px-8 pt-8">
+        <div className="flex items-center space-x-8">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setDashboardTab(tab.id)}
+                className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  dashboardTab === tab.id
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                <span>{tab.name}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Company Overview Content */}
+      <CompanyOverview companyData={companyData} />
+    </div>
+  );
   const isPublicCompany = currentData.realTimeData?.isPublic;
 
   useEffect(() => {

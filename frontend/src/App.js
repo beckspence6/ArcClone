@@ -268,7 +268,7 @@ function App() {
         return <DataRoom companyData={currentCompany} />;
         
       case 'reports':
-        return <Reports companyData={currentCompany?.analysisData} />;
+        return <Reports companyData={currentCompany} />;
         
       case 'chat':
         return <Chat companyData={currentCompany?.analysisData} />;

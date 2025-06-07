@@ -259,7 +259,7 @@ const Dashboard = ({ companyData }) => {
               <div className="flex items-center space-x-4 mt-4">
                 <div className="flex items-center space-x-2">
                   <Zap className="w-4 h-4" />
-                  <span className="text-sm">AI Confidence: {Math.round(currentData.confidence * 100)}%</span>
+                  <span className="text-sm">AI Confidence: {Math.round((currentData.confidence || 0) * 100)}%</span>
                 </div>
                 {isPublicCompany && realTimeData?.stockPrice && (
                   <div className="flex items-center space-x-2">

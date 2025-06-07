@@ -34,6 +34,7 @@ const Dashboard = ({ companyData }) => {
   const [insights, setInsights] = useState([]);
   const [selectedTimeframe, setSelectedTimeframe] = useState('1Y');
   const [animatedMetrics, setAnimatedMetrics] = useState({});
+  const [dashboardMode, setDashboardMode] = useState('distressed'); // 'distressed' or 'general'
 
   // No default data - everything should come from actual analysis
   const currentData = companyData;
@@ -65,6 +66,17 @@ const Dashboard = ({ companyData }) => {
         </div>
       </div>
     );
+  }
+
+  // Check if this should be a distressed credit analysis
+  const isDistressedCredit = currentData?.analysisType === 'distressed' || 
+                            currentData?.company?.sector?.toLowerCase().includes('distressed') ||
+                            currentData?.riskLevel === 'high' ||
+                            true; // Default to distressed for now
+
+  // If this is distressed credit analysis, use the specialized dashboard
+  if (isDistressedCredit) {
+    return <DistressedCreditDashboard companyData={companyData} />;
   }
   const isPublicCompany = currentData.realTimeData?.isPublic;
 

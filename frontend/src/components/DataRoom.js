@@ -30,7 +30,7 @@ const DataRoom = ({ companyData, onAnalyze }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   // Initialize with user's existing documents if any
   const [documents, setDocuments] = useState(
-    companyData?.documents || []
+    companyData?.documents || companyData?.files || []
   );
   const [dragActive, setDragActive] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);

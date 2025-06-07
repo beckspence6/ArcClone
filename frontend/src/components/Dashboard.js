@@ -19,7 +19,9 @@ import {
   BarChart3,
   Activity,
   RefreshCw,
-  Brain
+  Brain,
+  PieChart,
+  LineChart
 } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, PieChart, Pie, Cell } from 'recharts';
 import StratumLogo from './Logo';

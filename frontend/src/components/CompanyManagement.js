@@ -201,14 +201,14 @@ const CompanyManagement = ({ onSelectCompany, onCreateNew, companies = [], onDel
                   </div>
 
                   {/* Risk Flags */}
-                  {company.riskFlags && company.riskFlags.length > 0 && (
+                  {company.riskFlags && Array.isArray(company.riskFlags) && company.riskFlags.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {company.riskFlags.slice(0, 3).map((flag, i) => (
                         <span
                           key={i}
                           className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full"
                         >
-                          {flag}
+                          {typeof flag === 'string' ? flag : flag.title || 'Risk Flag'}
                         </span>
                       ))}
                       {company.riskFlags.length > 3 && (

@@ -138,10 +138,12 @@ const Dashboard = ({ companyData }) => {
   };
 
   const animateMetrics = () => {
+    if (!currentData?.financials || !currentData?.keyMetrics) return;
+    
     const metrics = {
-      revenue: parseFloat(currentData.financials.revenue.replace(/[$M,]/g, '')),
-      margin: parseFloat(currentData.financials.grossMargin.replace('%', '')),
-      growth: parseFloat(currentData.keyMetrics.revenueGrowth.replace('%', ''))
+      revenue: parseFloat((currentData.financials.revenue || '0').replace(/[$M,]/g, '')),
+      margin: parseFloat((currentData.financials.grossMargin || '0').replace('%', '')),
+      growth: parseFloat((currentData.keyMetrics.revenueGrowth || '0').replace('%', ''))
     };
     
     setAnimatedMetrics(metrics);

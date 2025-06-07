@@ -576,10 +576,10 @@ const Dashboard = ({ companyData }) => {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance Metrics</h3>
           <div className="space-y-4">
             {[
-              { label: 'Return on Assets', value: currentData.keyMetrics.roa, trend: 'up' },
-              { label: 'Return on Equity', value: currentData.keyMetrics.roe, trend: 'up' },
-              { label: 'Profit Margin', value: currentData.keyMetrics.profitMargin, trend: 'up' },
-              { label: 'Revenue Growth', value: currentData.keyMetrics.revenueGrowth, trend: 'up' }
+              { label: 'Return on Assets', value: currentData.keyMetrics?.roa || 'N/A', trend: 'up' },
+              { label: 'Return on Equity', value: currentData.keyMetrics?.roe || 'N/A', trend: 'up' },
+              { label: 'Profit Margin', value: currentData.keyMetrics?.profitMargin || 'N/A', trend: 'up' },
+              { label: 'Revenue Growth', value: currentData.keyMetrics?.revenueGrowth || 'N/A', trend: 'up' }
             ].map((item, index) => (
               <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
                 <span className="text-gray-600">{item.label}</span>

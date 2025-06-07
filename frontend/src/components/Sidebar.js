@@ -31,7 +31,7 @@ const Sidebar = ({ currentView, setCurrentView, user, companyData, onLogout }) =
   ];
 
   const fileActions = [
-    { id: 'export', name: 'Export', icon: Export },
+    { id: 'export', name: 'Export', icon: Download },
   ];
 
   return (

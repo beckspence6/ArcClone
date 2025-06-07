@@ -304,7 +304,7 @@ const Reports = ({ companyData }) => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <Edit className="w-4 h-4" />
+                  <Edit3 className="w-4 h-4" />
                   <span>Edit</span>
                 </motion.button>
               </div>

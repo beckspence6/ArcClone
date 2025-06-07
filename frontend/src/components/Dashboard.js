@@ -558,10 +558,10 @@ const Dashboard = ({ companyData }) => {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Balance Sheet Summary</h3>
           <div className="space-y-4">
             {[
-              { label: 'Total Assets', value: currentData.financials.totalAssets },
-              { label: 'Total Debt', value: currentData.financials.totalDebt },
-              { label: 'Cash & Equivalents', value: currentData.financials.cashAndEquivalents },
-              { label: 'Debt-to-Equity', value: currentData.keyMetrics.debtToEquity }
+              { label: 'Total Assets', value: currentData.financials?.totalAssets || 'N/A' },
+              { label: 'Total Debt', value: currentData.financials?.totalDebt || 'N/A' },
+              { label: 'Cash & Equivalents', value: currentData.financials?.cashAndEquivalents || 'N/A' },
+              { label: 'Debt-to-Equity', value: currentData.keyMetrics?.debtToEquity || 'N/A' }
             ].map((item, index) => (
               <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
                 <span className="text-gray-600">{item.label}</span>

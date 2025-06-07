@@ -25,6 +25,7 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, R
 import StratumLogo from './Logo';
 import GeminiService from '../services/geminiService';
 import AlphaVantageService from '../services/alphaVantageService';
+import DistressedCreditDashboard from './DistressedCreditDashboard';
 import toast from 'react-hot-toast';
 
 const Dashboard = ({ companyData }) => {

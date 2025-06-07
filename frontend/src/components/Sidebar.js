@@ -9,7 +9,7 @@ import {
   Building2,
   ChevronDown,
   File,
-  Download as Export,
+  Download,
   Users,
   CreditCard,
   LogOut

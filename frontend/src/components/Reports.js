@@ -39,6 +39,7 @@ const Reports = ({ companyData }) => {
   const [showBulkExport, setShowBulkExport] = useState(false);
   const [availableReports, setAvailableReports] = useState([]);
   const [expandedSection, setExpandedSection] = useState(null);
+  const [showFormula, setShowFormula] = useState(false);
   const [reportData, setReportData] = useState(null);
   const [generatingReport, setGeneratingReport] = useState(false);
 

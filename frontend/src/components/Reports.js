@@ -21,7 +21,10 @@ import {
   Search,
   MoreHorizontal,
   ExternalLink,
-  Archive
+  Archive,
+  ChevronRight,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import StratumLogo from './Logo';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart } from 'recharts';

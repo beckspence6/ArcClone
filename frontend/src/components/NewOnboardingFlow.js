@@ -197,7 +197,7 @@ const NewOnboardingFlow = ({ onComplete }) => {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
-          <Google className="w-5 h-5" />
+          <Chrome className="w-5 h-5" />
           <span className="font-semibold">Continue with Google</span>
         </motion.button>
 

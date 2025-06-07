@@ -376,32 +376,6 @@ const Settings = ({ user, setUser, onLogout }) => {
             </div>
           </div>
         );
-      case 'billing':
-        return (
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">Billing & Usage</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center p-6 bg-blue-50 rounded-lg">
-                <Zap className="w-8 h-8 text-blue-600 mx-auto mb-3" />
-                <h4 className="font-semibold text-gray-900 mb-2">Pro Plan</h4>
-                <p className="text-2xl font-bold text-gray-900 mb-2">$99/month</p>
-                <p className="text-sm text-gray-600">Unlimited AI analysis</p>
-              </div>
-              <div className="text-center p-6 bg-gray-50 rounded-lg">
-                <Globe className="w-8 h-8 text-gray-600 mx-auto mb-3" />
-                <h4 className="font-semibold text-gray-900 mb-2">Usage This Month</h4>
-                <p className="text-2xl font-bold text-gray-900 mb-2">2,847</p>
-                <p className="text-sm text-gray-600">AI queries processed</p>
-              </div>
-              <div className="text-center p-6 bg-green-50 rounded-lg">
-                <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-3" />
-                <h4 className="font-semibold text-gray-900 mb-2">Next Billing</h4>
-                <p className="text-2xl font-bold text-gray-900 mb-2">Nov 15</p>
-                <p className="text-sm text-gray-600">Auto-renewal enabled</p>
-              </div>
-            </div>
-          </div>
-        );
       default:
         return renderGeneralTab();
     }

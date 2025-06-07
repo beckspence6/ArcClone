@@ -25,8 +25,8 @@ const Chat = ({ companyData }) => {
       id: 1,
       type: 'bot',
       content: companyData?.company?.name 
-        ? `Hello! I'm your AI assistant for ${companyData.company.name}. I can help you analyze financial data, generate insights, and answer questions about the company's performance. What would you like to explore?`
-        : "Hello! I'm your AI assistant. Upload documents in the Data Room first, and I'll be able to provide detailed analysis and insights about your company. What can I help you with?",
+        ? `Hello! I'm your AI assistant specializing in distressed credit analysis for ${companyData.company.name}. I can help you analyze covenant violations, liquidity runways, capital structure, and distress scenarios. What would you like to explore?`
+        : "Hello! I'm your AI assistant specializing in distressed credit analysis. Upload documents in the Data Room first, and I'll be able to provide detailed covenant tracking, liquidity analysis, and restructuring scenarios. What can I help you with?",
       timestamp: new Date(),
       confidence: 0.98,
       agentType: 'coordinator',

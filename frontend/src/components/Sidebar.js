@@ -46,18 +46,77 @@ const Sidebar = ({ currentView, setCurrentView, user, companyData, onLogout, onB
         <StratumLogo size="medium" />
       </div>
 
-      {/* Company Selector */}
-      <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-              <Building2 className="w-4 h-4 text-white" />
+      {/* Company Selector with Back to Portfolio */}
+      <div className="p-4 border-b border-gray-200 space-y-3">
+        {/* Back to Portfolio Button */}
+        {onBackToCompanies && (
+          <motion.button
+            onClick={onBackToCompanies}
+            className="w-full flex items-center space-x-2 p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-sm font-medium">Back to Portfolio</span>
+          </motion.button>
+        )}
+
+        {/* Company Selector Dropdown */}
+        <div className="relative">
+          <motion.button
+            onClick={() => setShowCompanyDropdown(!showCompanyDropdown)}
+            className="w-full flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors"
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+          >
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                <Building2 className="w-4 h-4 text-white" />
+              </div>
+              <div className="text-left">
+                <span className="font-medium text-gray-900 block">
+                  {companyData?.company?.name || user?.company || 'Demo Company'}
+                </span>
+                <span className="text-xs text-blue-600">Current Analysis</span>
+              </div>
             </div>
-            <span className="font-medium text-gray-900">
-              {companyData?.company?.name || user?.company || 'Demo Company'}
-            </span>
-          </div>
-          <ChevronDown className="w-4 h-4 text-gray-500" />
+            {showCompanyDropdown ? (
+              <ChevronUp className="w-4 h-4 text-gray-500" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-gray-500" />
+            )}
+          </motion.button>
+
+          {/* Company Dropdown */}
+          <AnimatePresence>
+            {showCompanyDropdown && (
+              <motion.div
+                initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-10"
+              >
+                <div className="p-2">
+                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-blue-50">
+                    <Check className="w-4 h-4 text-blue-600" />
+                    <div>
+                      <span className="font-medium text-gray-900 block">
+                        {companyData?.company?.name || 'Current Company'}
+                      </span>
+                      <span className="text-xs text-blue-600">Active</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={onBackToCompanies}
+                    className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors mt-1"
+                  >
+                    <Building2 className="w-4 h-4 text-gray-500" />
+                    <span className="text-sm text-gray-700">Switch Company</span>
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 

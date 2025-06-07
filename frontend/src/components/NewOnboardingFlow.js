@@ -29,12 +29,121 @@ const NewOnboardingFlow = ({ onComplete }) => {
     firstName: '',
     lastName: '',
     company: '',
+    selectedCompany: null,
     role: 'analyst',
+    industry: '',
     notifications: true,
     marketUpdates: false
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [companySearchResults, setCompanySearchResults] = useState([]);
+  const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
+
+  // Mock company database - in production, this would come from API
+  const companyDatabase = [
+    { 
+      symbol: 'AAPL', 
+      name: 'Apple Inc.', 
+      industry: 'Technology', 
+      sector: 'Consumer Electronics',
+      location: 'Cupertino, CA',
+      founded: 1976,
+      marketCap: '$2.8T'
+    },
+    { 
+      symbol: 'MSFT', 
+      name: 'Microsoft Corporation', 
+      industry: 'Technology', 
+      sector: 'Software',
+      location: 'Redmond, WA',
+      founded: 1975,
+      marketCap: '$2.4T'
+    },
+    { 
+      symbol: 'GOOGL', 
+      name: 'Alphabet Inc.', 
+      industry: 'Technology', 
+      sector: 'Internet Services',
+      location: 'Mountain View, CA',
+      founded: 1998,
+      marketCap: '$1.7T'
+    },
+    { 
+      symbol: 'AMZN', 
+      name: 'Amazon.com Inc.', 
+      industry: 'E-commerce', 
+      sector: 'Consumer Discretionary',
+      location: 'Seattle, WA',
+      founded: 1994,
+      marketCap: '$1.5T'
+    },
+    { 
+      symbol: 'TSLA', 
+      name: 'Tesla Inc.', 
+      industry: 'Automotive', 
+      sector: 'Electric Vehicles',
+      location: 'Austin, TX',
+      founded: 2003,
+      marketCap: '$800B'
+    },
+    { 
+      symbol: 'META', 
+      name: 'Meta Platforms Inc.', 
+      industry: 'Technology', 
+      sector: 'Social Media',
+      location: 'Menlo Park, CA',
+      founded: 2004,
+      marketCap: '$750B'
+    },
+    { 
+      symbol: 'NFLX', 
+      name: 'Netflix Inc.', 
+      industry: 'Entertainment', 
+      sector: 'Streaming Services',
+      location: 'Los Gatos, CA',
+      founded: 1997,
+      marketCap: '$180B'
+    },
+    { 
+      symbol: 'NVDA', 
+      name: 'NVIDIA Corporation', 
+      industry: 'Technology', 
+      sector: 'Semiconductors',
+      location: 'Santa Clara, CA',
+      founded: 1993,
+      marketCap: '$1.2T'
+    }
+  ];
+
+  const handleCompanySearch = (searchTerm) => {
+    setFormData(prev => ({ ...prev, company: searchTerm }));
+    
+    if (searchTerm.length >= 2) {
+      const results = companyDatabase.filter(company => 
+        company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        company.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        company.industry.toLowerCase().includes(searchTerm.toLowerCase())
+      ).slice(0, 6);
+      
+      setCompanySearchResults(results);
+      setShowCompanyDropdown(true);
+    } else {
+      setCompanySearchResults([]);
+      setShowCompanyDropdown(false);
+    }
+  };
+
+  const handleCompanySelect = (company) => {
+    setFormData(prev => ({ 
+      ...prev, 
+      company: company.name,
+      selectedCompany: company,
+      industry: company.industry
+    }));
+    setShowCompanyDropdown(false);
+    setCompanySearchResults([]);
+  };
 
   const steps = [
     { id: 'welcome', title: 'Welcome to Stratum' },

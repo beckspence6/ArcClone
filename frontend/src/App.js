@@ -271,7 +271,7 @@ function App() {
         return <Reports companyData={currentCompany} />;
         
       case 'chat':
-        return <Chat companyData={currentCompany?.analysisData} />;
+        return <Chat companyData={currentCompany} />;
         
       case 'settings':
         return <Settings user={user} setUser={setUser} onLogout={handleLogout} />;

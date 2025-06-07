@@ -1,5 +1,5 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, 
   FolderOpen, 
@@ -8,11 +8,14 @@ import {
   Settings, 
   Building2,
   ChevronDown,
+  ChevronUp,
   File,
   Download,
   Users,
   CreditCard,
-  LogOut
+  LogOut,
+  ArrowLeft,
+  Check
 } from 'lucide-react';
 import StratumLogo from './Logo';
 

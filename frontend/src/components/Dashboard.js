@@ -299,15 +299,15 @@ const Dashboard = ({ companyData }) => {
         {[
           { 
             label: 'LTM Revenue', 
-            value: currentData.financials.revenue, 
-            change: currentData.keyMetrics.revenueGrowth, 
+            value: currentData.financials?.revenue || 'N/A', 
+            change: currentData.keyMetrics?.revenueGrowth || 'N/A', 
             icon: DollarSign, 
             color: 'blue',
             animated: animatedMetrics.revenue
           },
           { 
             label: 'Gross Margin', 
-            value: currentData.financials.grossMargin, 
+            value: currentData.financials?.grossMargin || 'N/A', 
             change: '+2.3%', 
             icon: TrendingUp, 
             color: 'green',
@@ -315,19 +315,19 @@ const Dashboard = ({ companyData }) => {
           },
           { 
             label: 'Net Income', 
-            value: currentData.financials.netIncome, 
+            value: currentData.financials?.netIncome || 'N/A', 
             change: '+15.7%', 
             icon: BarChart3, 
             color: 'purple',
-            animated: parseFloat(currentData.financials.netIncome.replace(/[$M,]/g, ''))
+            animated: parseFloat((currentData.financials?.netIncome || '0').replace(/[$M,]/g, ''))
           },
           { 
             label: 'ROE', 
-            value: currentData.keyMetrics.roe, 
+            value: currentData.keyMetrics?.roe || 'N/A', 
             change: '+1.2%', 
             icon: Target, 
             color: 'orange',
-            animated: parseFloat(currentData.keyMetrics.roe.replace('%', ''))
+            animated: parseFloat((currentData.keyMetrics?.roe || '0').replace('%', ''))
           }
         ].map((metric, index) => {
           const Icon = metric.icon;

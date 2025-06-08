@@ -604,65 +604,78 @@ const DistressedCreditDashboard = ({ companyData }) => {
     );
   };
 
-  const renderCovenants = () => (
-    <div className="space-y-4">
-      {distressedData.covenants.map((covenant, index) => {
-        const Icon = getSeverityIcon(covenant.status);
-        return (
-          <motion.div
-            key={index}
-            className="bg-white rounded-xl border border-gray-200 overflow-hidden"
-            whileHover={{ scale: 1.01 }}
-          >
-            <div className="p-6">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <Icon className={`w-5 h-5 ${getSeverityColor(covenant.status).split(' ')[0]}`} />
-                    <h3 className="text-lg font-semibold text-gray-900">{covenant.name}</h3>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(covenant.status)}`}>
-                      {covenant.status}
-                    </span>
-                  </div>
-                  
-                  <div className="grid grid-cols-3 gap-4 mt-4">
-                    <div>
-                      <p className="text-sm text-gray-600">Current Value</p>
-                      <p className="text-xl font-bold text-gray-900">{covenant.current}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Threshold</p>
-                      <p className="text-xl font-bold text-gray-900">{covenant.threshold}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Impact Level</p>
-                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(covenant.impact)}`}>
-                        {covenant.impact}
+  const renderCovenants = () => {
+    const covenants = generateCovenantAnalysis();
+    
+    return (
+      <div className="space-y-4">
+        {covenants.map((covenant, index) => {
+          const Icon = getSeverityIcon(covenant.status);
+          return (
+            <motion.div
+              key={index}
+              className="bg-white rounded-xl border border-gray-200 overflow-hidden"
+              whileHover={{ scale: 1.01 }}
+            >
+              <div className="p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <Icon className={`w-5 h-5 ${getSeverityColor(covenant.status).split(' ')[0]}`} />
+                      <h3 className="text-lg font-semibold text-gray-900">{covenant.name}</h3>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(covenant.status)}`}>
+                        {covenant.status}
                       </span>
                     </div>
+                    
+                    <div className="grid grid-cols-3 gap-4 mt-4">
+                      <div>
+                        <p className="text-sm text-gray-600">Current Value</p>
+                        <p className="text-xl font-bold text-gray-900">{covenant.current}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Threshold</p>
+                        <p className="text-xl font-bold text-gray-900">{covenant.threshold}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Impact Level</p>
+                        <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(covenant.impact)}`}>
+                          {covenant.impact}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 text-sm text-gray-600">
+                      <p><strong>Formula:</strong> {covenant.formula}</p>
+                      <p><strong>Source:</strong> {covenant.source}</p>
+                      {covenant.explanation && (
+                        <p className="mt-2">{covenant.explanation}</p>
+                      )}
+                    </div>
                   </div>
-                </div>
-                
-                <div className="text-right">
-                  <div className={`flex items-center space-x-1 ${
-                    covenant.trend === 'improving' ? 'text-green-600' :
-                    covenant.trend === 'declining' ? 'text-red-600' :
-                    covenant.trend === 'increasing' ? 'text-red-600' :
-                    'text-gray-600'
-                  }`}>
-                    {covenant.trend === 'improving' ? <TrendingUp className="w-4 h-4" /> :
-                     covenant.trend === 'declining' || covenant.trend === 'increasing' ? <TrendingDown className="w-4 h-4" /> :
-                     <Activity className="w-4 h-4" />}
-                    <span className="text-sm font-medium capitalize">{covenant.trend}</span>
+                  
+                  <div className="text-right">
+                    <div className={`flex items-center space-x-1 ${
+                      covenant.trend === 'improving' ? 'text-green-600' :
+                      covenant.trend === 'declining' ? 'text-red-600' :
+                      covenant.trend === 'calculated' ? 'text-blue-600' :
+                      'text-gray-600'
+                    }`}>
+                      {covenant.trend === 'improving' ? <TrendingUp className="w-4 h-4" /> :
+                       covenant.trend === 'declining' ? <TrendingDown className="w-4 h-4" /> :
+                       covenant.trend === 'calculated' ? <Calculator className="w-4 h-4" /> :
+                       <Activity className="w-4 h-4" />}
+                      <span className="text-sm font-medium capitalize">{covenant.trend}</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </motion.div>
-        );
-      })}
-    </div>
-  );
+            </motion.div>
+          );
+        })}
+      </div>
+    );
+  };
 
   const renderLiquidity = () => (
     <div className="bg-white rounded-xl p-6 border border-gray-200">

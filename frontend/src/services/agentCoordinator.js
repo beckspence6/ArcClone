@@ -888,17 +888,29 @@ class FinancialAnalystAgent {
     return attribution;
   }
 
-  calculateAnalysisConfidence(documentData, apiData) {
+  calculateAnalysisConfidence(documentData, apiData, enhancedConfidence = 0.5) {
     const documentCount = Object.keys(documentData).length;
     const apiCount = Object.keys(apiData).length;
     const totalDataPoints = documentCount + apiCount;
     
     if (totalDataPoints === 0) return 0.1;
-    if (documentCount > 0 && apiCount > 0) return 0.95; // Best case: multiple sources
-    if (documentCount > 0) return 0.85; // Good: document data available
-    if (apiCount > 0) return 0.75; // Moderate: only API data
     
-    return 0.5;
+    // Factor in enhanced extraction confidence
+    let baseConfidence = 0.5;
+    if (documentCount > 0 && apiCount > 0) baseConfidence = 0.85; // Multiple sources
+    else if (documentCount > 0) baseConfidence = 0.75; // Document data available  
+    else if (apiCount > 0) baseConfidence = 0.65; // Only API data
+    
+    // Boost confidence with enhanced extraction quality
+    const finalConfidence = Math.min(0.98, baseConfidence + (enhancedConfidence * 0.2));
+    
+    return finalConfidence;
+  }
+
+  parseNumber(value) {
+    if (!value) return 0;
+    if (typeof value === 'number') return value;
+    return parseFloat(value.toString().replace(/[$,M,K,%]/g, ''));
   }
 
   async extractFinancialMetrics(documentResults, companySymbol = null) {

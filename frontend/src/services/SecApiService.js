@@ -54,49 +54,44 @@ class SecApiService {
     });
   }
 
-  // Strategic cache management
   getCacheKey(endpoint, params) {
-    const paramString = Object.keys(params)
-      .sort()
-      .map(key => `${key}=${params[key]}`)
-      .join('&');
-    return `secapi_${endpoint}_${paramString}`;
+    return `sec_${endpoint}_${JSON.stringify(params)}`;
   }
 
-  getFromCache(cacheKey) {
-    const cached = this.cache.get(cacheKey);
+  getFromCache(key) {
+    const cached = this.cache.get(key);
     if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
-      console.log(`[SecApiService] Cache hit for ${cacheKey}`);
+      console.log(`[SecApiService] Cache hit for ${key}`);
       return cached.data;
     }
     return null;
   }
 
-  setCache(cacheKey, data) {
-    this.cache.set(cacheKey, {
-      data,
+  setCache(key, data) {
+    this.cache.set(key, {
+      data: data,
       timestamp: Date.now()
     });
-    console.log(`[SecApiService] Cached ${cacheKey}`);
   }
 
-  // Credit management
   canMakeRequest(endpoint) {
     const usage = this.creditUsage.get(endpoint);
     if (!usage) return true;
-    
-    if (usage.used >= usage.limit) {
-      console.warn(`[SecApiService] Credit limit reached for ${endpoint}: ${usage.used}/${usage.limit}`);
-      return false;
+
+    const now = Date.now();
+    if (now > usage.resetTime) {
+      usage.used = 0;
+      usage.resetTime = now + 3600000;
     }
-    return true;
+
+    return usage.used < usage.limit;
   }
 
   incrementCredit(endpoint) {
     const usage = this.creditUsage.get(endpoint);
     if (usage) {
       usage.used += 1;
-      console.log(`[SecApiService] Credit used for ${endpoint}: ${usage.used}/${usage.limit}`);
+      usage.lastRequest = Date.now();
     }
   }
 

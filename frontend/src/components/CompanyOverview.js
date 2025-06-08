@@ -426,13 +426,13 @@ const CompanyOverview = ({ companyData }) => {
           </motion.div>
         </div>
 
-        {/* Financial Overview - Arc Style */}
+        {/* Financial Overview - Real Data with Source Attribution */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Key Financial Metrics */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <h3 className="text-xl font-semibold text-gray-900 mb-6">Financial Overview</h3>
             <div className="grid grid-cols-2 gap-6">
-              {Object.entries(company.metrics).map(([key, metric]) => (
+              {Object.entries(metrics).map(([key, metric]) => (
                 <motion.div
                   key={key}
                   className="cursor-pointer group"
@@ -459,19 +459,40 @@ const CompanyOverview = ({ companyData }) => {
                     </div>
                   </div>
                   <div className="flex items-end justify-between">
-                    <span className="text-2xl font-bold text-gray-900">{metric.value}</span>
-                    <div className="flex items-center space-x-1">
-                      {metric.change.startsWith('+') ? (
-                        <TrendingUp className="w-4 h-4 text-green-500" />
-                      ) : (
-                        <TrendingDown className="w-4 h-4 text-red-500" />
-                      )}
-                      <span className={`text-sm font-medium ${
-                        metric.change.startsWith('+') ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {metric.change}
-                      </span>
-                    </div>
+                    <span className={`text-2xl font-bold ${
+                      metric.value.includes('[') ? 'text-gray-400' : 'text-gray-900'
+                    }`}>
+                      {metric.value}
+                    </span>
+                    {!metric.change.includes('[') && (
+                      <div className="flex items-center space-x-1">
+                        {metric.change.startsWith('+') ? (
+                          <TrendingUp className="w-4 h-4 text-green-500" />
+                        ) : metric.change.startsWith('-') ? (
+                          <TrendingDown className="w-4 h-4 text-red-500" />
+                        ) : null}
+                        <span className={`text-sm font-medium ${
+                          metric.change.startsWith('+') ? 'text-green-600' : 
+                          metric.change.startsWith('-') ? 'text-red-600' : 'text-gray-600'
+                        }`}>
+                          {metric.change}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Source attribution badge */}
+                  <div className="mt-2 flex items-center justify-between text-xs">
+                    <span className={`px-2 py-1 rounded-full text-xs ${
+                      metric.confidence > 90 ? 'bg-green-100 text-green-800' :
+                      metric.confidence > 70 ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {metric.source !== 'N/A' ? metric.source.split(' ')[0] : 'No Data'}
+                    </span>
+                    <span className="text-gray-500">
+                      {metric.confidence}% confidence
+                    </span>
                   </div>
                   
                   {/* Formula explanation */}
@@ -485,7 +506,14 @@ const CompanyOverview = ({ companyData }) => {
                       >
                         <p className="text-xs text-blue-800 font-medium mb-1">Formula:</p>
                         <p className="text-xs text-blue-700">{metric.formula}</p>
-                        <p className="text-xs text-blue-600 mt-1">Confidence: {metric.confidence}%</p>
+                        {metric.endpoint && (
+                          <p className="text-xs text-blue-600 mt-1">Endpoint: {metric.endpoint}</p>
+                        )}
+                        {metric.guidance && (
+                          <p className="text-xs text-orange-700 mt-1 bg-orange-50 p-2 rounded">
+                            💡 {metric.guidance}
+                          </p>
+                        )}
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -494,103 +522,183 @@ const CompanyOverview = ({ companyData }) => {
             </div>
           </div>
 
-          {/* Revenue Trend Chart */}
+          {/* Revenue Trend Chart - Real Data */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-xl font-semibold text-gray-900 mb-6">Rolling Quarterly LTM Revenue & Gross Margin</h3>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={company.revenueData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis 
-                    dataKey="quarter" 
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fill: '#666' }}
-                  />
-                  <YAxis 
-                    yAxisId="revenue"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fill: '#666' }}
-                    label={{ value: 'Revenue ($M)', angle: -90, position: 'insideLeft' }}
-                  />
-                  <YAxis 
-                    yAxisId="margin"
-                    orientation="right"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fill: '#666' }}
-                    label={{ value: 'Margin (%)', angle: 90, position: 'insideRight' }}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'white', 
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '12px',
-                      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
-                    }}
-                  />
-                  <Bar yAxisId="revenue" dataKey="revenue" fill="#3B82F6" radius={[4, 4, 0, 0]} name="LTM Revenue ($M)" />
-                  <Line 
-                    yAxisId="margin" 
-                    type="monotone" 
-                    dataKey="margin" 
-                    stroke="#10B981" 
-                    strokeWidth={3}
-                    dot={{ fill: '#10B981', r: 4 }}
-                    name="Gross Margin (%)"
-                  />
-                </ComposedChart>
-              </ResponsiveContainer>
-            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-6">Historical Financial Performance</h3>
+            {revenueData.length > 0 ? (
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={revenueData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis 
+                      dataKey="period" 
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12, fill: '#666' }}
+                    />
+                    <YAxis 
+                      yAxisId="revenue"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12, fill: '#666' }}
+                      label={{ value: 'Revenue ($M)', angle: -90, position: 'insideLeft' }}
+                    />
+                    <YAxis 
+                      yAxisId="margin"
+                      orientation="right"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12, fill: '#666' }}
+                      label={{ value: 'Margin (%)', angle: 90, position: 'insideRight' }}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'white', 
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '12px',
+                        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
+                      }}
+                    />
+                    <Bar yAxisId="revenue" dataKey="revenue" fill="#3B82F6" radius={[4, 4, 0, 0]} name="Revenue ($M)" />
+                    <Line 
+                      yAxisId="margin" 
+                      type="monotone" 
+                      dataKey="margin" 
+                      stroke="#10B981" 
+                      strokeWidth={3}
+                      dot={{ fill: '#10B981', r: 4 }}
+                      name="Gross Margin (%)"
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="h-64 flex items-center justify-center">
+                <div className="text-center text-gray-500">
+                  <BarChart3 className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <p className="text-lg font-medium">No Historical Data Available</p>
+                  <p className="text-sm mt-2">
+                    {comprehensiveData?.error 
+                      ? 'API data unavailable. Please upload financial statements.'
+                      : 'Financial history not found via API sources.'
+                    }
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Management & Investors */}
+        {/* Management & Investors - Real Data */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Management Team */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-xl font-semibold text-gray-900 mb-6">Management</h3>
-            <div className="space-y-4">
-              {company.management.map((member, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-blue-600 font-medium text-sm">
-                        {member.name.split(' ').map(n => n[0]).join('')}
-                      </span>
+            <h3 className="text-xl font-semibold text-gray-900 mb-6">Management Team</h3>
+            {managementData.length > 0 ? (
+              <div className="space-y-4">
+                {managementData.map((member, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <span className="text-blue-600 font-medium text-sm">
+                          {member.name !== '[Name Unavailable]' 
+                            ? member.name.split(' ').map(n => n[0]).join('') 
+                            : '??'
+                          }
+                        </span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{member.name}</p>
+                        <p className="text-sm text-gray-600">{member.role}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{member.name}</p>
-                      <p className="text-sm text-gray-600">{member.role}</p>
+                    <div className="text-right">
+                      <span className="text-sm text-gray-500">{member.tenure}</span>
+                      {member.source && (
+                        <p className="text-xs text-blue-600 mt-1">{member.source.split(' ')[0]}</p>
+                      )}
                     </div>
                   </div>
-                  <span className="text-sm text-gray-500">{member.tenure}</span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Users className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <p className="text-lg font-medium">Management Data Unavailable</p>
+                <p className="text-sm mt-2">
+                  Executive information not available via API. Please upload recent SEC filings or company documents.
+                </p>
+              </div>
+            )}
           </div>
 
-          {/* Investors */}
+          {/* Data Sources & Attribution */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-xl font-semibold text-gray-900 mb-6">Investors</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-6">Data Sources & Quality</h3>
             <div className="space-y-4">
-              {company.investors.map((investor, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="font-medium text-gray-900">{investor.name}</p>
-                    <p className="text-sm text-gray-600">{investor.type}</p>
-                  </div>
-                  <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
-                    {investor.stake}
-                  </span>
+              {/* API Status */}
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium text-gray-900">API Data Status</span>
+                  {comprehensiveData && !comprehensiveData.error ? (
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                  ) : (
+                    <AlertTriangle className="w-5 h-5 text-yellow-500" />
+                  )}
                 </div>
-              ))}
+                <p className="text-sm text-gray-600">
+                  {comprehensiveData && !comprehensiveData.error
+                    ? 'Successfully connected to financial APIs'
+                    : 'Limited API connectivity - using document data'
+                  }
+                </p>
+              </div>
+
+              {/* Document Data */}
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium text-gray-900">Document Analysis</span>
+                  <Activity className="w-5 h-5 text-blue-500" />
+                </div>
+                <p className="text-sm text-gray-600">
+                  {companyData?.results?.documents?.documents?.length || 0} documents processed
+                </p>
+              </div>
+
+              {/* Data Coverage */}
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <span className="font-medium text-gray-900 block mb-2">Data Coverage</span>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Profile:</span>
+                    <span className={company.profileConfidence > 70 ? 'text-green-600' : 'text-yellow-600'}>
+                      {company.profileConfidence}%
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Financials:</span>
+                    <span className={Object.values(metrics).some(m => m.confidence > 70) ? 'text-green-600' : 'text-red-600'}>
+                      {Math.round(Object.values(metrics).reduce((sum, m) => sum + m.confidence, 0) / Object.keys(metrics).length)}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Last Updated */}
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-gray-900">Last Updated</span>
+                  <Clock className="w-5 h-5 text-gray-400" />
+                </div>
+                <p className="text-sm text-gray-600 mt-1">
+                  {new Date().toLocaleString()}
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Source Modal */}
+        {/* Source Modal - Enhanced with Real Data Context */}
         <AnimatePresence>
           {showSourceModal && selectedMetric && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -615,7 +723,11 @@ const CompanyOverview = ({ companyData }) => {
                     <h4 className="font-medium text-gray-900 mb-2">
                       {selectedMetric.key.replace(/([A-Z])/g, ' $1').trim()}
                     </h4>
-                    <p className="text-3xl font-bold text-gray-900">{selectedMetric.value}</p>
+                    <p className={`text-3xl font-bold ${
+                      selectedMetric.value.includes('[') ? 'text-gray-400' : 'text-gray-900'
+                    }`}>
+                      {selectedMetric.value}
+                    </p>
                   </div>
 
                   <div>
@@ -628,14 +740,50 @@ const CompanyOverview = ({ companyData }) => {
                     <p className="text-sm text-gray-600">{selectedMetric.formula}</p>
                   </div>
 
+                  {selectedMetric.endpoint && (
+                    <div>
+                      <h5 className="text-sm font-medium text-gray-700 mb-1">API Endpoint:</h5>
+                      <p className="text-sm text-gray-600 font-mono bg-gray-100 p-2 rounded">
+                        {selectedMetric.endpoint}
+                      </p>
+                    </div>
+                  )}
+
+                  {selectedMetric.guidance && (
+                    <div className="bg-orange-50 p-3 rounded-lg">
+                      <h5 className="text-sm font-medium text-orange-800 mb-1">Data Guidance:</h5>
+                      <p className="text-sm text-orange-700">{selectedMetric.guidance}</p>
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                     <div className="flex items-center space-x-2">
-                      <CheckCircle className="w-5 h-5 text-green-500" />
-                      <span className="text-sm text-gray-600">Confidence: {selectedMetric.confidence}%</span>
+                      {selectedMetric.confidence > 70 ? (
+                        <CheckCircle className="w-5 h-5 text-green-500" />
+                      ) : (
+                        <AlertTriangle className="w-5 h-5 text-yellow-500" />
+                      )}
+                      <span className="text-sm text-gray-600">
+                        Confidence: {selectedMetric.confidence}%
+                      </span>
                     </div>
-                    <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                      View Document
-                    </button>
+                    {selectedMetric.confidence === 0 && (
+                      <span className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
+                        Data Unavailable
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+};
+
+export default CompanyOverview;
                   </div>
                 </div>
               </motion.div>

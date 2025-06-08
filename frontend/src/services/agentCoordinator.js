@@ -694,24 +694,191 @@ class FinancialAnalystAgent {
   async analyzeFinancials(documentResults, companyData) {
     try {
       // Extract financial data from processed documents
-      const financialData = this.extractFinancialMetrics(documentResults);
+      const documentFinancials = this.extractFinancialMetrics(documentResults);
       
-      // Calculate key ratios and metrics
-      const calculatedMetrics = this.calculateFinancialRatios(financialData);
+      // Use comprehensive API data if available
+      let apiFinancials = {};
+      if (companyData.comprehensiveData) {
+        apiFinancials = this.normalizeAPIFinancials(companyData.comprehensiveData);
+      }
       
-      // Generate trends and projections
-      const trends = await this.analyzeTrends(financialData);
+      // Merge document and API data (prioritize documents for accuracy)
+      const mergedFinancials = { ...apiFinancials, ...documentFinancials };
+      
+      // Calculate enhanced ratios and metrics with source attribution
+      const calculatedMetrics = this.calculateFinancialRatios(mergedFinancials);
+      
+      // Generate trends and projections using real data
+      const trends = await this.analyzeTrends(mergedFinancials);
+      
+      // Enhanced risk assessment with multiple data sources
+      const riskMetrics = this.assessFinancialRisk(mergedFinancials, companyData.comprehensiveData);
       
       return {
-        extractedData: financialData,
+        extractedData: documentFinancials,
+        apiData: apiFinancials,
+        mergedData: mergedFinancials,
         calculatedMetrics: calculatedMetrics,
         trends: trends,
-        riskMetrics: this.assessFinancialRisk(financialData),
-        confidence: 0.92
+        riskMetrics: riskMetrics,
+        sourceAttribution: this.generateSourceAttribution(documentFinancials, apiFinancials),
+        confidence: this.calculateAnalysisConfidence(documentFinancials, apiFinancials),
+        lastUpdated: new Date()
       };
     } catch (error) {
       throw new Error(`Financial analysis failed: ${error.message}`);
     }
+  }
+
+  normalizeAPIFinancials(comprehensiveData) {
+    const normalized = {};
+    
+    // Extract from different API sources
+    if (comprehensiveData.financialStatements) {
+      const statements = comprehensiveData.financialStatements;
+      
+      // Income statement data
+      if (statements.income && Array.isArray(statements.income) && statements.income[0]) {
+        const latest = statements.income[0];
+        normalized.revenue = latest.revenue || latest.totalRevenue;
+        normalized.netIncome = latest.netIncome;
+        normalized.grossProfit = latest.grossProfit;
+        normalized.operatingIncome = latest.operatingIncome;
+        normalized.ebitda = latest.ebitda;
+      }
+      
+      // Balance sheet data
+      if (statements.balance && Array.isArray(statements.balance) && statements.balance[0]) {
+        const latest = statements.balance[0];
+        normalized.totalAssets = latest.totalAssets;
+        normalized.totalLiabilities = latest.totalLiabilities;
+        normalized.totalEquity = latest.totalStockholdersEquity || latest.totalEquity;
+        normalized.totalDebt = latest.totalDebt;
+        normalized.cash = latest.cashAndCashEquivalents;
+      }
+      
+      // Cash flow data
+      if (statements.cashFlow && Array.isArray(statements.cashFlow) && statements.cashFlow[0]) {
+        const latest = statements.cashFlow[0];
+        normalized.operatingCashFlow = latest.operatingCashFlow;
+        normalized.freeCashFlow = latest.freeCashFlow;
+        normalized.capitalExpenditures = latest.capitalExpenditure;
+      }
+    }
+    
+    // Extract from ratios
+    if (comprehensiveData.ratios) {
+      const ratios = comprehensiveData.ratios;
+      if (ratios.ratios && Array.isArray(ratios.ratios) && ratios.ratios[0]) {
+        const latest = ratios.ratios[0];
+        normalized.currentRatio = latest.currentRatio;
+        normalized.quickRatio = latest.quickRatio;
+        normalized.debtToEquity = latest.debtEquityRatio;
+        normalized.returnOnEquity = latest.returnOnEquity;
+        normalized.returnOnAssets = latest.returnOnAssets;
+      }
+    }
+    
+    return normalized;
+  }
+
+  calculateFinancialRatios(data) {
+    const revenue = this.parseNumber(data.revenue);
+    const netIncome = this.parseNumber(data.netIncome);
+    const totalAssets = this.parseNumber(data.totalAssets);
+    const totalEquity = this.parseNumber(data.totalEquity);
+    const totalDebt = this.parseNumber(data.totalDebt);
+    const operatingCashFlow = this.parseNumber(data.operatingCashFlow);
+    
+    const ratios = {
+      // Profitability ratios with formulas
+      profitMargin: {
+        value: revenue ? ((netIncome / revenue) * 100).toFixed(2) + '%' : '[Data Unavailable]',
+        formula: 'Net Income / Revenue × 100',
+        source: data.revenue ? (data.revenue_source || 'Multiple APIs') : 'N/A',
+        confidence: this.getConfidenceScore(data.revenue, data.netIncome)
+      },
+      
+      returnOnAssets: {
+        value: totalAssets ? ((netIncome / totalAssets) * 100).toFixed(2) + '%' : '[Data Unavailable]',
+        formula: 'Net Income / Total Assets × 100',
+        source: data.totalAssets ? (data.totalAssets_source || 'Multiple APIs') : 'N/A',
+        confidence: this.getConfidenceScore(data.totalAssets, data.netIncome)
+      },
+      
+      returnOnEquity: {
+        value: totalEquity ? ((netIncome / totalEquity) * 100).toFixed(2) + '%' : '[Data Unavailable]',
+        formula: 'Net Income / Total Equity × 100',
+        source: data.totalEquity ? (data.totalEquity_source || 'Multiple APIs') : 'N/A',
+        confidence: this.getConfidenceScore(data.totalEquity, data.netIncome)
+      },
+      
+      // Leverage ratios
+      debtToEquityRatio: {
+        value: totalEquity && totalDebt ? (totalDebt / totalEquity).toFixed(2) : '[Data Unavailable]',
+        formula: 'Total Debt / Total Equity',
+        source: data.totalDebt ? (data.totalDebt_source || 'Multiple APIs') : 'N/A',
+        confidence: this.getConfidenceScore(data.totalDebt, data.totalEquity)
+      },
+      
+      // Cash flow ratios
+      operatingCashFlowMargin: {
+        value: revenue && operatingCashFlow ? ((operatingCashFlow / revenue) * 100).toFixed(2) + '%' : '[Data Unavailable]',
+        formula: 'Operating Cash Flow / Revenue × 100',
+        source: data.operatingCashFlow ? (data.operatingCashFlow_source || 'Multiple APIs') : 'N/A',
+        confidence: this.getConfidenceScore(data.operatingCashFlow, data.revenue)
+      }
+    };
+    
+    return ratios;
+  }
+
+  getConfidenceScore(value1, value2) {
+    if (!value1 || !value2) return 0.3;
+    if (typeof value1 === 'string' && value1.includes('[Data Unavailable]')) return 0.0;
+    return 0.9; // High confidence for calculated ratios with valid data
+  }
+
+  generateSourceAttribution(documentData, apiData) {
+    const attribution = {};
+    
+    // Track which source provided each data point
+    Object.keys({ ...documentData, ...apiData }).forEach(key => {
+      if (documentData[key] && apiData[key]) {
+        attribution[key] = {
+          primary: 'User Document',
+          secondary: 'API Data',
+          hasDiscrepancy: documentData[key] !== apiData[key],
+          documentValue: documentData[key],
+          apiValue: apiData[key]
+        };
+      } else if (documentData[key]) {
+        attribution[key] = {
+          primary: 'User Document',
+          secondary: null
+        };
+      } else if (apiData[key]) {
+        attribution[key] = {
+          primary: 'API Data',
+          secondary: null
+        };
+      }
+    });
+    
+    return attribution;
+  }
+
+  calculateAnalysisConfidence(documentData, apiData) {
+    const documentCount = Object.keys(documentData).length;
+    const apiCount = Object.keys(apiData).length;
+    const totalDataPoints = documentCount + apiCount;
+    
+    if (totalDataPoints === 0) return 0.1;
+    if (documentCount > 0 && apiCount > 0) return 0.95; // Best case: multiple sources
+    if (documentCount > 0) return 0.85; // Good: document data available
+    if (apiCount > 0) return 0.75; // Moderate: only API data
+    
+    return 0.5;
   }
 
   extractFinancialMetrics(documentResults) {
@@ -720,63 +887,110 @@ class FinancialAnalystAgent {
     
     documentResults.documents?.forEach(doc => {
       if (doc.analysis?.financials) {
-        Object.assign(financials, doc.analysis.financials);
+        Object.keys(doc.analysis.financials).forEach(key => {
+          financials[key] = doc.analysis.financials[key];
+          financials[`${key}_source`] = `User Document: ${doc.fileName}`;
+        });
       }
     });
 
     return financials;
   }
 
-  calculateFinancialRatios(data) {
-    const revenue = this.parseNumber(data.revenue);
-    const netIncome = this.parseNumber(data.netIncome);
-    const totalAssets = this.parseNumber(data.totalAssets);
-    const totalEquity = this.parseNumber(data.totalEquity);
-    
-    return {
-      profitMargin: revenue ? (netIncome / revenue * 100).toFixed(2) + '%' : 'N/A',
-      roa: totalAssets ? (netIncome / totalAssets * 100).toFixed(2) + '%' : 'N/A',
-      roe: totalEquity ? (netIncome / totalEquity * 100).toFixed(2) + '%' : 'N/A',
-      // Add more ratio calculations
-    };
-  }
-
   parseNumber(value) {
     if (!value) return 0;
+    if (typeof value === 'number') return value;
     return parseFloat(value.toString().replace(/[$,M,K,%]/g, ''));
   }
 
   async analyzeTrends(data) {
-    const prompt = `Analyze financial trends for this data: ${JSON.stringify(data)}`;
+    const prompt = `Analyze financial trends and provide insights for this comprehensive data: ${JSON.stringify(data)}. Focus on distressed credit analysis including covenant health, liquidity position, and credit risk indicators.`;
     try {
       return await GeminiService.generateInsights(data, prompt);
     } catch (error) {
-      return "Trend analysis temporarily unavailable";
+      return "Trend analysis temporarily unavailable - please check API configuration";
     }
   }
 
-  assessFinancialRisk(data) {
+  assessFinancialRisk(mergedData, comprehensiveAPIData) {
     return {
-      liquidityRisk: this.assessLiquidityRisk(data),
-      leverageRisk: this.assessLeverageRisk(data),
-      profitabilityRisk: this.assessProfitabilityRisk(data),
-      overallRisk: 'Medium' // Calculated based on individual risks
+      liquidityRisk: this.assessLiquidityRisk(mergedData),
+      leverageRisk: this.assessLeverageRisk(mergedData),
+      profitabilityRisk: this.assessProfitabilityRisk(mergedData),
+      creditRisk: this.assessCreditRisk(mergedData, comprehensiveAPIData),
+      overallRisk: this.calculateOverallRisk(mergedData),
+      dataQuality: this.assessDataQuality(mergedData, comprehensiveAPIData)
     };
   }
 
   assessLiquidityRisk(data) {
-    // Implement liquidity risk assessment logic
+    const currentRatio = this.parseNumber(data.currentRatio);
+    const quickRatio = this.parseNumber(data.quickRatio);
+    const cash = this.parseNumber(data.cash);
+    
+    if (currentRatio < 1.0 || quickRatio < 0.5) return 'High';
+    if (currentRatio < 1.5 || quickRatio < 1.0) return 'Medium';
     return 'Low';
   }
 
   assessLeverageRisk(data) {
-    // Implement leverage risk assessment logic
-    return 'Medium';
+    const debtToEquity = this.parseNumber(data.debtToEquity);
+    
+    if (debtToEquity > 2.0) return 'High';
+    if (debtToEquity > 1.0) return 'Medium';
+    return 'Low';
   }
 
   assessProfitabilityRisk(data) {
-    // Implement profitability risk assessment logic
+    const profitMargin = this.parseNumber(data.profitMargin);
+    const roe = this.parseNumber(data.returnOnEquity);
+    
+    if (profitMargin < 0 || roe < 0) return 'High';
+    if (profitMargin < 5 || roe < 10) return 'Medium';
     return 'Low';
+  }
+
+  assessCreditRisk(data, apiData) {
+    // Advanced credit risk assessment using multiple factors
+    const factors = [];
+    
+    if (this.parseNumber(data.debtToEquity) > 1.5) factors.push('High Leverage');
+    if (this.parseNumber(data.operatingCashFlow) < 0) factors.push('Negative Cash Flow');
+    if (this.parseNumber(data.profitMargin) < 0) factors.push('Unprofitable');
+    
+    if (factors.length >= 2) return 'High';
+    if (factors.length === 1) return 'Medium';
+    return 'Low';
+  }
+
+  calculateOverallRisk(data) {
+    const risks = [
+      this.assessLiquidityRisk(data),
+      this.assessLeverageRisk(data),
+      this.assessProfitabilityRisk(data)
+    ];
+    
+    const highRiskCount = risks.filter(r => r === 'High').length;
+    const mediumRiskCount = risks.filter(r => r === 'Medium').length;
+    
+    if (highRiskCount >= 2) return 'High';
+    if (highRiskCount >= 1 || mediumRiskCount >= 2) return 'Medium';
+    return 'Low';
+  }
+
+  assessDataQuality(mergedData, apiData) {
+    const totalFields = ['revenue', 'netIncome', 'totalAssets', 'totalEquity', 'totalDebt'];
+    const availableFields = totalFields.filter(field => mergedData[field] && mergedData[field] !== '[Data Unavailable]');
+    
+    const completeness = (availableFields.length / totalFields.length) * 100;
+    
+    return {
+      completeness: `${completeness.toFixed(0)}%`,
+      availableFields: availableFields,
+      missingFields: totalFields.filter(field => !availableFields.includes(field)),
+      hasApiData: !!apiData,
+      hasDocumentData: Object.keys(mergedData).some(key => key.includes('_source') && mergedData[key].includes('User Document'))
+    };
   }
 }
 

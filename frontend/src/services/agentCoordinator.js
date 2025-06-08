@@ -1,5 +1,8 @@
 import GeminiService from './geminiService';
 import AlphaVantageService from './alphaVantageService';
+import FMPService from './FMPService';
+import MarketstackService from './MarketstackService';
+import TwelveDataService from './TwelveDataService';
 
 class AgentCoordinator {
   constructor() {

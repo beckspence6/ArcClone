@@ -428,48 +428,6 @@ const AddNewCompany = ({ onComplete, onCancel }) => {
       </div>
     </motion.div>
   );
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <div className="text-center">
-        <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-          <Building2 className="w-8 h-8 text-white" />
-        </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Company Name</h2>
-        <p className="text-gray-600">
-          Enter the name of the distressed credit opportunity you want to analyze.
-        </p>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Company Name *
-        </label>
-        <input
-          type="text"
-          value={companyName}
-          onChange={(e) => setCompanyName(e.target.value)}
-          placeholder="e.g., Hertz Global Holdings, Neiman Marcus, etc."
-          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
-          autoFocus
-        />
-      </div>
-
-      <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-        <div className="flex items-start space-x-3">
-          <Brain className="w-5 h-5 text-blue-600 mt-0.5" />
-          <div>
-            <h4 className="font-medium text-blue-900 mb-1">AI-Powered Analysis</h4>
-            <p className="text-blue-800 text-sm">
-              Once you upload documents, our AI agents will automatically detect the company name, 
-              analyze financial statements, and generate comprehensive distressed credit insights.
-            </p>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
 
   const renderUploadStep = () => (
     <motion.div

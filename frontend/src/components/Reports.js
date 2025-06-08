@@ -49,6 +49,51 @@ const Reports = ({ companyData }) => {
   const [reportData, setReportData] = useState(null);
   const [generatingReport, setGeneratingReport] = useState(false);
 
+  // Generate dynamic company content from real data
+  const generateCompanyContent = () => {
+    const companyName = companyData?.company?.name || companyData?.analysisData?.company?.name || 'Target Company';
+    const ticker = companyData?.company?.ticker || companyData?.analysisData?.company?.ticker;
+    const industry = companyData?.company?.industry || companyData?.analysisData?.company?.industry || 'Industry Classification Pending';
+    const isPrivate = companyData?.company?.isPrivateCompany || companyData?.analysisData?.company?.isPrivateCompany;
+    
+    // Extract financial data if available
+    const financials = companyData?.analysisData?.financials || {};
+    const revenue = financials.revenue !== 'N/A' ? financials.revenue : '[Revenue Data Unavailable]';
+    const grossMargin = financials.grossMargin !== 'N/A' ? financials.grossMargin : '[Margin Data Unavailable]';
+    const totalDebt = financials.totalDebt !== 'N/A' ? financials.totalDebt : '[Debt Data Unavailable]';
+    const cash = financials.cashAndEquivalents !== 'N/A' ? financials.cashAndEquivalents : '[Cash Data Unavailable]';
+    
+    return {
+      companyName,
+      ticker,
+      industry,
+      isPrivate,
+      revenue,
+      grossMargin,
+      totalDebt,
+      cash,
+      displayName: ticker ? `${companyName} (${ticker})` : companyName,
+      companyType: isPrivate ? 'Private Company' : 'Public Company',
+      executiveSummary: generateExecutiveSummary(companyName, ticker, industry, financials),
+      opportunityDescription: generateOpportunityDescription(companyName, ticker, industry, isPrivate)
+    };
+  };
+
+  const generateExecutiveSummary = (companyName, ticker, industry, financials) => {
+    const hasFinancials = financials && Object.keys(financials).some(key => financials[key] !== 'N/A');
+    
+    if (hasFinancials) {
+      return `${companyName}${ticker ? ` (${ticker})` : ''} presents a distressed credit analysis opportunity in the ${industry} sector. Based on available financial data, the company shows ${financials.revenue !== 'N/A' ? `LTM revenue of ${financials.revenue}` : 'revenue figures under review'} and ${financials.grossMargin !== 'N/A' ? `gross margins of ${financials.grossMargin}` : 'margin analysis in progress'}. This analysis focuses on covenant compliance, liquidity position, and recovery scenarios for stakeholders in the capital structure.`;
+    } else {
+      return `${companyName}${ticker ? ` (${ticker})` : ''} is under comprehensive distressed credit analysis in the ${industry} sector. The analysis incorporates uploaded financial documents, SEC filings, and credit agreements to assess covenant compliance, liquidity runway, and potential restructuring scenarios. Financial metrics and risk assessments are being extracted from document analysis and real-time market data where available.`;
+    }
+  };
+
+  const generateOpportunityDescription = (companyName, ticker, industry, isPrivate) => {
+    const dataSource = isPrivate ? 'document-based analysis' : 'real-time market data and document analysis';
+    return `Comprehensive distressed credit assessment for ${companyName} utilizing ${dataSource} to evaluate restructuring opportunities, covenant violations, and recovery scenarios across the capital structure.`;
+  };
+
   // Enhanced report templates for distressed credit
   const reportTemplates = [
     {

@@ -482,6 +482,7 @@ class BackendTester:
         self.test_gemini_api_key_access()
         self.test_agent_coordinator_singleton()
         self.test_enhanced_document_analysis()
+        self.test_secapi_key_access()
         
         # Print summary
         print("\n📊 Test Summary:")

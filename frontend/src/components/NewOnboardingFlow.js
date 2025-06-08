@@ -31,14 +31,9 @@ const NewOnboardingFlow = ({ onComplete }) => {
     password: '',
     firstName: '',
     lastName: '',
-    company: '',
-    ticker: '',
-    selectedCompany: null,
     role: 'analyst',
-    industry: '',
     notifications: true,
-    marketUpdates: false,
-    isPrivateCompany: false
+    marketUpdates: false
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

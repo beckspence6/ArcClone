@@ -357,6 +357,14 @@ class AgentCoordinator {
 
   getEndpointInfo(source, dataType) {
     const endpointMap = {
+      'SEC': {
+        'companyProfile': '/extractor (10-K Business Description)',
+        'financialStatements': '/xbrl-to-json (XBRL Financial Data)',
+        'executives': '/executive-compensation (SEC Proxy Filings)',
+        'subsidiaries': '/company-subsidiaries (SEC Subsidiary Data)',
+        'ownership': '/beneficial-ownership (Forms 13D/13G)',
+        'ratios': 'Calculated from XBRL Data'
+      },
       'FMP': {
         'companyProfile': '/v3/profile/{symbol}',
         'stockPrice': '/v3/quote/{symbol}',

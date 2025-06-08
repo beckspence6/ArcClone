@@ -94,6 +94,22 @@ const DistressedCreditDashboard = ({ companyData }) => {
     fetchDistressedCreditData();
   }, [companyData?.company?.ticker]);
 
+  // Enhanced metrics generation with Gemini fallback
+  useEffect(() => {
+    const enhanceDistressedMetrics = async () => {
+      if (!loading && companyData?.company) {
+        try {
+          const metrics = await generateDistressedMetrics();
+          setEnhancedMetrics(metrics);
+        } catch (error) {
+          console.error('[DistressedCreditDashboard] Error generating enhanced metrics:', error);
+        }
+      }
+    };
+
+    enhanceDistressedMetrics();
+  }, [comprehensiveData, loading]);
+
   // Enhanced distressed credit metrics with Gemini fallback for missing API data
   const generateDistressedMetrics = async () => {
     const hasApiData = comprehensiveData && !comprehensiveData.error;

@@ -89,6 +89,31 @@ const CompanyOverview = ({ companyData }) => {
     }
   }, [comprehensiveData, loading]);
 
+  // Enhanced metrics with Gemini fallback for missing financial data
+  useEffect(() => {
+    const enhanceFinancialMetrics = async () => {
+      if (!enhancedCompanyData) return;
+      
+      const baseMetrics = generateFinancialMetrics();
+      const lowConfidenceMetrics = Object.values(baseMetrics).filter(metric => 
+        typeof metric === 'object' && metric.confidence < 50
+      );
+
+      if (lowConfidenceMetrics.length > 2) {
+        console.log('[CompanyOverview] Enhancing financial metrics with Gemini');
+        await enhanceMetricsWithGemini(
+          baseMetrics, 
+          enhancedCompanyData.name, 
+          enhancedCompanyData.ticker
+        );
+      }
+    };
+
+    if (enhancedCompanyData && !loading) {
+      enhanceFinancialMetrics();
+    }
+  }, [enhancedCompanyData, comprehensiveData]);
+
   // Enhanced company profile generation with multi-source data and Gemini fallback
   const generateCompanyProfile = () => {
     const hasApiData = comprehensiveData && !comprehensiveData.error;

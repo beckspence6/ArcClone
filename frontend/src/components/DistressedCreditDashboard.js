@@ -531,64 +531,78 @@ const DistressedCreditDashboard = ({ companyData }) => {
     );
   };
 
-  const renderMaturityWall = () => (
-    <div className="bg-white rounded-xl p-6 border border-gray-200">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-semibold text-gray-900">Debt Maturity Schedule</h3>
-        <div className="flex items-center space-x-2">
-          <div className="flex items-center space-x-1">
-            <div className="w-4 h-4 bg-blue-500 rounded"></div>
-            <span className="text-sm text-gray-600">Secured</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <div className="w-4 h-4 bg-red-500 rounded"></div>
-            <span className="text-sm text-gray-600">Unsecured</span>
+  const renderMaturityWall = () => {
+    const liquidityData = generateLiquidityAnalysis();
+    const metrics = generateDistressedMetrics();
+    
+    // Format data for the chart
+    const maturityData = liquidityData.map(item => ({
+      period: item.period,
+      secured: item.cash * 0.6, // Example: 60% secured
+      unsecured: item.cash * 0.4, // Example: 40% unsecured
+      total: item.cash,
+      type: 'Term Loan'
+    }));
+
+    return (
+      <div className="bg-white rounded-xl p-6 border border-gray-200">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-semibold text-gray-900">Debt Maturity Schedule</h3>
+          <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1">
+              <div className="w-4 h-4 bg-blue-500 rounded"></div>
+              <span className="text-sm text-gray-600">Secured</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <div className="w-4 h-4 bg-red-500 rounded"></div>
+              <span className="text-sm text-gray-600">Unsecured</span>
+            </div>
           </div>
         </div>
-      </div>
-      
-      <div className="h-80">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={distressedData.maturityWall}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis 
-              dataKey="period" 
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 12, fill: '#666' }}
-            />
-            <YAxis 
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 12, fill: '#666' }}
-              label={{ value: 'Amount ($M)', angle: -90, position: 'insideLeft' }}
-            />
-            <Tooltip 
-              contentStyle={{ 
-                backgroundColor: 'white', 
-                border: '1px solid #e5e7eb',
-                borderRadius: '12px',
-                boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
-              }}
-              formatter={(value, name) => [`$${value}M`, name === 'secured' ? 'Secured Debt' : 'Unsecured Debt']}
-            />
-            <Bar dataKey="secured" stackId="a" fill="#3B82F6" radius={[0, 0, 0, 0]} />
-            <Bar dataKey="unsecured" stackId="a" fill="#EF4444" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+        
+        <div className="h-80">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={maturityData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis 
+                dataKey="period" 
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 12, fill: '#666' }}
+              />
+              <YAxis 
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 12, fill: '#666' }}
+                label={{ value: 'Amount ($M)', angle: -90, position: 'insideLeft' }}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'white', 
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '12px',
+                  boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
+                }}
+                formatter={(value, name) => [`$${value.toFixed(1)}M`, name === 'secured' ? 'Secured Debt' : 'Unsecured Debt']}
+              />
+              <Bar dataKey="secured" stackId="a" fill="#3B82F6" radius={[0, 0, 0, 0]} />
+              <Bar dataKey="unsecured" stackId="a" fill="#EF4444" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
 
-      <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4">
-        {distressedData.maturityWall.map((item, index) => (
-          <div key={index} className="p-3 bg-gray-50 rounded-lg">
-            <div className="text-sm font-medium text-gray-900">{item.period}</div>
-            <div className="text-xs text-gray-600 mt-1">{item.type}</div>
-            <div className="text-lg font-bold text-gray-900 mt-1">${item.total}M</div>
-          </div>
-        ))}
+        <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4">
+          {maturityData.map((item, index) => (
+            <div key={index} className="p-3 bg-gray-50 rounded-lg">
+              <div className="text-sm font-medium text-gray-900">{item.period}</div>
+              <div className="text-xs text-gray-600 mt-1">{item.type}</div>
+              <div className="text-lg font-bold text-gray-900 mt-1">${item.total.toFixed(1)}M</div>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderCovenants = () => (
     <div className="space-y-4">

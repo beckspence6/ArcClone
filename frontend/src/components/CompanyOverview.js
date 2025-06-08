@@ -200,7 +200,7 @@ const CompanyOverview = ({ companyData }) => {
     return company;
   };
 
-  // Generate financial metrics from real API data with source attribution
+  // Enhanced financial metrics with confidence-based data display and Gemini fallback
   const generateFinancialMetrics = () => {
     const hasApiData = comprehensiveData && !comprehensiveData.error;
     const financials = comprehensiveData?.financialStatements;

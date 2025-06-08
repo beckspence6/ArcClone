@@ -95,8 +95,8 @@ const Dashboard = ({ companyData }) => {
     }
   };
 
-  // Get company name for display (target company, not user's employer)
-  const companyName = companyData?.company?.name || 'Target Company';
+  // Get company name for display
+  const companyName = companyData?.company?.name || companyData?.company?.company || 'Company';
   const companyTicker = companyData?.company?.ticker;
   const isPublicCompany = !!companyTicker;
 

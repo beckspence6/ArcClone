@@ -240,34 +240,42 @@ const CompanyOverview = ({ companyData }) => {
       };
     }
 
-    if (hasApiData && financials?.balance?.[0]) {
+    // Balance sheet metrics
+    if (hasApiData && financials?.balance?.length > 0) {
       const latestBalance = financials.balance[0];
-      const prevBalance = financials.balance[1];
       
-      metrics.cash = {
-        value: latestBalance.cashAndCashEquivalents ? 
-          `$${(latestBalance.cashAndCashEquivalents / 1000000).toFixed(1)}M` : 
-          '[Cash Unavailable]',
-        change: prevBalance?.cashAndCashEquivalents ? 
-          `${((latestBalance.cashAndCashEquivalents - prevBalance.cashAndCashEquivalents) / prevBalance.cashAndCashEquivalents * 100).toFixed(1)}%` : 
-          '[Change Unavailable]',
+      // Total Assets
+      metrics.totalAssets = {
+        value: latestBalance.totalAssets ? `$${(latestBalance.totalAssets / 1000000).toFixed(1)}M` : '[Assets Data Pending]',
+        change: '[Growth Pending]',
         source: `${comprehensiveData.sourceAttribution?.balance?.source || 'FMP'} Balance Sheet API`,
-        formula: 'Cash + Cash Equivalents + Short-term Investments',
-        confidence: 98,
-        endpoint: comprehensiveData.sourceAttribution?.balance?.endpoint || '/v3/balance-sheet-statement/{symbol}'
+        formula: 'Current Assets + Non-Current Assets',
+        confidence: latestBalance.totalAssets ? 96 : 30,
+        priority: 'high'
       };
 
+      // Total Debt
+      const totalDebt = latestBalance.totalDebt || latestBalance.longTermDebt || 0;
       metrics.totalDebt = {
-        value: latestBalance.totalDebt ? 
-          `$${(latestBalance.totalDebt / 1000000).toFixed(1)}M` : 
-          '[Total Debt Unavailable]',
-        change: prevBalance?.totalDebt ? 
-          `${((latestBalance.totalDebt - prevBalance.totalDebt) / prevBalance.totalDebt * 100).toFixed(1)}%` : 
-          '[Change Unavailable]',
+        value: totalDebt ? `$${(totalDebt / 1000000).toFixed(1)}M` : '[Debt Data Pending]',
+        change: '[Trend Pending]',
         source: `${comprehensiveData.sourceAttribution?.balance?.source || 'FMP'} Balance Sheet API`,
         formula: 'Short-term Debt + Long-term Debt',
-        confidence: 97,
-        endpoint: comprehensiveData.sourceAttribution?.balance?.endpoint || '/v3/balance-sheet-statement/{symbol}'
+        confidence: totalDebt ? 94 : 30,
+        priority: 'high'
+      };
+
+      // Debt to Equity
+      const totalEquity = latestBalance.totalEquity || latestBalance.totalStockholdersEquity;
+      const debtToEquity = totalDebt && totalEquity ? (totalDebt / totalEquity) : null;
+      
+      metrics.debtToEquity = {
+        value: debtToEquity ? `${debtToEquity.toFixed(2)}x` : '[Leverage Data Pending]',
+        change: '[Trend Pending]',
+        source: `${comprehensiveData.sourceAttribution?.balance?.source || 'FMP'} Balance Sheet API`,
+        formula: 'Total Debt / Total Equity',
+        confidence: debtToEquity ? 94 : 25,
+        priority: 'high'
       };
     }
 

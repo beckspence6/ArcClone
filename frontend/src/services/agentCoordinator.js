@@ -881,20 +881,168 @@ class FinancialAnalystAgent {
     return 0.5;
   }
 
-  extractFinancialMetrics(documentResults) {
-    // Extract financial data from AI analysis results
+  async extractFinancialMetrics(documentResults, companySymbol = null) {
+    // Enhanced financial data extraction using sophisticated Gemini analysis
     const financials = {};
+    const covenantData = {};
+    const subsidiaryStructure = {};
+    const extractionResults = [];
     
-    documentResults.documents?.forEach(doc => {
-      if (doc.analysis?.financials) {
-        Object.keys(doc.analysis.financials).forEach(key => {
-          financials[key] = doc.analysis.financials[key];
-          financials[`${key}_source`] = `User Document: ${doc.fileName}`;
+    console.log(`[FinancialAnalyst] Enhanced extraction for ${documentResults.documents?.length || 0} documents`);
+    
+    if (!documentResults.documents || documentResults.documents.length === 0) {
+      return {
+        financials: {},
+        covenantData: {},
+        subsidiaryStructure: {},
+        extractionResults: [],
+        confidence: 0.1,
+        sources: []
+      };
+    }
+
+    // Process each document with enhanced Gemini analysis
+    for (const doc of documentResults.documents) {
+      try {
+        console.log(`[FinancialAnalyst] Processing ${doc.fileName} with enhanced analysis`);
+        
+        // Use enhanced Gemini extraction for deep document analysis
+        const extractedText = doc.extractedText || await this.extractTextFromDocument(doc);
+        
+        if (extractedText && extractedText.length > 100) {
+          // Enhanced financial data extraction
+          const geminiAnalysis = await GeminiService.extractFinancialData(extractedText, companySymbol);
+          
+          if (geminiAnalysis && geminiAnalysis.financialData) {
+            // Merge financial metrics with source attribution
+            Object.keys(geminiAnalysis.financialData).forEach(key => {
+              if (geminiAnalysis.financialData[key] && geminiAnalysis.financialData[key] !== '[Data Unavailable]') {
+                financials[key] = geminiAnalysis.financialData[key];
+                financials[`${key}_source`] = `AI Analysis: ${doc.fileName}`;
+                financials[`${key}_confidence`] = geminiAnalysis.confidence || 0.8;
+              }
+            });
+          }
+
+          // Extract covenant data for distressed credit analysis
+          if (geminiAnalysis && geminiAnalysis.covenantMetrics) {
+            Object.keys(geminiAnalysis.covenantMetrics).forEach(key => {
+              covenantData[key] = {
+                value: geminiAnalysis.covenantMetrics[key],
+                source: `Covenant Analysis: ${doc.fileName}`,
+                confidence: geminiAnalysis.confidence || 0.8,
+                document: doc.fileName
+              };
+            });
+          }
+
+          // Enhanced SEC filing analysis for specific document types
+          if (doc.documentType === '10k' || doc.documentType === '10q') {
+            console.log(`[FinancialAnalyst] Performing SEC filing analysis on ${doc.fileName}`);
+            try {
+              const secAnalysis = await GeminiService.extractSECData(extractedText, companySymbol);
+              if (secAnalysis) {
+                // Merge SEC-specific financial data
+                Object.keys(secAnalysis).forEach(key => {
+                  if (secAnalysis[key] && !financials[key]) {
+                    financials[key] = secAnalysis[key];
+                    financials[`${key}_source`] = `SEC Filing: ${doc.fileName}`;
+                    financials[`${key}_confidence`] = 0.95; // High confidence for SEC data
+                  }
+                });
+              }
+            } catch (secError) {
+              console.warn(`[FinancialAnalyst] SEC analysis failed for ${doc.fileName}:`, secError);
+            }
+          }
+
+          // Covenant extraction for credit agreements
+          if (doc.documentType === 'credit_agreement' || doc.documentType === 'indenture') {
+            console.log(`[FinancialAnalyst] Performing covenant analysis on ${doc.fileName}`);
+            try {
+              const covenantAnalysis = await GeminiService.extractCovenantData(extractedText, companySymbol);
+              if (covenantAnalysis) {
+                Object.assign(covenantData, covenantAnalysis);
+              }
+            } catch (covenantError) {
+              console.warn(`[FinancialAnalyst] Covenant analysis failed for ${doc.fileName}:`, covenantError);
+            }
+          }
+
+          // Subsidiary structure analysis
+          if (doc.documentType === '10k' || doc.documentType === 'bankruptcy_filing') {
+            console.log(`[FinancialAnalyst] Analyzing subsidiary structure from ${doc.fileName}`);
+            try {
+              const subsidiaryAnalysis = await GeminiService.extractSubsidiaryStructure(extractedText, companySymbol);
+              if (subsidiaryAnalysis) {
+                Object.assign(subsidiaryStructure, subsidiaryAnalysis);
+              }
+            } catch (subsidiaryError) {
+              console.warn(`[FinancialAnalyst] Subsidiary analysis failed for ${doc.fileName}:`, subsidiaryError);
+            }
+          }
+
+          extractionResults.push({
+            fileName: doc.fileName,
+            documentType: doc.documentType || 'unknown',
+            extractedMetrics: Object.keys(geminiAnalysis?.financialData || {}).length,
+            covenantCount: Object.keys(geminiAnalysis?.covenantMetrics || {}).length,
+            confidence: geminiAnalysis?.confidence || 0.5,
+            status: 'success'
+          });
+        }
+
+        // Fallback to basic analysis if enhanced analysis fails
+        if (doc.analysis?.financials) {
+          Object.keys(doc.analysis.financials).forEach(key => {
+            if (!financials[key]) { // Don't override enhanced analysis
+              financials[key] = doc.analysis.financials[key];
+              financials[`${key}_source`] = `Basic Analysis: ${doc.fileName}`;
+              financials[`${key}_confidence`] = 0.6;
+            }
+          });
+        }
+
+      } catch (error) {
+        console.error(`[FinancialAnalyst] Enhanced extraction failed for ${doc.fileName}:`, error);
+        extractionResults.push({
+          fileName: doc.fileName,
+          documentType: doc.documentType || 'unknown',
+          status: 'error',
+          error: error.message,
+          confidence: 0.0
         });
       }
-    });
+    }
 
-    return financials;
+    // Calculate overall confidence and generate summary
+    const totalDocs = documentResults.documents.length;
+    const successfulExtractions = extractionResults.filter(r => r.status === 'success').length;
+    const overallConfidence = totalDocs > 0 ? (successfulExtractions / totalDocs) * 0.9 : 0.1;
+    
+    const sources = extractionResults
+      .filter(r => r.status === 'success')
+      .map(r => r.fileName);
+
+    console.log(`[FinancialAnalyst] Enhanced extraction complete: ${successfulExtractions}/${totalDocs} documents processed successfully`);
+    console.log(`[FinancialAnalyst] Extracted ${Object.keys(financials).length} financial metrics, ${Object.keys(covenantData).length} covenant terms`);
+
+    return {
+      financials,
+      covenantData,
+      subsidiaryStructure,
+      extractionResults,
+      confidence: overallConfidence,
+      sources,
+      extractionSummary: {
+        totalDocuments: totalDocs,
+        successfulExtractions: successfulExtractions,
+        failedExtractions: totalDocs - successfulExtractions,
+        totalMetrics: Object.keys(financials).length,
+        covenantTerms: Object.keys(covenantData).length,
+        subsidiaryEntities: Object.keys(subsidiaryStructure).length
+      }
+    };
   }
 
   parseNumber(value) {

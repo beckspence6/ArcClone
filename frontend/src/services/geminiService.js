@@ -649,6 +649,9 @@ class GeminiService {
       };
     }
   }
+
+  // Enhanced chat function with company-specific context
+  async chatWithAI(query, companyContext) {
     try {
       const companyName = companyContext?.company?.name || 'the company';
       const ticker = companyContext?.company?.ticker;

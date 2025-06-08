@@ -275,9 +275,17 @@ test_plan:
   test_all: false
   test_priority: "high_first"
 
-agent_communication:
-  - agent: "main"
-    message: "Analyzed current codebase. ~75% complete as reported. Core components exist but missing DistressedCreditDashboard.js and several enhancements. Ready to continue with remaining tasks."
+  - task: "Enhanced extractFinancialMetrics Integration" 
+    implemented: true
+    working: true
+    file: "agentCoordinator.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Successfully enhanced extractFinancialMetrics method in FinancialAnalystAgent class to integrate with sophisticated GeminiService.extractFinancialData(), extractSECData(), extractCovenantData(), and extractSubsidiaryStructure() methods. Added comprehensive document analysis capabilities including covenant extraction, subsidiary structure analysis, and enhanced financial metrics with confidence scoring and source attribution. Fixed AgentCoordinator constructor issues by updating components to use exported instance instead of creating new instances. Added Gemini API key to frontend .env file. Enhanced distressed credit analysis with liquidity assessment, covenant compliance tracking, capital structure analysis, and recovery scenarios."
   - agent: "main"
     message: "FIXED CRITICAL ERRORS: 1) Fixed Google icon import error in NewOnboardingFlow.js (replaced with Chrome icon), 2) Fixed Dashboard component to handle undefined data gracefully with null checks, 3) Removed 3D stock ticker border and interaction text on landing page, 4) Fixed Sidebar icon import. All major errors should now be resolved."
   - agent: "main"

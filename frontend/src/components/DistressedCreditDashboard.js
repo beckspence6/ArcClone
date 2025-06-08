@@ -768,62 +768,65 @@ const DistressedCreditDashboard = ({ companyData }) => {
     );
   };
 
-  const renderCapitalStructure = () => (
-    <div className="bg-white rounded-xl p-6 border border-gray-200">
-      <h3 className="text-xl font-semibold text-gray-900 mb-6">Capital Structure Waterfall</h3>
-      
-      <div className="space-y-4">
-        {distressedData.capitalStructure.map((item, index) => (
-          <motion.div
-            key={index}
-            className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-            whileHover={{ scale: 1.01 }}
-          >
-            <div className="flex items-center space-x-4">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                item.seniority === 1 ? 'bg-green-500' :
-                item.seniority === 2 ? 'bg-blue-500' :
-                item.seniority === 3 ? 'bg-yellow-500' :
-                item.seniority === 4 ? 'bg-orange-500' :
-                'bg-red-500'
-              }`}>
-                {item.seniority}
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900">{item.name}</h4>
-                <p className="text-sm text-gray-600 capitalize">{item.type}</p>
-              </div>
-            </div>
-            
-            <div className="text-right">
-              <p className="text-lg font-bold text-gray-900">${item.amount}M</p>
-              <p className="text-sm text-gray-600">{item.recovery}% recovery</p>
-            </div>
-          </motion.div>
-        ))}
-      </div>
+  const renderCapitalStructure = () => {
+    const structure = generateCapitalStructure();
+    const totalCapital = structure.reduce((sum, item) => sum + parseFloat(item.amount) || 0, 0);
+    const weightedRecovery = structure.reduce((sum, item) => {
+      const amount = parseFloat(item.amount) || 0;
+      const recovery = parseFloat(item.recovery) || 0;
+      return sum + (amount * recovery);
+    }, 0) / totalCapital;
 
-      <div className="mt-6 pt-6 border-t border-gray-200">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-sm text-gray-600">Total Capital</p>
-            <p className="text-2xl font-bold text-gray-900">
-              ${distressedData.capitalStructure.reduce((sum, item) => sum + item.amount, 0).toFixed(1)}M
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">Weighted Recovery</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {Math.round(
-                distressedData.capitalStructure.reduce((sum, item) => sum + (item.amount * item.recovery), 0) /
-                distressedData.capitalStructure.reduce((sum, item) => sum + item.amount, 0)
-              )}%
-            </p>
+    return (
+      <div className="bg-white rounded-xl p-6 border border-gray-200">
+        <h3 className="text-xl font-semibold text-gray-900 mb-6">Capital Structure Analysis</h3>
+        
+        <div className="space-y-4">
+          {structure.map((item, index) => (
+            <motion.div
+              key={index}
+              className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+              whileHover={{ scale: 1.01 }}
+            >
+              <div className="flex items-center space-x-4">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+                  item.type === 'debt' ? 'bg-blue-500' : 'bg-green-500'
+                }`}>
+                  {index + 1}
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900">{item.name}</h4>
+                  <p className="text-sm text-gray-600 capitalize">{item.type}</p>
+                </div>
+              </div>
+              
+              <div className="text-right">
+                <p className="text-lg font-bold text-gray-900">${item.amount}M</p>
+                <p className="text-sm text-gray-600">{item.recovery}% recovery</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-gray-600">Total Capital</p>
+              <p className="text-2xl font-bold text-gray-900">
+                ${totalCapital.toFixed(1)}M
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Weighted Recovery</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {isNaN(weightedRecovery) ? 'N/A' : `${Math.round(weightedRecovery)}%`}
+              </p>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderDistressFlags = () => (
     <div className="space-y-4">

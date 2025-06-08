@@ -326,21 +326,33 @@ class AgentCoordinator {
   }
 
   // Source attribution tracking
-  recordSourceAttribution(dataType, source, symbol, errorInfo = null) {
+  recordSourceAttribution(dataType, source, symbol, resultInfo = null) {
     const key = `${dataType}_${symbol}`;
     if (!this.sourceAttribution) {
       this.sourceAttribution = {};
     }
     
-    this.sourceAttribution[key] = {
+    // Enhanced attribution for SEC data with direct links
+    const attribution = {
       source: source,
       timestamp: new Date(),
       symbol: symbol,
       dataType: dataType,
-      success: !errorInfo,
-      error: errorInfo,
+      success: !resultInfo?.error,
+      error: resultInfo?.error,
       endpoint: this.getEndpointInfo(source, dataType)
     };
+
+    // Add SEC-specific enhanced attribution
+    if (source === 'SEC' && resultInfo && !resultInfo.error) {
+      attribution.confidence = resultInfo.confidence || 99;
+      attribution.sourceUrl = resultInfo.sourceUrl;
+      attribution.filingDate = resultInfo.filingDate;
+      attribution.dataQuality = 'regulatory';
+      attribution.secEndpoint = resultInfo.endpoint;
+    }
+    
+    this.sourceAttribution[key] = attribution;
   }
 
   getEndpointInfo(source, dataType) {

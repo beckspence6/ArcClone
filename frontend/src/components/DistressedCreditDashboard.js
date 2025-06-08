@@ -45,6 +45,7 @@ import {
   Cell
 } from 'recharts';
 import AgentCoordinator from '../services/agentCoordinator';
+import GeminiService from '../services/geminiService';
 
 const DistressedCreditDashboard = ({ companyData }) => {
   const [activeTab, setActiveTab] = useState('overview');

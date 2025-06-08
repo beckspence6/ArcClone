@@ -95,10 +95,79 @@ const CompanyOverview = ({ companyData }) => {
       company.profileConfidence = 95;
     }
 
-    // Use Gemini fallback for missing critical data points
-    if (company.founded === '[Founded Date Pending]' || company.description === '[Description Pending]') {
-      company.needsGeminiEnhancement = true;
-      company.geminiQuery = `Get founding date, industry details, and business description for ${companyName} ${ticker ? `(${ticker})` : ''}`;
+    return company;
+  };
+
+  // Gemini enhancement for missing company data
+  const enhanceCompanyDataWithGemini = async (company) => {
+    if (!company.name || company.name === '[Company Name]') return company;
+
+    try {
+      const prompt = `
+        COMPANY INFORMATION SPECIALIST - FILL MISSING DATA
+        
+        Company: ${company.name} ${company.ticker !== '[No Ticker]' ? `(${company.ticker})` : ''}
+        
+        Current Data:
+        - Industry: ${company.industry}
+        - Founded: ${company.founded}
+        - Description: ${company.description}
+        - Website: ${company.website}
+        - Employees: ${company.employees}
+        
+        Please provide missing information in JSON format:
+        {
+          "founded": "YYYY (founding year only)",
+          "industry": "specific industry classification",
+          "sector": "business sector",
+          "description": "2-3 sentence business description",
+          "website": "official website URL",
+          "employees": "approximate employee count",
+          "confidence": 85
+        }
+        
+        Only provide information you're confident about. Return "[Not Available]" for unclear data.
+      `;
+
+      const result = await GeminiService.model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+      const cleanResponse = text.replace(/```json|```/g, '').trim();
+      const geminiData = JSON.parse(cleanResponse);
+
+      // Update company data with Gemini results (only if current data is pending)
+      if (company.founded === '[Founded Date Pending]' && geminiData.founded !== '[Not Available]') {
+        company.founded = geminiData.founded;
+        company.foundedSource = 'Gemini AI Analysis';
+        company.foundedConfidence = geminiData.confidence || 85;
+      }
+
+      if (company.description === '[Description Pending]' && geminiData.description !== '[Not Available]') {
+        company.description = geminiData.description;
+        company.descriptionSource = 'Gemini AI Analysis';
+        company.descriptionConfidence = geminiData.confidence || 85;
+      }
+
+      if (company.industry === '[Industry Pending]' && geminiData.industry !== '[Not Available]') {
+        company.industry = geminiData.industry;
+        company.industrySource = 'Gemini AI Analysis';
+        company.industryConfidence = geminiData.confidence || 85;
+      }
+
+      if (company.website === '[Website Pending]' && geminiData.website !== '[Not Available]') {
+        company.website = geminiData.website;
+        company.websiteSource = 'Gemini AI Analysis';
+        company.websiteConfidence = geminiData.confidence || 85;
+      }
+
+      if (company.employees === '[Employee Count Pending]' && geminiData.employees !== '[Not Available]') {
+        company.employees = geminiData.employees;
+        company.employeesSource = 'Gemini AI Analysis';
+        company.employeesConfidence = geminiData.confidence || 85;
+      }
+
+    } catch (error) {
+      console.warn('Gemini enhancement failed:', error);
     }
 
     return company;

@@ -392,6 +392,64 @@ const CompanyOverview = ({ companyData }) => {
     }));
   };
 
+  // General purpose Gemini enhancement for missing financial metrics
+  const enhanceMetricsWithGemini = async (metrics, companyName, ticker) => {
+    const missingMetrics = Object.entries(metrics).filter(([key, metric]) => 
+      metric.confidence < 50 || metric.status === 'pending'
+    );
+
+    if (missingMetrics.length === 0) return metrics;
+
+    try {
+      const prompt = `
+        FINANCIAL DATA ANALYST - FILL MISSING METRICS
+        
+        Company: ${companyName} ${ticker ? `(${ticker})` : ''}
+        
+        Missing Financial Metrics:
+        ${missingMetrics.map(([key, metric]) => `- ${key}: ${metric.value}`).join('\n')}
+        
+        Please provide estimates for missing financial data in JSON format:
+        {
+          "ltmRevenue": "revenue in millions with M suffix",
+          "totalAssets": "total assets in millions with M suffix", 
+          "totalDebt": "total debt in millions with M suffix",
+          "operatingCashFlow": "operating cash flow in millions with M suffix",
+          "stockPrice": "current stock price with $ prefix",
+          "employees": "approximate employee count",
+          "confidence": 75
+        }
+        
+        Only provide data you're confident about. Return "[Estimate Unavailable]" for unclear data.
+        Focus on publicly traded companies with available information.
+      `;
+
+      const result = await GeminiService.model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+      const cleanResponse = text.replace(/```json|```/g, '').trim();
+      const geminiData = JSON.parse(cleanResponse);
+
+      // Update metrics with Gemini estimates
+      Object.entries(geminiData).forEach(([key, value]) => {
+        if (key !== 'confidence' && value !== '[Estimate Unavailable]' && metrics[key] && metrics[key].confidence < 50) {
+          metrics[key] = {
+            ...metrics[key],
+            value: value,
+            source: 'Gemini AI Estimate',
+            confidence: geminiData.confidence || 75,
+            status: 'estimated'
+          };
+        }
+      });
+
+    } catch (error) {
+      console.warn('Gemini metrics enhancement failed:', error);
+    }
+
+    return metrics;
+  };
+
   const company = enhancedCompanyData || generateCompanyProfile();
   const metrics = generateFinancialMetrics();
   const revenueData = generateRevenueData();

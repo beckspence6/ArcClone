@@ -28,6 +28,7 @@ import StratumLogo from './Logo';
 import GeminiService from '../services/geminiService';
 import AlphaVantageService from '../services/alphaVantageService';
 import DistressedCreditDashboard from './DistressedCreditDashboard';
+import CompanyOverview from './CompanyOverview';
 import toast from 'react-hot-toast';
 
 const Dashboard = ({ companyData }) => {

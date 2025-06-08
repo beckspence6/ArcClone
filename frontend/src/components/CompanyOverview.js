@@ -784,15 +784,3 @@ const CompanyOverview = ({ companyData }) => {
 };
 
 export default CompanyOverview;
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
-      </div>
-    </div>
-  );
-};
-
-export default CompanyOverview;

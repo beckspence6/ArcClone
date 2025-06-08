@@ -33,6 +33,25 @@ const Chat = ({ companyData }) => {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
+  const sampleQuestions = companyData?.company?.name ? [
+    `What is ${companyData.company.name}'s current distress situation?`,
+    "Analyze the covenant violations and their implications",
+    "What's the liquidity runway and burn rate analysis?",
+    "Explain the capital structure and recovery scenarios",
+    "What are the most critical risk flags to monitor?",
+    "Generate an investment committee memo",
+    "What are potential restructuring scenarios?",
+    "How does the maturity wall impact near-term liquidity?"
+  ] : [
+    "How does Stratum's distressed credit analysis work?",
+    "What types of documents can I upload for analysis?",
+    "How accurate is the covenant tracking system?",
+    "What security measures protect my data?",
+    "Can you integrate with my existing credit systems?",
+    "How do you calculate distress scores?",
+    "What makes your analysis different from others?"
+  ];
+
   // Initialize chat with company-specific context
   useEffect(() => {
     const initializeChat = () => {

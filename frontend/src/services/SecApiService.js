@@ -37,25 +37,19 @@ class SecApiService {
   }
 
   initializeCreditTracking() {
-    // Track credits for each endpoint (100 per endpoint on free tier)
     const endpoints = [
-      'xbrl-to-json',
-      'extractor',
-      'query',
-      'company-subsidiaries', 
-      'executive-compensation',
-      'insider-trading',
-      'institutional-holdings',
-      'beneficial-ownership',
-      'full-text-search', // High cost - route through backend
-      'filing-download'   // High cost - route through backend
+      'query', 'xbrl-to-json', 'extractor', 'company-subsidiaries',
+      'executive-compensation', 'directors-board-members', 'outstanding-shares-float',
+      'form-13f', 'form-13d-13g', 'form-144', 'full-text-search',
+      'mapping', 'edgar-entities', 'litigation-releases'
     ];
 
     endpoints.forEach(endpoint => {
       this.creditUsage.set(endpoint, {
         used: 0,
-        limit: 100,
-        resetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+        limit: this.maxCreditsPerEndpoint,
+        resetTime: Date.now() + 3600000,
+        lastRequest: Date.now()
       });
     });
   }

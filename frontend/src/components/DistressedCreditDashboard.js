@@ -465,7 +465,9 @@ ${documents.length > 0 ?
     const financials = comprehensiveData?.financialStatements;
     const companyName = companyData?.company?.name || 'the company';
 
-    if (!hasApiData || !financials?.cashFlow) {
+    if (!hasApiData || !financials?.cashFlow || !Array.isArray(financials.cashFlow) || 
+        !financials?.balance || !Array.isArray(financials.balance) ||
+        !financials?.income || !Array.isArray(financials.income)) {
       return {
         runway: [],
         cashFlowBreakdown: null,

@@ -434,83 +434,102 @@ const DistressedCreditDashboard = ({ companyData }) => {
     );
   }
 
-  const renderOverview = () => (
-    <div className="space-y-6">
-      {/* Key Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <motion.div 
-          className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm"
-          whileHover={{ y: -2, shadow: '0 8px 25px rgba(0,0,0,0.1)' }}
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
-              <TrendingDown className="w-6 h-6 text-red-600" />
-            </div>
-            <span className="text-2xl font-bold text-red-600">{distressedData.overview.distressScore}</span>
-          </div>
-          <h3 className="font-semibold text-gray-900 mb-1">Distress Score</h3>
-          <p className="text-sm text-gray-600">High risk level</p>
-        </motion.div>
+  const renderOverview = () => {
+    const metrics = generateDistressedMetrics();
+    const covenants = generateCovenantAnalysis();
+    const violationCount = covenants.filter(c => c.status === 'violation').length;
 
-        <motion.div 
-          className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm"
-          whileHover={{ y: -2, shadow: '0 8px 25px rgba(0,0,0,0.1)' }}
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-              <Droplet className="w-6 h-6 text-orange-600" />
+    return (
+      <div className="space-y-6">
+        {/* Key Metrics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <motion.div 
+            className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm"
+            whileHover={{ y: -2, shadow: '0 8px 25px rgba(0,0,0,0.1)' }}
+            onClick={() => handleMetricClick('distressScore', metrics)}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                <TrendingDown className="w-6 h-6 text-red-600" />
+              </div>
+              <span className="text-2xl font-bold text-red-600">{metrics.distressScore}</span>
             </div>
-            <span className="text-2xl font-bold text-orange-600">{distressedData.overview.liquidityMonths}m</span>
-          </div>
-          <h3 className="font-semibold text-gray-900 mb-1">Liquidity Runway</h3>
-          <p className="text-sm text-gray-600">Months remaining</p>
-        </motion.div>
+            <h3 className="font-semibold text-gray-900 mb-1">Distress Score</h3>
+            <p className="text-sm text-gray-600">{metrics.riskLevel} risk level</p>
+          </motion.div>
 
-        <motion.div 
-          className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm"
-          whileHover={{ y: -2, shadow: '0 8px 25px rgba(0,0,0,0.1)' }}
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-blue-600" />
+          <motion.div 
+            className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm"
+            whileHover={{ y: -2, shadow: '0 8px 25px rgba(0,0,0,0.1)' }}
+            onClick={() => handleMetricClick('liquidity', metrics)}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                <Droplet className="w-6 h-6 text-orange-600" />
+              </div>
+              <span className="text-2xl font-bold text-orange-600">{metrics.liquidityMonths}m</span>
             </div>
-            <span className="text-2xl font-bold text-blue-600">${distressedData.overview.totalDebt}M</span>
-          </div>
-          <h3 className="font-semibold text-gray-900 mb-1">Total Debt</h3>
-          <p className="text-sm text-gray-600">Outstanding amount</p>
-        </motion.div>
+            <h3 className="font-semibold text-gray-900 mb-1">Liquidity Runway</h3>
+            <p className="text-sm text-gray-600">Months remaining</p>
+          </motion.div>
 
-        <motion.div 
-          className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm"
-          whileHover={{ y: -2, shadow: '0 8px 25px rgba(0,0,0,0.1)' }}
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-red-600" />
+          <motion.div 
+            className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm"
+            whileHover={{ y: -2, shadow: '0 8px 25px rgba(0,0,0,0.1)' }}
+            onClick={() => handleMetricClick('debt', metrics)}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-blue-600" />
+              </div>
+              <span className="text-2xl font-bold text-blue-600">{metrics.totalDebt}</span>
             </div>
-            <span className="text-2xl font-bold text-red-600">{distressedData.overview.covenantViolations}</span>
-          </div>
-          <h3 className="font-semibold text-gray-900 mb-1">Covenant Violations</h3>
-          <p className="text-sm text-gray-600">Active breaches</p>
-        </motion.div>
-      </div>
+            <h3 className="font-semibold text-gray-900 mb-1">Total Debt</h3>
+            <p className="text-sm text-gray-600">Outstanding amount</p>
+          </motion.div>
 
-      {/* Critical Alerts */}
-      <div className="bg-red-50 border border-red-200 rounded-xl p-6">
-        <div className="flex items-start space-x-4">
-          <AlertTriangle className="w-6 h-6 text-red-600 mt-1" />
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-red-900 mb-2">Critical Alerts</h3>
-            <div className="space-y-2">
-              <p className="text-red-800">• Next debt maturity: <strong>$75M due March 2025</strong></p>
-              <p className="text-red-800">• DSCR covenant violation: <strong>1.15 vs 1.25 minimum</strong></p>
-              <p className="text-red-800">• Liquidity runway: <strong>8.3 months at current burn rate</strong></p>
+          <motion.div 
+            className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm"
+            whileHover={{ y: -2, shadow: '0 8px 25px rgba(0,0,0,0.1)' }}
+            onClick={() => handleMetricClick('covenants', { violationCount, covenants })}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+              </div>
+              <span className="text-2xl font-bold text-red-600">{violationCount}</span>
             </div>
-          </div>
+            <h3 className="font-semibold text-gray-900 mb-1">Covenant Violations</h3>
+            <p className="text-sm text-gray-600">Active breaches</p>
+          </motion.div>
         </div>
+
+        {/* Critical Alerts */}
+        {metrics.distressFactors && metrics.distressFactors.length > 0 && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+            <div className="flex items-start space-x-4">
+              <AlertTriangle className="w-6 h-6 text-red-600 mt-1" />
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-red-900 mb-2">Critical Alerts</h3>
+                <div className="space-y-2">
+                  {metrics.distressFactors.map((factor, index) => (
+                    <p key={index} className="text-red-800">
+                      • {factor.factor}: <strong>Weight {factor.weight}%</strong>
+                    </p>
+                  ))}
+                  {metrics.liquidityMonths !== '[Cannot Calculate]' && (
+                    <p className="text-red-800">
+                      • Liquidity runway: <strong>{metrics.liquidityMonths} months at current burn rate</strong>
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderMaturityWall = () => (
     <div className="bg-white rounded-xl p-6 border border-gray-200">

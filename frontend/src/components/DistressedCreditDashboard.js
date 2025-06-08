@@ -24,7 +24,10 @@ import {
   Eye,
   Download,
   RefreshCw,
-  Activity
+  Activity,
+  Loader2,
+  ExternalLink,
+  Calculator
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -39,157 +42,362 @@ import {
   Area,
   AreaChart,
   PieChart as RechartsPieChart,
-  Cell,
-  Waterfall,
-  WaterfallChart
+  Cell
 } from 'recharts';
+import AgentCoordinator from '../services/agentCoordinator';
 
 const DistressedCreditDashboard = ({ companyData }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [expandedSections, setExpandedSections] = useState({});
   const [alertDetails, setAlertDetails] = useState({});
+  const [comprehensiveData, setComprehensiveData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [selectedMetric, setSelectedMetric] = useState(null);
+  const [showSourceModal, setShowSourceModal] = useState(false);
 
-  // Mock distressed credit data structure
-  const distressedData = {
-    overview: {
-      distressScore: 73,
-      riskLevel: 'high',
-      liquidityMonths: 8.3,
-      totalDebt: 487.5,
-      nextMaturity: '2025-03-15',
-      covenantViolations: 2
-    },
-    maturityWall: [
-      { period: '2024 Q4', secured: 25, unsecured: 15, total: 40, type: 'Term Loan' },
-      { period: '2025 Q1', secured: 45, unsecured: 30, total: 75, type: 'Bonds' },
-      { period: '2025 Q2', secured: 60, unsecured: 25, total: 85, type: 'Credit Line' },
-      { period: '2025 Q3', secured: 80, unsecured: 40, total: 120, type: 'Notes' },
-      { period: '2025 Q4', secured: 35, unsecured: 20, total: 55, type: 'Term Loan' },
-      { period: '2026 Q1', secured: 90, unsecured: 50, total: 140, type: 'Bonds' }
-    ],
-    covenants: [
-      { 
-        name: 'Debt Service Coverage Ratio', 
-        current: 1.15, 
-        threshold: 1.25, 
-        status: 'violation',
-        trend: 'declining',
-        impact: 'high'
-      },
-      { 
-        name: 'Total Leverage Ratio', 
-        current: 6.8, 
-        threshold: 6.0, 
-        status: 'violation',
-        trend: 'increasing',
-        impact: 'critical'
-      },
-      { 
-        name: 'Interest Coverage Ratio', 
-        current: 2.1, 
-        threshold: 2.0, 
-        status: 'compliant',
-        trend: 'stable',
-        impact: 'medium'
-      },
-      { 
-        name: 'Current Ratio', 
-        current: 1.3, 
-        threshold: 1.2, 
-        status: 'compliant',
-        trend: 'improving',
-        impact: 'low'
-      },
-      { 
-        name: 'Tangible Net Worth', 
-        current: 185.2, 
-        threshold: 200.0, 
-        status: 'watch',
-        trend: 'declining',
-        impact: 'medium'
+  useEffect(() => {
+    const fetchDistressedCreditData = async () => {
+      if (!companyData?.company?.ticker) {
+        console.warn('[DistressedCreditDashboard] No ticker available');
+        setError('Company ticker required for distressed credit analysis');
+        setLoading(false);
+        return;
       }
-    ],
-    liquidityRunway: [
-      { month: 'Jan 2024', cash: 45.2, burnRate: -8.5, runway: 12.3 },
-      { month: 'Feb 2024', cash: 38.7, burnRate: -9.2, runway: 11.1 },
-      { month: 'Mar 2024', cash: 32.1, burnRate: -7.8, runway: 10.8 },
-      { month: 'Apr 2024', cash: 26.3, burnRate: -8.9, runway: 9.7 },
-      { month: 'May 2024', cash: 19.8, burnRate: -9.1, runway: 8.3 },
-      { month: 'Jun 2024', cash: 14.2, burnRate: -8.7, runway: 7.9 }
-    ],
-    capitalStructure: [
-      { name: 'Senior Secured', amount: 185.5, recovery: 85, seniority: 1, type: 'debt' },
-      { name: 'Senior Unsecured', amount: 124.8, recovery: 45, seniority: 2, type: 'debt' },
-      { name: 'Subordinated', amount: 67.2, recovery: 15, seniority: 3, type: 'debt' },
-      { name: 'Preferred Equity', amount: 45.0, recovery: 5, seniority: 4, type: 'equity' },
-      { name: 'Common Equity', amount: 92.3, recovery: 0, seniority: 5, type: 'equity' }
-    ],
-    distressFlags: [
-      {
-        id: 1,
-        severity: 'critical',
-        category: 'Financial',
-        title: 'Covenant Violations',
-        description: 'Multiple debt covenant breaches including DSCR and leverage ratios',
-        impact: 'Potential acceleration of debt',
-        timeline: '30 days',
-        lastUpdated: '2024-01-15'
-      },
-      {
-        id: 2,
-        severity: 'high',
-        category: 'Liquidity',
-        title: 'Low Cash Reserves',
-        description: 'Current cash runway below 9 months with negative cash flow',
-        impact: 'Working capital constraints',
-        timeline: '60 days',
-        lastUpdated: '2024-01-14'
-      },
-      {
-        id: 3,
-        severity: 'medium',
-        category: 'Market',
-        title: 'Credit Rating Downgrade',
-        description: 'Moody\'s downgraded credit rating to Caa1',
-        impact: 'Increased borrowing costs',
-        timeline: '90 days',
-        lastUpdated: '2024-01-10'
-      },
-      {
-        id: 4,
-        severity: 'medium',
-        category: 'Operational',
-        title: 'Revenue Decline',
-        description: '15% YoY revenue decline in core business segments',
-        impact: 'Reduced debt service capacity',
-        timeline: '180 days',
-        lastUpdated: '2024-01-08'
+
+      try {
+        setLoading(true);
+        console.log(`[DistressedCreditDashboard] Fetching distressed credit data for ${companyData.company.ticker}`);
+        
+        const coordinator = new AgentCoordinator();
+        const data = await coordinator.orchestrateDataFetch(companyData.company.ticker, ['all']);
+        
+        // Cross-reference with user documents for enhanced credit analysis
+        const enhancedData = await coordinator.crossReferenceDocuments(
+          data, 
+          companyData?.results?.documents?.documents || [], 
+          companyData.company.ticker
+        );
+        
+        console.log('[DistressedCreditDashboard] Enhanced data received:', enhancedData);
+        setComprehensiveData(enhancedData);
+        setError(null);
+      } catch (err) {
+        console.error('[DistressedCreditDashboard] Error fetching data:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
-    ]
+    };
+
+    fetchDistressedCreditData();
+  }, [companyData?.company?.ticker]);
+
+  // Generate distressed credit metrics from real API data
+  const generateDistressedMetrics = () => {
+    const hasApiData = comprehensiveData && !comprehensiveData.error;
+    const financials = comprehensiveData?.financialStatements;
+    const ratios = comprehensiveData?.ratios;
+    const quote = comprehensiveData?.stockPrice;
+
+    if (!hasApiData) {
+      return {
+        distressScore: '[Data Unavailable]',
+        riskLevel: '[Risk Level Unavailable]',
+        liquidityMonths: '[Liquidity Unavailable]',
+        totalDebt: '[Debt Unavailable]',
+        debtToEquity: '[Ratio Unavailable]',
+        interestCoverage: '[Coverage Unavailable]',
+        currentRatio: '[Ratio Unavailable]',
+        guidance: 'Real-time financial data required for accurate distressed credit analysis. Please ensure the company ticker is correct and try uploading recent financial statements.',
+        sourceAttribution: 'N/A'
+      };
+    }
+
+    const latestIncome = financials?.income?.[0];
+    const latestBalance = financials?.balance?.[0];
+    const latestCashFlow = financials?.cashFlow?.[0];
+    const latestRatios = ratios?.ratios?.[0];
+
+    // Calculate distress score based on multiple factors
+    const distressFactors = [];
+    let distressScore = 0;
+
+    // Factor 1: Debt levels
+    if (latestBalance?.totalDebt && latestBalance?.totalStockholdersEquity) {
+      const debtToEquity = latestBalance.totalDebt / latestBalance.totalStockholdersEquity;
+      if (debtToEquity > 3) distressFactors.push({ factor: 'High Leverage', weight: 25, triggered: true });
+      else if (debtToEquity > 2) distressFactors.push({ factor: 'Moderate Leverage', weight: 15, triggered: true });
+      distressScore += debtToEquity > 3 ? 25 : (debtToEquity > 2 ? 15 : 0);
+    }
+
+    // Factor 2: Profitability
+    if (latestIncome?.netIncome && latestIncome.netIncome < 0) {
+      distressFactors.push({ factor: 'Negative Net Income', weight: 20, triggered: true });
+      distressScore += 20;
+    }
+
+    // Factor 3: Interest coverage
+    if (latestIncome?.operatingIncome && latestIncome?.interestExpense) {
+      const interestCoverage = Math.abs(latestIncome.operatingIncome / latestIncome.interestExpense);
+      if (interestCoverage < 1.5) {
+        distressFactors.push({ factor: 'Low Interest Coverage', weight: 20, triggered: true });
+        distressScore += 20;
+      }
+    }
+
+    // Factor 4: Liquidity
+    if (latestBalance?.totalCurrentAssets && latestBalance?.totalCurrentLiabilities) {
+      const currentRatio = latestBalance.totalCurrentAssets / latestBalance.totalCurrentLiabilities;
+      if (currentRatio < 1.0) {
+        distressFactors.push({ factor: 'Poor Liquidity', weight: 15, triggered: true });
+        distressScore += 15;
+      }
+    }
+
+    // Factor 5: Cash flow
+    if (latestCashFlow?.operatingCashFlow && latestCashFlow.operatingCashFlow < 0) {
+      distressFactors.push({ factor: 'Negative Operating Cash Flow', weight: 15, triggered: true });
+      distressScore += 15;
+    }
+
+    // Determine risk level
+    let riskLevel = 'Low';
+    if (distressScore >= 60) riskLevel = 'Critical';
+    else if (distressScore >= 40) riskLevel = 'High';
+    else if (distressScore >= 20) riskLevel = 'Medium';
+
+    // Calculate liquidity runway
+    const cash = latestBalance?.cashAndCashEquivalents || 0;
+    const operatingCashFlow = latestCashFlow?.operatingCashFlow || 0;
+    const quarterlyBurn = operatingCashFlow < 0 ? Math.abs(operatingCashFlow) / 4 : 0;
+    const liquidityMonths = quarterlyBurn > 0 ? (cash / quarterlyBurn * 3).toFixed(1) : '[Cannot Calculate]';
+
+    return {
+      distressScore: Math.min(distressScore, 100),
+      riskLevel: riskLevel,
+      liquidityMonths: liquidityMonths,
+      totalDebt: latestBalance?.totalDebt ? `$${(latestBalance.totalDebt / 1000000).toFixed(1)}M` : '[Debt Unavailable]',
+      debtToEquity: latestBalance?.totalDebt && latestBalance?.totalStockholdersEquity ? 
+        (latestBalance.totalDebt / latestBalance.totalStockholdersEquity).toFixed(2) : '[Ratio Unavailable]',
+      interestCoverage: latestIncome?.operatingIncome && latestIncome?.interestExpense ? 
+        Math.abs(latestIncome.operatingIncome / latestIncome.interestExpense).toFixed(2) : '[Coverage Unavailable]',
+      currentRatio: latestBalance?.totalCurrentAssets && latestBalance?.totalCurrentLiabilities ? 
+        (latestBalance.totalCurrentAssets / latestBalance.totalCurrentLiabilities).toFixed(2) : '[Ratio Unavailable]',
+      distressFactors: distressFactors,
+      sourceAttribution: {
+        primary: comprehensiveData.sourceAttribution || 'Multi-API Sources',
+        income: `${comprehensiveData.financialStatements?.income ? 'FMP Income Statement API' : 'N/A'}`,
+        balance: `${comprehensiveData.financialStatements?.balance ? 'FMP Balance Sheet API' : 'N/A'}`,
+        cashFlow: `${comprehensiveData.financialStatements?.cashFlow ? 'FMP Cash Flow API' : 'N/A'}`,
+        confidence: hasApiData ? 92 : 0
+      }
+    };
   };
+
+  // Generate covenant analysis from real data and documents
+  const generateCovenantAnalysis = () => {
+    const hasApiData = comprehensiveData && !comprehensiveData.error;
+    const financials = comprehensiveData?.financialStatements;
+    const documents = companyData?.results?.documents?.documents || [];
+
+    if (!hasApiData || !financials) {
+      return [{
+        name: 'Debt Service Coverage Ratio',
+        current: '[Data Unavailable]',
+        threshold: '[Threshold Unavailable]',
+        status: 'unknown',
+        trend: 'unknown',
+        impact: 'unknown',
+        source: 'Requires financial statement data',
+        formula: 'Operating Income / Total Debt Service',
+        guidance: 'Please upload recent credit agreements and financial statements for covenant analysis.'
+      }];
+    }
+
+    const latestIncome = financials.income?.[0];
+    const latestBalance = financials.balance?.[0];
+    const latestCashFlow = financials.cashFlow?.[0];
+
+    const covenants = [];
+
+    // Standard financial covenants with real calculations
+    if (latestCashFlow?.operatingCashFlow && latestBalance?.totalDebt) {
+      const dscr = Math.abs(latestCashFlow.operatingCashFlow / (latestBalance.totalDebt * 0.1)); // Assuming 10% debt service
+      covenants.push({
+        name: 'Debt Service Coverage Ratio',
+        current: dscr.toFixed(2),
+        threshold: '1.25', // Typical threshold
+        status: dscr >= 1.25 ? 'compliant' : 'violation',
+        trend: 'calculated',
+        impact: dscr < 1.0 ? 'critical' : (dscr < 1.25 ? 'high' : 'low'),
+        source: 'FMP Cash Flow & Balance Sheet APIs',
+        formula: 'Operating Cash Flow / Annual Debt Service',
+        explanation: 'Measures the company\'s ability to service its debt obligations with operating cash flow.'
+      });
+    }
+
+    if (latestBalance?.totalDebt && latestIncome?.ebitda) {
+      const leverageRatio = latestBalance.totalDebt / latestIncome.ebitda;
+      covenants.push({
+        name: 'Total Leverage Ratio',
+        current: leverageRatio.toFixed(2),
+        threshold: '4.00', // Typical threshold
+        status: leverageRatio <= 4.0 ? 'compliant' : 'violation',
+        trend: 'calculated',
+        impact: leverageRatio > 6.0 ? 'critical' : (leverageRatio > 4.0 ? 'high' : 'low'),
+        source: 'FMP Balance Sheet & Income Statement APIs',
+        formula: 'Total Debt / EBITDA',
+        explanation: 'Measures the company\'s debt burden relative to earnings before interest, taxes, depreciation, and amortization.'
+      });
+    }
+
+    if (latestIncome?.operatingIncome && latestIncome?.interestExpense) {
+      const interestCoverage = Math.abs(latestIncome.operatingIncome / latestIncome.interestExpense);
+      covenants.push({
+        name: 'Interest Coverage Ratio',
+        current: interestCoverage.toFixed(2),
+        threshold: '2.00', // Typical threshold
+        status: interestCoverage >= 2.0 ? 'compliant' : 'violation',
+        trend: 'calculated',
+        impact: interestCoverage < 1.5 ? 'critical' : (interestCoverage < 2.0 ? 'medium' : 'low'),
+        source: 'FMP Income Statement API',
+        formula: 'Operating Income / Interest Expense',
+        explanation: 'Measures the company\'s ability to pay interest on outstanding debt.'
+      });
+    }
+
+    if (latestBalance?.totalCurrentAssets && latestBalance?.totalCurrentLiabilities) {
+      const currentRatio = latestBalance.totalCurrentAssets / latestBalance.totalCurrentLiabilities;
+      covenants.push({
+        name: 'Current Ratio',
+        current: currentRatio.toFixed(2),
+        threshold: '1.20', // Typical threshold
+        status: currentRatio >= 1.2 ? 'compliant' : (currentRatio >= 1.0 ? 'watch' : 'violation'),
+        trend: 'calculated',
+        impact: currentRatio < 1.0 ? 'high' : (currentRatio < 1.2 ? 'medium' : 'low'),
+        source: 'FMP Balance Sheet API',
+        formula: 'Current Assets / Current Liabilities',
+        explanation: 'Measures the company\'s ability to pay short-term obligations.'
+      });
+    }
+
+    if (latestBalance?.totalStockholdersEquity) {
+      const tangibleNetWorth = latestBalance.totalStockholdersEquity - (latestBalance.goodwillAndIntangibleAssets || 0);
+      covenants.push({
+        name: 'Tangible Net Worth',
+        current: `$${(tangibleNetWorth / 1000000).toFixed(1)}M`,
+        threshold: '[Threshold Unknown]', // Would need to extract from credit documents
+        status: 'unknown',
+        trend: 'calculated',
+        impact: 'medium',
+        source: 'FMP Balance Sheet API',
+        formula: 'Total Equity - Intangible Assets',
+        explanation: 'Measures the company\'s net worth excluding intangible assets.',
+        guidance: 'Upload credit agreements to determine specific covenant thresholds.'
+      });
+    }
+
+    return covenants;
+  };
+
+  // Generate liquidity analysis
+  const generateLiquidityAnalysis = () => {
+    const hasApiData = comprehensiveData && !comprehensiveData.error;
+    const financials = comprehensiveData?.financialStatements;
+
+    if (!hasApiData || !financials?.cashFlow) {
+      return [];
+    }
+
+    // Use historical cash flow data to project runway
+    const cashFlowData = financials.cashFlow.slice(0, 4); // Last 4 quarters/years
+    const balanceData = financials.balance.slice(0, 4);
+
+    return cashFlowData.map((cf, index) => {
+      const balance = balanceData[index];
+      const cash = balance?.cashAndCashEquivalents || 0;
+      const operatingCF = cf?.operatingCashFlow || 0;
+      const quarterlyBurn = operatingCF < 0 ? Math.abs(operatingCF) / 4 : 0;
+      const runway = quarterlyBurn > 0 ? (cash / quarterlyBurn) : 0;
+
+      return {
+        period: cf.calendarYear || `Period ${index + 1}`,
+        cash: cash / 1000000, // Convert to millions
+        operatingCashFlow: operatingCF / 1000000,
+        runway: runway,
+        source: 'FMP Cash Flow & Balance Sheet APIs'
+      };
+    }).reverse(); // Most recent first
+  };
+
+  // Generate capital structure from real data
+  const generateCapitalStructure = () => {
+    const hasApiData = comprehensiveData && !comprehensiveData.error;
+    const latestBalance = comprehensiveData?.financialStatements?.balance?.[0];
+
+    if (!hasApiData || !latestBalance) {
+      return [{
+        name: 'Total Debt',
+        amount: '[Data Unavailable]',
+        percentage: 0,
+        recovery: '[Recovery Unavailable]',
+        source: 'N/A',
+        guidance: 'Upload recent balance sheets and credit agreements for capital structure analysis.'
+      }];
+    }
+
+    const structure = [];
+    const totalCapital = (latestBalance.totalDebt || 0) + (latestBalance.totalStockholdersEquity || 0);
+
+    if (latestBalance.totalDebt) {
+      structure.push({
+        name: 'Total Debt',
+        amount: latestBalance.totalDebt / 1000000,
+        percentage: totalCapital ? (latestBalance.totalDebt / totalCapital * 100) : 0,
+        recovery: '[Recovery Rate Unknown]', // Would need credit analysis
+        source: 'FMP Balance Sheet API',
+        type: 'debt'
+      });
+    }
+
+    if (latestBalance.totalStockholdersEquity) {
+      structure.push({
+        name: 'Total Equity',
+        amount: latestBalance.totalStockholdersEquity / 1000000,
+        percentage: totalCapital ? (latestBalance.totalStockholdersEquity / totalCapital * 100) : 0,
+        recovery: '[Recovery Rate Unknown]',
+        source: 'FMP Balance Sheet API',
+        type: 'equity'
+      });
+    }
+
+    return structure;
+  };
+
+  const distressedMetrics = generateDistressedMetrics();
+  const covenantAnalysis = generateCovenantAnalysis();
+  const liquidityAnalysis = generateLiquidityAnalysis();
+  const capitalStructure = generateCapitalStructure();
 
   const tabs = [
     { id: 'overview', name: 'Overview', icon: BarChart3 },
-    { id: 'maturity', name: 'Maturity Wall', icon: Calendar },
     { id: 'covenants', name: 'Covenants', icon: Shield },
     { id: 'liquidity', name: 'Liquidity', icon: Droplet },
-    { id: 'structure', name: 'Capital Structure', icon: Layers },
-    { id: 'flags', name: 'Risk Flags', icon: AlertTriangle }
+    { id: 'structure', name: 'Capital Structure', icon: Layers }
   ];
 
-  const toggleSection = (section) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
+  const handleMetricClick = (metricKey, metricData) => {
+    setSelectedMetric({ key: metricKey, ...metricData });
+    setShowSourceModal(true);
   };
 
   const getSeverityColor = (severity) => {
     switch (severity) {
-      case 'critical': return 'text-red-600 bg-red-100 border-red-200';
-      case 'high': return 'text-orange-600 bg-orange-100 border-orange-200';
-      case 'medium': return 'text-yellow-600 bg-yellow-100 border-yellow-200';
-      case 'low': return 'text-green-600 bg-green-100 border-green-200';
+      case 'critical': case 'Critical': return 'text-red-600 bg-red-100 border-red-200';
+      case 'high': case 'High': return 'text-orange-600 bg-orange-100 border-orange-200';
+      case 'medium': case 'Medium': return 'text-yellow-600 bg-yellow-100 border-yellow-200';
+      case 'low': case 'Low': return 'text-green-600 bg-green-100 border-green-200';
       case 'violation': return 'text-red-600 bg-red-100 border-red-200';
       case 'watch': return 'text-yellow-600 bg-yellow-100 border-yellow-200';
       case 'compliant': return 'text-green-600 bg-green-100 border-green-200';
@@ -198,6 +406,33 @@ const DistressedCreditDashboard = ({ companyData }) => {
   };
 
   const getSeverityIcon = (severity) => {
+    switch (severity) {
+      case 'critical': case 'Critical': return XCircle;
+      case 'high': case 'High': return AlertTriangle;
+      case 'medium': case 'Medium': return AlertCircle;
+      case 'low': case 'Low': return Info;
+      case 'violation': return XCircle;
+      case 'watch': return AlertTriangle;
+      case 'compliant': return CheckCircle;
+      default: return Info;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="p-8 bg-gray-50 min-h-screen">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
+              <p className="text-gray-600">Loading distressed credit analysis...</p>
+              <p className="text-sm text-gray-500 mt-2">Analyzing financial data and credit metrics</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
     switch (severity) {
       case 'critical': return XCircle;
       case 'high': return AlertTriangle;

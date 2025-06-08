@@ -34,6 +34,7 @@ const CompanyOverview = ({ companyData }) => {
   const [comprehensiveData, setComprehensiveData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [enhancedCompanyData, setEnhancedCompanyData] = useState(null);
 
   useEffect(() => {
     const fetchComprehensiveData = async () => {

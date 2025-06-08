@@ -677,76 +677,96 @@ const DistressedCreditDashboard = ({ companyData }) => {
     );
   };
 
-  const renderLiquidity = () => (
-    <div className="bg-white rounded-xl p-6 border border-gray-200">
-      <h3 className="text-xl font-semibold text-gray-900 mb-6">Liquidity Runway Analysis</h3>
-      
-      <div className="h-80 mb-6">
-        <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={distressedData.liquidityRunway}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis 
-              dataKey="month" 
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 12, fill: '#666' }}
-            />
-            <YAxis 
-              yAxisId="cash"
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 12, fill: '#666' }}
-              label={{ value: 'Cash ($M)', angle: -90, position: 'insideLeft' }}
-            />
-            <YAxis 
-              yAxisId="runway"
-              orientation="right"
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 12, fill: '#666' }}
-              label={{ value: 'Runway (Months)', angle: 90, position: 'insideRight' }}
-            />
-            <Tooltip 
-              contentStyle={{ 
-                backgroundColor: 'white', 
-                border: '1px solid #e5e7eb',
-                borderRadius: '12px',
-                boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
-              }}
-            />
-            <Bar yAxisId="cash" dataKey="cash" fill="#3B82F6" radius={[4, 4, 0, 0]} name="Cash Balance ($M)" />
-            <Line 
-              yAxisId="runway" 
-              type="monotone" 
-              dataKey="runway" 
-              stroke="#EF4444" 
-              strokeWidth={3}
-              dot={{ fill: '#EF4444', r: 5 }}
-              name="Liquidity Runway (Months)"
-            />
-          </ComposedChart>
-        </ResponsiveContainer>
-      </div>
+  const renderLiquidity = () => {
+    const liquidityData = generateLiquidityAnalysis();
+    const metrics = generateDistressedMetrics();
+    
+    // Get the most recent data point
+    const latestData = liquidityData[0] || {
+      cash: 0,
+      operatingCashFlow: 0,
+      runway: 0
+    };
 
-      <div className="grid grid-cols-3 gap-4">
-        <div className="text-center p-4 bg-red-50 rounded-lg border border-red-200">
-          <Clock className="w-8 h-8 text-red-600 mx-auto mb-2" />
-          <p className="text-sm text-red-600 font-medium">Current Runway</p>
-          <p className="text-2xl font-bold text-red-900">8.3 months</p>
+    return (
+      <div className="bg-white rounded-xl p-6 border border-gray-200">
+        <h3 className="text-xl font-semibold text-gray-900 mb-6">Liquidity Runway Analysis</h3>
+        
+        <div className="h-80 mb-6">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={liquidityData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis 
+                dataKey="period" 
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 12, fill: '#666' }}
+              />
+              <YAxis 
+                yAxisId="cash"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 12, fill: '#666' }}
+                label={{ value: 'Cash ($M)', angle: -90, position: 'insideLeft' }}
+              />
+              <YAxis 
+                yAxisId="runway"
+                orientation="right"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 12, fill: '#666' }}
+                label={{ value: 'Runway (Months)', angle: 90, position: 'insideRight' }}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'white', 
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '12px',
+                  boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
+                }}
+                formatter={(value, name) => {
+                  if (name === 'cash') return [`$${value.toFixed(1)}M`, 'Cash Balance'];
+                  if (name === 'runway') return [`${value.toFixed(1)} months`, 'Liquidity Runway'];
+                  if (name === 'operatingCashFlow') return [`$${value.toFixed(1)}M`, 'Operating Cash Flow'];
+                  return [value, name];
+                }}
+              />
+              <Bar yAxisId="cash" dataKey="cash" fill="#3B82F6" radius={[4, 4, 0, 0]} name="Cash Balance" />
+              <Line 
+                yAxisId="runway" 
+                type="monotone" 
+                dataKey="runway" 
+                stroke="#EF4444" 
+                strokeWidth={3}
+                dot={{ fill: '#EF4444', r: 5 }}
+                name="Liquidity Runway"
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
         </div>
-        <div className="text-center p-4 bg-orange-50 rounded-lg border border-orange-200">
-          <TrendingDown className="w-8 h-8 text-orange-600 mx-auto mb-2" />
-          <p className="text-sm text-orange-600 font-medium">Monthly Burn</p>
-          <p className="text-2xl font-bold text-orange-900">$8.7M</p>
-        </div>
-        <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <DollarSign className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-          <p className="text-sm text-blue-600 font-medium">Cash Balance</p>
-          <p className="text-2xl font-bold text-blue-900">$14.2M</p>
+
+        <div className="grid grid-cols-3 gap-4">
+          <div className="text-center p-4 bg-red-50 rounded-lg border border-red-200">
+            <Clock className="w-8 h-8 text-red-600 mx-auto mb-2" />
+            <p className="text-sm text-red-600 font-medium">Current Runway</p>
+            <p className="text-2xl font-bold text-red-900">{metrics.liquidityMonths} months</p>
+          </div>
+          <div className="text-center p-4 bg-orange-50 rounded-lg border border-orange-200">
+            <TrendingDown className="w-8 h-8 text-orange-600 mx-auto mb-2" />
+            <p className="text-sm text-orange-600 font-medium">Monthly Burn</p>
+            <p className="text-2xl font-bold text-orange-900">
+              ${Math.abs(latestData.operatingCashFlow).toFixed(1)}M
+            </p>
+          </div>
+          <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <DollarSign className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+            <p className="text-sm text-blue-600 font-medium">Cash Balance</p>
+            <p className="text-2xl font-bold text-blue-900">${latestData.cash.toFixed(1)}M</p>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderCapitalStructure = () => (
     <div className="bg-white rounded-xl p-6 border border-gray-200">

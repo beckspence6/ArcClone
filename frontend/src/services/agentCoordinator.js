@@ -797,26 +797,37 @@ class ResearchAgent {
       
       // Use provided info if no detection
       const companyName = detectedCompany?.companyName || companyInfo?.companyName || 'Unknown Company';
+      const ticker = companyInfo?.ticker || detectedCompany?.ticker;
       
-      // Enrich with market data if public company
-      let marketData = null;
-      if (companyInfo?.ticker || detectedCompany?.ticker) {
-        const symbol = companyInfo.ticker || detectedCompany.ticker;
-        try {
-          marketData = await this.fetchMarketData(symbol);
-        } catch (error) {
-          console.warn('Failed to fetch market data:', error);
-        }
+      // If we have a ticker, use the new multi-API orchestration
+      if (ticker) {
+        console.log(`[ResearchAgent] Using multi-API orchestration for ${ticker}`);
+        const coordinator = new AgentCoordinator();
+        const comprehensiveData = await coordinator.orchestrateDataFetch(ticker);
+        
+        return {
+          name: companyName,
+          ticker: ticker,
+          industry: detectedCompany?.industry || companyInfo?.industry || 'Unknown',
+          description: companyInfo?.description || detectedCompany?.description || '',
+          isPublic: true,
+          comprehensiveData: comprehensiveData,
+          confidence: detectedCompany?.confidence || 0.9,
+          dataSource: 'Multi-API Orchestration',
+          lastUpdated: new Date()
+        };
       }
       
+      // Fallback for companies without ticker
       return {
         name: companyName,
         industry: detectedCompany?.industry || companyInfo?.industry || 'Unknown',
-        ticker: companyInfo?.ticker || detectedCompany?.ticker,
+        ticker: null,
         description: companyInfo?.description || detectedCompany?.description || '',
-        isPublic: !!marketData,
-        marketData: marketData,
-        confidence: detectedCompany?.confidence || 0.8
+        isPublic: false,
+        marketData: null,
+        confidence: detectedCompany?.confidence || 0.8,
+        dataSource: 'Document Analysis Only'
       };
     } catch (error) {
       throw new Error(`Company research failed: ${error.message}`);
@@ -825,18 +836,9 @@ class ResearchAgent {
 
   async fetchMarketData(symbol) {
     try {
-      const [overview, stockPrice, historicalData] = await Promise.all([
-        AlphaVantageService.getCompanyOverview(symbol),
-        AlphaVantageService.getStockPrice(symbol),
-        AlphaVantageService.getHistoricalData(symbol, 'monthly')
-      ]);
-
-      return {
-        overview,
-        currentPrice: stockPrice,
-        historicalData,
-        lastUpdated: new Date()
-      };
+      // Use new multi-API orchestration instead of just AlphaVantage
+      const coordinator = new AgentCoordinator();
+      return await coordinator.orchestrateDataFetch(symbol, ['stockPrice', 'historical', 'profile']);
     } catch (error) {
       throw new Error(`Market data fetch failed: ${error.message}`);
     }

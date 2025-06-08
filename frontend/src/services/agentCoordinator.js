@@ -1123,15 +1123,25 @@ class InsightsAgent {
 
   async processQuery(message, context) {
     try {
-      const response = await GeminiService.generateInsights(context, message);
+      // Use the enhanced chatWithAI function for company-specific analysis
+      const response = await GeminiService.chatWithAI(message, context);
       return {
-        response: response,
-        confidence: 0.85,
-        sources: context ? ['Company Analysis', 'Financial Data'] : ['General Knowledge'],
+        response: response.response,
+        confidence: response.confidence || 0.85,
+        agentType: response.agentType || 'insights',
+        sources: response.sources || (context ? ['Company Analysis', 'Financial Data'] : ['General Knowledge']),
         timestamp: new Date()
       };
     } catch (error) {
-      throw error;
+      console.error('[InsightsAgent] ProcessQuery error:', error);
+      return {
+        response: "I apologize, but I'm having trouble processing that query. Could you please try rephrasing your question or providing more specific details?",
+        confidence: 0.5,
+        agentType: 'coordinator',
+        sources: ['Error Recovery'],
+        timestamp: new Date(),
+        error: error.message
+      };
     }
   }
 }

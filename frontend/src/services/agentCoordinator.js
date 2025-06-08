@@ -37,7 +37,7 @@ class AgentCoordinator {
 
   // Central data orchestration method
   async orchestrateDataFetch(symbol, dataTypes = ['all']) {
-    console.log(`[AgentCoordinator] Orchestrating data fetch for ${symbol}`);
+    console.log(`[AgentCoordinator] Orchestrating data fetch for ${symbol} (SEC priority enabled)`);
     
     const companyData = {
       symbol: symbol,
@@ -48,10 +48,66 @@ class AgentCoordinator {
       ratios: null,
       news: null,
       executives: null,
+      subsidiaries: null, // SEC-specific data
+      ownership: null,    // SEC-specific data
+      secData: null,      // Comprehensive SEC data
       sourceAttribution: {},
       errors: [],
       lastUpdated: new Date()
     };
+
+    // Priority 1: Fetch comprehensive SEC data for public companies (highest accuracy)
+    if (dataTypes.includes('all') || dataTypes.includes('sec')) {
+      console.log(`[AgentCoordinator] Fetching comprehensive SEC data for ${symbol}`);
+      try {
+        companyData.secData = await SecApiService.getComprehensiveData(symbol);
+        if (companyData.secData && companyData.secData.success) {
+          console.log(`[AgentCoordinator] SEC data successfully retrieved for ${symbol}`);
+          
+          // Use SEC data as primary source where available
+          if (companyData.secData.financials) {
+            companyData.financialStatements = this.formatSECFinancials(companyData.secData.financials);
+            companyData.sourceAttribution.financialStatements = {
+              source: 'SEC',
+              endpoint: 'XBRL-to-JSON',
+              confidence: 99,
+              url: companyData.secData.financials.sourceUrl
+            };
+          }
+          
+          if (companyData.secData.profile) {
+            companyData.profile = this.formatSECProfile(companyData.secData.profile);
+            companyData.sourceAttribution.profile = {
+              source: 'SEC',
+              endpoint: '10-K Extractor',
+              confidence: 97,
+              url: companyData.secData.profile.sourceUrl
+            };
+          }
+          
+          if (companyData.secData.executives) {
+            companyData.executives = companyData.secData.executives.executives;
+            companyData.sourceAttribution.executives = {
+              source: 'SEC',
+              endpoint: 'Executive Compensation',
+              confidence: 96
+            };
+          }
+          
+          if (companyData.secData.subsidiaries) {
+            companyData.subsidiaries = companyData.secData.subsidiaries.subsidiaries;
+            companyData.sourceAttribution.subsidiaries = {
+              source: 'SEC',
+              endpoint: 'Company Subsidiaries',
+              confidence: 98
+            };
+          }
+        }
+      } catch (error) {
+        console.warn(`[AgentCoordinator] SEC data fetch failed for ${symbol}:`, error);
+        companyData.errors.push(`SEC API: ${error.message}`);
+      }
+    }
 
     // Fetch company profile
     if (dataTypes.includes('all') || dataTypes.includes('profile')) {

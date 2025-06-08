@@ -14,56 +14,133 @@ import {
   AlertTriangle,
   Copy,
   ThumbsUp,
-  ThumbsDown
+  ThumbsDown,
+  PieChart,
+  Target,
+  Calculator,
+  Lightbulb,
+  TrendingDown
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AgentCoordinator from '../services/agentCoordinator';
 
 const Chat = ({ companyData }) => {
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      type: 'bot',
-      content: companyData?.company?.name 
-        ? `Hello! I'm your AI assistant specializing in distressed credit analysis for ${companyData.company.name}. I can help you analyze covenant violations, liquidity runways, capital structure, and distress scenarios. What would you like to explore?`
-        : "Hello! I'm your AI assistant specializing in distressed credit analysis. Upload documents in the Data Room first, and I'll be able to provide detailed covenant tracking, liquidity analysis, and restructuring scenarios. What can I help you with?",
-      timestamp: new Date(),
-      confidence: 0.98,
-      agentType: 'coordinator',
-      hasCompanyContext: !!companyData
-    }
-  ]);
+  const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [agentActivity, setAgentActivity] = useState([]);
+  const [contextualSuggestions, setContextualSuggestions] = useState([]);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  // Initialize chat with company-specific context
+  useEffect(() => {
+    const initializeChat = () => {
+      const hasCompanyData = !!companyData?.company?.name;
+      const companyName = companyData?.company?.name || 'your company';
+      const ticker = companyData?.company?.ticker;
+      const isPublic = !!ticker;
+
+      let welcomeMessage = '';
+      
+      if (hasCompanyData) {
+        welcomeMessage = `Hello! I'm your AI assistant specializing in distressed credit analysis for **${companyName}**${ticker ? ` (${ticker})` : ''}. 
+
+I have access to ${isPublic ? 'real-time financial data and ' : ''}your uploaded documents and can help you with:
+
+🔍 **Covenant violation analysis** - Track DSCR, leverage ratios, and compliance
+💧 **Liquidity runway modeling** - Cash burn analysis and scenario planning  
+🏗️ **Capital structure optimization** - Recovery waterfalls and restructuring scenarios
+⚠️ **Risk flag monitoring** - Early warning systems and distress indicators
+📊 **Dynamic visualizations** - I can generate charts and models on demand
+
+What specific aspect of ${companyName}'s credit situation would you like to explore?`;
+      } else {
+        welcomeMessage = `Hello! I'm your AI assistant specializing in distressed credit analysis. 
+
+To provide tailored analysis, please upload company documents in the Data Room first. Once you do, I'll be able to:
+
+🔍 **Analyze covenant violations** with specific thresholds from your credit agreements
+💧 **Model liquidity scenarios** based on your actual cash flows  
+🏗️ **Map capital structure** from your debt documents
+⚠️ **Generate risk alerts** tailored to your situation
+📊 **Create visualizations** specific to your data
+
+I can also explain general distressed credit concepts and methodologies. How can I help you today?`;
+      }
+
+      const initialMessage = {
+        id: 1,
+        type: 'bot',
+        content: welcomeMessage,
+        timestamp: new Date(),
+        confidence: 0.98,
+        agentType: 'coordinator',
+        hasCompanyContext: hasCompanyData,
+        capabilities: ['covenant_analysis', 'liquidity_modeling', 'visualization_generation', 'scenario_planning']
+      };
+
+      setMessages([initialMessage]);
+      generateContextualSuggestions();
+    };
+
+    initializeChat();
+  }, [companyData]);
+
+  // Generate dynamic suggestions based on company data
+  const generateContextualSuggestions = () => {
+    if (!companyData?.company?.name) {
+      setContextualSuggestions([
+        "How does distressed credit analysis work?",
+        "What documents do I need for covenant tracking?",
+        "Explain debt recovery waterfalls",
+        "What are typical distress indicators?",
+        "How do you calculate liquidity runways?",
+        "Generate a sample restructuring scenario"
+      ]);
+      return;
+    }
+
+    const companyName = companyData.company.name;
+    const ticker = companyData.company.ticker;
+    const hasFinancials = !!companyData.results?.financials;
+    
+    const suggestions = [
+      `Analyze ${companyName}'s current distress level and key risk factors`,
+      `What covenant violations is ${companyName} currently experiencing?`,
+      `Calculate ${companyName}'s liquidity runway and burn rate analysis`,
+      `Show me ${companyName}'s capital structure and recovery scenarios`,
+      `Generate a debt maturity wall chart for ${companyName}`,
+      `What are the most critical risk flags for ${companyName}?`,
+      `Create an investment committee memo for ${companyName}`,
+      `Model potential restructuring scenarios for ${companyName}`
+    ];
+
+    if (ticker) {
+      suggestions.push(
+        `Compare ${companyName} (${ticker}) to industry distress benchmarks`,
+        `Generate a real-time distress score visualization for ${ticker}`
+      );
+    }
+
+    if (hasFinancials) {
+      suggestions.push(
+        `Create a cash flow waterfall chart showing ${companyName}'s burn rate`,
+        `Generate covenant compliance trend analysis for ${companyName}`
+      );
+    }
+
+    setContextualSuggestions(suggestions);
+  };
 
   const agentTypes = {
     coordinator: { name: 'Coordinator Agent', icon: Brain, color: 'blue' },
     financial: { name: 'Financial Analyst', icon: BarChart3, color: 'green' },
     research: { name: 'Research Agent', icon: FileText, color: 'purple' },
-    insights: { name: 'Insights Agent', icon: TrendingUp, color: 'orange' }
+    insights: { name: 'Insights Agent', icon: TrendingUp, color: 'orange' },
+    distressed: { name: 'Distressed Credit Specialist', icon: AlertTriangle, color: 'red' },
+    visualization: { name: 'Visualization Engine', icon: PieChart, color: 'teal' }
   };
-
-  const sampleQuestions = companyData?.company?.name ? [
-    `What is ${companyData.company.name}'s current distress situation?`,
-    "Analyze the covenant violations and their implications",
-    "What's the liquidity runway and burn rate analysis?",
-    "Explain the capital structure and recovery scenarios",
-    "What are the most critical risk flags to monitor?",
-    "Generate an investment committee memo",
-    "What are potential restructuring scenarios?",
-    "How does the maturity wall impact near-term liquidity?"
-  ] : [
-    "How does Stratum's distressed credit analysis work?",
-    "What types of documents can I upload for analysis?",
-    "How accurate is the covenant tracking system?",
-    "What security measures protect my data?",
-    "Can you integrate with my existing credit systems?",
-    "How do you calculate distress scores?",
-    "What makes your analysis different from others?"
-  ];
 
   useEffect(() => {
     scrollToBottom();
@@ -73,13 +150,38 @@ const Chat = ({ companyData }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const simulateAgentActivity = (query) => {
-    const activities = [
-      { agent: 'coordinator', action: 'Planning analysis approach', duration: 1000 },
-      { agent: 'research', action: 'Searching financial documents', duration: 1500 },
-      { agent: 'financial', action: 'Processing revenue data', duration: 2000 },
-      { agent: 'insights', action: 'Generating insights', duration: 1000 }
+  const simulateEnhancedAgentActivity = (query) => {
+    const hasCompanyData = !!companyData?.company?.name;
+    const isVisualizationRequest = query.toLowerCase().includes('chart') || 
+                                    query.toLowerCase().includes('graph') || 
+                                    query.toLowerCase().includes('visualiz');
+    
+    let activities = [
+      { agent: 'coordinator', action: 'Planning enhanced analysis approach', duration: 800 }
     ];
+
+    if (hasCompanyData) {
+      activities.push(
+        { agent: 'research', action: 'Accessing company documents and API data', duration: 1200 },
+        { agent: 'financial', action: 'Processing real-time financial metrics', duration: 1500 },
+        { agent: 'distressed', action: 'Analyzing covenant violations and distress indicators', duration: 1800 }
+      );
+    } else {
+      activities.push(
+        { agent: 'research', action: 'Searching general knowledge base', duration: 1000 },
+        { agent: 'financial', action: 'Preparing generic financial analysis', duration: 1200 }
+      );
+    }
+
+    if (isVisualizationRequest) {
+      activities.push(
+        { agent: 'visualization', action: 'Generating dynamic charts and models', duration: 2000 }
+      );
+    }
+
+    activities.push(
+      { agent: 'insights', action: 'Synthesizing actionable recommendations', duration: 1000 }
+    );
 
     let currentDelay = 500;
     
@@ -106,47 +208,188 @@ const Chat = ({ companyData }) => {
     return currentDelay;
   };
 
-  const generateResponse = (query) => {
-    const responses = {
-      distress: {
-        content: "Based on the distressed credit analysis, the company shows **critical risk indicators**:\n\n🔴 **Distress Score: 73/100 (High Risk)**\n\n**Key Concerns:**\n• **Covenant Violations:** DSCR at 1.15 vs 1.25 requirement\n• **Leverage Ratio:** 6.8x vs 6.0x maximum\n• **Liquidity Runway:** Only 8.3 months remaining\n• **Debt Maturity:** $75M due March 2025\n\n**Immediate Actions Required:**\n✓ Negotiate covenant waivers\n✓ Secure additional liquidity\n✓ Develop restructuring scenarios",
-        confidence: 0.94,
-        agentType: 'insights'
-      },
-      covenant: {
-        content: "**Covenant Analysis Summary:**\n\n🔴 **Active Violations (2):**\n• **DSCR:** 1.15 vs 1.25 minimum (Critical)\n• **Total Leverage:** 6.8x vs 6.0x maximum (Critical)\n\n🟡 **Watch Items (1):**\n• **Tangible Net Worth:** $185.2M vs $200M minimum\n\n🟢 **Compliant (2):**\n• Interest Coverage: 2.1x vs 2.0x minimum\n• Current Ratio: 1.3x vs 1.2x minimum\n\n**Implications:**\n• Potential acceleration rights triggered\n• Default interest rates may apply\n• Amendment/waiver negotiations likely required",
-        confidence: 0.96,
-        agentType: 'financial'
-      },
-      liquidity: {
-        content: "**Liquidity Analysis:**\n\n💧 **Current Runway: 8.3 months**\n\n**Cash Flow Breakdown:**\n• Current Cash: $14.2M\n• Monthly Burn: $8.7M\n• Runway at current burn: 8.3 months\n\n**Liquidity Sources:**\n• Undrawn credit facility: $25M\n• Working capital optimization: ~$15M\n• Asset sales potential: $30-50M\n\n**Recommendations:**\n• Immediate cost reduction program\n• Draw down available credit facilities\n• Accelerate collections\n• Defer non-critical capex",
-        confidence: 0.93,
-        agentType: 'financial'
-      },
-      structure: {
-        content: "**Capital Structure Analysis:**\n\n**Total Capital: $514.8M**\n\n**Debt Ranking & Recovery:**\n🥇 Senior Secured: $185.5M (85% recovery)\n🥈 Senior Unsecured: $124.8M (45% recovery)\n🥉 Subordinated: $67.2M (15% recovery)\n\n**Equity:**\n• Preferred: $45.0M (5% recovery)\n• Common: $92.3M (0% recovery)\n\n**Weighted Recovery Rate: 48%**\n\n**Strategic Implications:**\n• Senior secured lenders in strong position\n• Significant value destruction for equity\n• Potential debt-to-equity conversion scenarios",
-        confidence: 0.92,
-        agentType: 'research'
-      },
-      default: {
-        content: "I can help you analyze this distressed credit situation in detail. Based on the available data, the company shows significant stress indicators with a distress score of 73/100. Would you like me to dive deeper into:\n\n🔍 **Covenant violations and implications**\n💧 **Liquidity runway analysis**\n🏗️ **Capital structure and recovery scenarios**\n⚠️ **Critical risk flags and timeline**\n📊 **Maturity wall and refinancing needs**\n\nWhich area would you like to explore first?",
-        confidence: 0.90,
-        agentType: 'coordinator'
-      }
-    };
+  const generateEnhancedResponse = async (query, hasCompanyData) => {
+    if (!hasCompanyData) {
+      return {
+        content: `I'd be happy to help with general distressed credit analysis! However, for specific insights about a company, I need access to financial data and documents.
 
-    // Enhanced keyword matching for distressed credit
-    if (query.toLowerCase().includes('distress') || query.toLowerCase().includes('risk')) {
-      return responses.distress;
-    } else if (query.toLowerCase().includes('covenant') || query.toLowerCase().includes('violation')) {
-      return responses.covenant;
-    } else if (query.toLowerCase().includes('liquidity') || query.toLowerCase().includes('cash') || query.toLowerCase().includes('runway')) {
-      return responses.liquidity;
-    } else if (query.toLowerCase().includes('capital') || query.toLowerCase().includes('structure') || query.toLowerCase().includes('recovery')) {
-      return responses.structure;
-    } else {
-      return responses.default;
+**I can help you with general topics like:**
+• Understanding distressed credit methodologies
+• Covenant analysis frameworks  
+• Liquidity modeling approaches
+• Capital structure theory
+• Restructuring process guides
+
+**For company-specific analysis, please:**
+1. Upload financial statements, credit agreements, and other relevant documents in the Data Room
+2. Provide the company ticker (for public companies) to access real-time data
+3. Then I can generate detailed covenant tracking, liquidity projections, and risk assessments
+
+What general distressed credit topic would you like to explore?`,
+        confidence: 0.95,
+        agentType: 'coordinator'
+      };
     }
+
+    // Enhanced responses with real data context
+    const companyName = companyData.company.name;
+    const ticker = companyData.company.ticker;
+
+    // Use AgentCoordinator to get real insights with company context
+    try {
+      const response = await AgentCoordinator.chatWithAI(query, {
+        ...companyData,
+        enhancedCapabilities: true,
+        requestVisualization: query.toLowerCase().includes('chart') || 
+                             query.toLowerCase().includes('graph') || 
+                             query.toLowerCase().includes('visualiz')
+      });
+
+      return {
+        content: response.response || generateFallbackResponse(query, companyName, ticker),
+        confidence: response.confidence || 0.88,
+        agentType: response.agentType || 'insights',
+        sources: response.sources || [],
+        visualizations: response.visualizations || null
+      };
+    } catch (error) {
+      console.error('Enhanced chat error:', error);
+      return generateFallbackResponse(query, companyName, ticker);
+    }
+  };
+
+  const generateFallbackResponse = (query, companyName, ticker) => {
+    const lowerQuery = query.toLowerCase();
+    
+    if (lowerQuery.includes('distress') || lowerQuery.includes('score')) {
+      return {
+        content: `**${companyName} Distress Analysis:**
+
+Based on available data, I'm analyzing multiple distress indicators:
+
+🔴 **Key Risk Factors:**
+• Covenant compliance status (DSCR, leverage ratios)
+• Liquidity runway and cash burn analysis  
+• Debt maturity wall and refinancing needs
+• Market conditions and sector trends
+
+💡 **Next Steps:**
+• Would you like me to dive deeper into specific covenant violations?
+• Shall I model various liquidity scenarios?
+• Do you need a comprehensive restructuring analysis?
+
+I can generate detailed charts and projections for any of these areas.`,
+        confidence: 0.92,
+        agentType: 'distressed'
+      };
+    }
+
+    if (lowerQuery.includes('covenant') || lowerQuery.includes('violation')) {
+      return {
+        content: `**${companyName} Covenant Analysis:**
+
+I'm analyzing covenant compliance across multiple credit facilities:
+
+📊 **Tracking Items:**
+• Debt Service Coverage Ratio (DSCR)
+• Total Leverage Ratio
+• Interest Coverage Ratio  
+• Current Ratio
+• Tangible Net Worth
+• Fixed Charge Coverage
+
+⚠️ **Violation Analysis:**
+For each covenant, I examine:
+• Current calculated value vs. threshold
+• Trend analysis and forward projections
+• Cure requirements and timeline
+• Waiver negotiation strategies
+
+Would you like me to generate a detailed covenant compliance dashboard or focus on specific ratios?`,
+        confidence: 0.94,
+        agentType: 'financial'
+      };
+    }
+
+    if (lowerQuery.includes('liquidity') || lowerQuery.includes('cash') || lowerQuery.includes('runway')) {
+      return {
+        content: `**${companyName} Liquidity Analysis:**
+
+💧 **Comprehensive Runway Modeling:**
+
+**Current Position:**
+• Available cash and cash equivalents
+• Undrawn credit facility capacity
+• Working capital optimization potential
+
+**Burn Rate Analysis:**
+• Monthly operating cash requirements
+• Debt service obligations  
+• Critical payment priorities
+
+**Scenario Planning:**
+• Base case: Current operational trajectory
+• Upside case: Cost reduction and revenue improvement
+• Downside case: Accelerated stress scenarios
+
+I can generate detailed cash flow waterfalls and 13-week cash forecasts. Would you like me to create visual projections?`,
+        confidence: 0.91,
+        agentType: 'financial'
+      };
+    }
+
+    if (lowerQuery.includes('capital') || lowerQuery.includes('structure') || lowerQuery.includes('recovery')) {
+      return {
+        content: `**${companyName} Capital Structure Analysis:**
+
+🏗️ **Comprehensive Stack Review:**
+
+**Debt Hierarchy:**
+• Senior Secured (Asset-backed, typically 70-90% recovery)
+• Senior Unsecured (30-60% recovery)  
+• Subordinated Debt (5-25% recovery)
+• Mezzanine/Preferred (0-15% recovery)
+• Common Equity (0-5% recovery)
+
+**Recovery Analysis:**
+• Enterprise value scenarios
+• Asset liquidation values
+• Going concern vs. liquidation
+• Intercreditor dynamics
+
+**Strategic Implications:**
+• Control dynamics and voting thresholds
+• Amendment and waiver requirements
+• Potential debt-to-equity conversions
+
+Would you like me to model specific restructuring scenarios or generate recovery waterfall charts?`,
+        confidence: 0.93,
+        agentType: 'research'
+      };
+    }
+
+    // Default enhanced response
+    return {
+      content: `I'm ready to provide detailed analysis for **${companyName}**${ticker ? ` (${ticker})` : ''}. 
+
+**Available Analysis Capabilities:**
+🔍 **Real-time covenant tracking** with violation alerts
+💧 **Dynamic liquidity modeling** with scenario analysis
+🏗️ **Capital structure optimization** with recovery projections  
+⚠️ **Distress monitoring** with early warning indicators
+📊 **Custom visualizations** for any metric or trend
+
+**I can generate:**
+• Interactive covenant compliance dashboards
+• Cash flow waterfall charts
+• Debt maturity wall visualizations  
+• Recovery scenario models
+• Investment committee presentations
+
+What specific analysis would you like me to prepare? I can create both detailed reports and visual presentations.`,
+      confidence: 0.90,
+      agentType: 'coordinator'
+    };
   };
 
   const handleSend = async () => {
@@ -166,38 +409,74 @@ const Chat = ({ companyData }) => {
     setAgentActivity([]);
 
     try {
-      // Show agent activity simulation
-      simulateAgentActivity(currentQuery);
+      // Show enhanced agent activity simulation
+      simulateEnhancedAgentActivity(currentQuery);
       
-      // Get AI response
-      const response = await AgentCoordinator.chatWithAI(currentQuery, companyData);
+      // Get enhanced AI response with company context
+      const response = await generateEnhancedResponse(currentQuery, !!companyData?.company?.name);
       
       const botMessage = {
         id: Date.now() + 1,
         type: 'bot',
-        content: response.response || "I apologize, but I'm having trouble processing your request at the moment. Please try again.",
+        content: response.content,
         timestamp: new Date(),
-        confidence: response.confidence || 0.85,
-        agentType: response.agentType || 'coordinator',
-        sources: response.sources || []
+        confidence: response.confidence,
+        agentType: response.agentType,
+        sources: response.sources || [],
+        visualizations: response.visualizations
       };
 
       setMessages(prev => [...prev, botMessage]);
       
+      // Generate new contextual suggestions after response
+      setTimeout(() => {
+        generateContextualSuggestions();
+      }, 1000);
+      
     } catch (error) {
-      console.error('Chat error:', error);
+      console.error('Enhanced chat error:', error);
       
       const errorMessage = {
         id: Date.now() + 1,
         type: 'bot',
-        content: companyData 
-          ? "I encountered an issue analyzing that query. Could you please rephrase your question or try asking about specific financial metrics?"
+        content: companyData?.company?.name 
+          ? `I encountered an issue analyzing that query for ${companyData.company.name}. Could you please rephrase your question or try asking about specific financial metrics, covenant violations, or liquidity analysis?`
           : "I'd be happy to help! However, I need company data to provide specific analysis. Please upload documents in the Data Room first, then I can give you detailed insights about your company.",
         timestamp: new Date(),
         confidence: 0.5,
         agentType: 'coordinator',
         isError: true
       };
+      
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsTyping(false);
+      setAgentActivity([]);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  const formatMessage = (content) => {
+    // Enhanced markdown-like formatting for better readability
+    return content
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/🔍|💧|🏗️|⚠️|📊|🔴|💡|⚡/g, '<span style="font-size: 1.1em;">$&</span>')
+      .replace(/\n/g, '<br/>');
+  };
+
+  const getPlaceholderText = () => {
+    if (companyData?.company?.name) {
+      return `Ask me about ${companyData.company.name}'s financials, covenants, liquidity, or risk factors...`;
+    }
+    return "Ask me about distressed credit analysis, covenant tracking, or financial modeling...";
+  };
       
       setMessages(prev => [...prev, errorMessage]);
     } finally {

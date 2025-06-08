@@ -58,8 +58,7 @@ const Dashboard = ({ companyData }) => {
       console.log(`[Dashboard] Refreshing data for ${companyData.company.ticker}`);
       
       // Trigger a fresh data fetch through the AgentCoordinator
-      const coordinator = new AgentCoordinator();
-      await coordinator.orchestrateDataFetch(companyData.company.ticker, ['all']);
+      await AgentCoordinator.orchestrateDataFetch(companyData.company.ticker, ['all']);
       
       setLastRefresh(new Date());
       console.log('[Dashboard] Data refresh completed');

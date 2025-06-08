@@ -676,8 +676,8 @@ const CompanyOverview = ({ companyData }) => {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-gray-600">Financials:</span>
-                    <span className={Object.values(metrics).some(m => m.confidence > 70) ? 'text-green-600' : 'text-red-600'}>
-                      {Math.round(Object.values(metrics).reduce((sum, m) => sum + m.confidence, 0) / Object.keys(metrics).length)}%
+                    <span className={Object.values(metrics).some(m => (m.confidence || 0) > 70) ? 'text-green-600' : 'text-red-600'}>
+                      {Math.round(Object.values(metrics).reduce((sum, m) => sum + (typeof m.confidence === 'number' ? m.confidence : 0), 0) / Math.max(Object.keys(metrics).length, 1))}%
                     </span>
                   </div>
                 </div>

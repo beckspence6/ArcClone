@@ -209,64 +209,90 @@ const Reports = ({ companyData }) => {
   };
 
   const exportToPDF = async () => {
-    setGeneratingReport(true);
     try {
-      toast.success('Generating PDF report...');
+      setGeneratingReport(true);
       
-      // Create PDF
+      const companyName = generateCompanyContent().companyName;
+      const fileName = `${companyName.replace(/\s+/g, '_')}_Investment_Analysis_${new Date().toISOString().split('T')[0]}.pdf`;
+      
+      // Create PDF with enhanced content
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       
-      // Title Page
-      pdf.setFontSize(24);
-      pdf.text(companyData?.company?.name || 'Investment Report', pageWidth / 2, 30, { align: 'center' });
+      // Add header
+      pdf.setFontSize(20);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Investment Analysis Report', pageWidth / 2, 25, { align: 'center' });
       
-      pdf.setFontSize(18);
-      pdf.text('Investment Analysis Report', pageWidth / 2, 45, { align: 'center' });
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(companyName, pageWidth / 2, 35, { align: 'center' });
       
       pdf.setFontSize(12);
-      pdf.text(`Generated on ${new Date().toLocaleDateString()}`, pageWidth / 2, 60, { align: 'center' });
-      pdf.text('Powered by Stratum AI', pageWidth / 2, 70, { align: 'center' });
+      pdf.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth / 2, 45, { align: 'center' });
       
-      // Executive Summary
-      pdf.addPage();
-      pdf.setFontSize(16);
-      pdf.text('Executive Summary', 20, 30);
+      // Add executive summary
+      const { executiveSummary } = generateCompanyContent();
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Executive Summary', 20, 65);
       
       pdf.setFontSize(11);
-      const summaryText = reportData?.executiveSummary || 
-        `${companyData?.company?.name || 'The company'} presents a compelling investment opportunity with strong financial fundamentals and growth potential. Our AI analysis indicates positive indicators across key metrics including revenue growth, profitability, and market position.`;
+      pdf.setFont('helvetica', 'normal');
+      const splitSummary = pdf.splitTextToSize(executiveSummary, pageWidth - 40);
+      pdf.text(splitSummary, 20, 75);
       
-      const splitSummary = pdf.splitTextToSize(summaryText, pageWidth - 40);
-      pdf.text(splitSummary, 20, 45);
+      // Add financial metrics section
+      let yPosition = 75 + (splitSummary.length * 5) + 20;
       
-      // Financial Metrics
-      if (companyData?.financials) {
+      if (yPosition > pageHeight - 50) {
         pdf.addPage();
-        pdf.setFontSize(16);
-        pdf.text('Key Financial Metrics', 20, 30);
-        
-        pdf.setFontSize(11);
-        let yPos = 50;
-        
-        Object.entries(companyData.financials).forEach(([key, value]) => {
-          if (yPos > pageHeight - 30) {
-            pdf.addPage();
-            yPos = 30;
-          }
-          pdf.text(`${key}: ${value}`, 20, yPos);
-          yPos += 10;
-        });
+        yPosition = 25;
       }
       
-      // Save PDF
-      pdf.save(`${companyData?.company?.name || 'Company'}_Investment_Report.pdf`);
-      toast.success('PDF report generated successfully!');
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Key Financial Metrics', 20, yPosition);
+      yPosition += 15;
       
+      const content = generateCompanyContent();
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'normal');
+      
+      const metrics = [
+        `Revenue: ${content.revenue}`,
+        `Gross Margin: ${content.grossMargin}`,
+        `Total Debt: ${content.totalDebt}`,
+        `Cash Position: ${content.cash}`
+      ];
+      
+      metrics.forEach(metric => {
+        if (yPosition > pageHeight - 20) {
+          pdf.addPage();
+          yPosition = 25;
+        }
+        pdf.text(`• ${metric}`, 25, yPosition);
+        yPosition += 8;
+      });
+      
+      // Add footer
+      const totalPages = pdf.internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+        pdf.text('Confidential - Investment Analysis', 20, pageHeight - 10);
+      }
+      
+      // Save the PDF
+      pdf.save(fileName);
+      
+      toast.success(`PDF report exported successfully: ${fileName}`);
     } catch (error) {
       console.error('PDF generation error:', error);
-      toast.error('Failed to generate PDF');
+      toast.error('Failed to export PDF. Please try again.');
     } finally {
       setGeneratingReport(false);
     }

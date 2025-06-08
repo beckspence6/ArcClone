@@ -104,7 +104,6 @@ const NewOnboardingFlow = ({ onComplete }) => {
   const steps = [
     { id: 'welcome', title: 'Welcome to Stratum' },
     { id: 'account', title: 'Create Your Account' },
-    { id: 'company', title: 'Select Target Company' },
     { id: 'preferences', title: 'Quick Setup' }
   ];
 

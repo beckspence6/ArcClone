@@ -16,9 +16,11 @@ import {
   DollarSign,
   FileCheck,
   Tag,
-  Folder
+  Folder,
+  Search
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import FMPService from '../services/FMPService';
 
 const AddNewCompany = ({ onComplete, onCancel }) => {
   const [currentStep, setCurrentStep] = useState(0);

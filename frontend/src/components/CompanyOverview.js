@@ -763,7 +763,7 @@ const CompanyOverview = ({ companyData }) => {
                         <AlertTriangle className="w-5 h-5 text-yellow-500" />
                       )}
                       <span className="text-sm text-gray-600">
-                        Confidence: {selectedMetric.confidence}%
+                        Confidence: {typeof selectedMetric.confidence === 'number' ? selectedMetric.confidence : 0}%
                       </span>
                     </div>
                     {selectedMetric.confidence === 0 && (

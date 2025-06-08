@@ -65,46 +65,63 @@ class AgentCoordinator {
     if (dataTypes.includes('all') || dataTypes.includes('sec')) {
       console.log(`[AgentCoordinator] Fetching comprehensive SEC data for ${symbol}`);
       try {
-        companyData.secData = await SecApiService.getComprehensiveData(symbol);
+        companyData.secData = await SecApiService.getComprehensiveSecData(symbol);
         if (companyData.secData && companyData.secData.success) {
           console.log(`[AgentCoordinator] SEC data successfully retrieved for ${symbol}`);
           
-          // Use SEC data as primary source where available
-          if (companyData.secData.financials) {
-            companyData.financialStatements = this.formatSECFinancials(companyData.secData.financials);
+          // Process SEC company data
+          if (companyData.secData.data.company) {
+            companyData.profile = this.formatSECProfile(companyData.secData.data.company);
+            companyData.sourceAttribution.profile = {
+              source: 'SEC',
+              endpoint: 'EDGAR Entities & Mapping APIs',
+              confidence: 98,
+              url: companyData.secData.data.company.entityDetails?.website
+            };
+          }
+          
+          // Process SEC financial data from XBRL
+          if (companyData.secData.data.financials) {
+            companyData.financialStatements = this.formatSECFinancials(companyData.secData.data.financials);
             companyData.sourceAttribution.financialStatements = {
               source: 'SEC',
               endpoint: 'XBRL-to-JSON',
               confidence: 99,
-              url: companyData.secData.financials.sourceUrl
+              url: `https://www.sec.gov/Archives/edgar/data/${companyData.secData.data.company?.cik || 'unknown'}`
             };
           }
           
-          if (companyData.secData.profile) {
-            companyData.profile = this.formatSECProfile(companyData.secData.profile);
-            companyData.sourceAttribution.profile = {
+          // Process SEC covenant analysis
+          if (companyData.secData.data.covenants) {
+            companyData.covenants = companyData.secData.data.covenants.analysis;
+            companyData.sourceAttribution.covenants = {
               source: 'SEC',
-              endpoint: '10-K Extractor',
-              confidence: 97,
-              url: companyData.secData.profile.sourceUrl
+              endpoint: 'AI-Enhanced Filing Analysis',
+              confidence: companyData.secData.data.covenants.confidence || 85,
+              analysisType: 'covenant',
+              url: companyData.secData.data.covenants.filing_url
             };
           }
           
-          if (companyData.secData.executives) {
-            companyData.executives = companyData.secData.executives.executives;
-            companyData.sourceAttribution.executives = {
-              source: 'SEC',
-              endpoint: 'Executive Compensation',
-              confidence: 96
-            };
-          }
-          
-          if (companyData.secData.subsidiaries) {
-            companyData.subsidiaries = companyData.secData.subsidiaries.subsidiaries;
+          // Process SEC subsidiary structure
+          if (companyData.secData.data.subsidiaries) {
+            companyData.subsidiaries = companyData.secData.data.subsidiaries.analysis;
             companyData.sourceAttribution.subsidiaries = {
               source: 'SEC',
-              endpoint: 'Company Subsidiaries',
-              confidence: 98
+              endpoint: 'AI-Enhanced Subsidiary Mapping',
+              confidence: companyData.secData.data.subsidiaries.confidence || 82,
+              analysisType: 'subsidiary'
+            };
+          }
+          
+          // Process SEC debt structure
+          if (companyData.secData.data.debtStructure) {
+            companyData.debtStructure = companyData.secData.data.debtStructure.analysis;
+            companyData.sourceAttribution.debtStructure = {
+              source: 'SEC',
+              endpoint: 'AI-Enhanced Debt Structure Analysis',
+              confidence: companyData.secData.data.debtStructure.confidence || 88,
+              analysisType: 'debt_structure'
             };
           }
         }

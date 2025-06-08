@@ -333,25 +333,34 @@ const CompanyOverview = ({ companyData }) => {
     return metrics;
   };
 
-  // Generate historical revenue data from API
+  // Enhanced revenue chart data with confidence-based display
   const generateRevenueData = () => {
     const hasApiData = comprehensiveData && !comprehensiveData.error;
     const financials = comprehensiveData?.financialStatements;
 
     if (!hasApiData || !financials?.income || !Array.isArray(financials.income) || financials.income.length === 0) {
-      return []; // Return empty array instead of mock data
+      // Return placeholder data that indicates data is pending rather than empty
+      return [
+        { period: 'Q1', revenue: 0, margin: 0, status: 'pending', confidence: 15 },
+        { period: 'Q2', revenue: 0, margin: 0, status: 'pending', confidence: 15 },
+        { period: 'Q3', revenue: 0, margin: 0, status: 'pending', confidence: 15 },
+        { period: 'Q4', revenue: 0, margin: 0, status: 'pending', confidence: 15 }
+      ];
     }
 
-    // Convert annual data to quarterly format for chart
+    // Convert annual data to quarterly format for chart with enhanced confidence scoring
     return financials.income.slice(0, 6).reverse().map((item, index) => {
       const revenue = item.revenue ? item.revenue / 1000000 : 0;
-      const grossProfit = item.grossProfit || (item.revenue - item.costOfRevenue) || 0;
-      const margin = item.revenue ? (grossProfit / item.revenue * 100) : 0;
+      const grossProfit = item.grossProfit || (item.revenue && item.costOfRevenue ? item.revenue - item.costOfRevenue : 0);
+      const margin = item.revenue && grossProfit ? (grossProfit / item.revenue * 100) : 0;
       
       return {
-        period: item.calendarYear || `Period ${index + 1}`,
+        period: item.calendarYear || item.date?.split('-')[0] || `Period ${index + 1}`,
         revenue: parseFloat(revenue.toFixed(1)),
-        margin: parseFloat(margin.toFixed(1))
+        margin: parseFloat(margin.toFixed(1)),
+        status: item.revenue ? 'complete' : 'partial',
+        confidence: item.revenue ? 95 : 30,
+        source: item.revenue ? 'FMP Income Statement' : 'Estimated'
       };
     });
   };

@@ -238,9 +238,6 @@ const CompanyOverview = ({ companyData }) => {
         confidence: grossMargin ? 94 : 35,
         priority: 'high'
       };
-        confidence: 94,
-        endpoint: comprehensiveData.sourceAttribution?.income?.endpoint || '/v3/income-statement/{symbol}'
-      };
     }
 
     if (hasApiData && financials?.balance?.[0]) {

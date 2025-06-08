@@ -1065,10 +1065,203 @@ class FinancialAnalystAgent {
     };
   }
 
-  parseNumber(value) {
-    if (!value) return 0;
-    if (typeof value === 'number') return value;
-    return parseFloat(value.toString().replace(/[$,M,K,%]/g, ''));
+  async extractTextFromDocument(doc) {
+    // Helper method to extract text from document files
+    if (doc.extractedText) {
+      return doc.extractedText;
+    }
+    
+    if (doc.file) {
+      try {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target.result);
+          reader.onerror = (e) => reject(new Error('Failed to read file'));
+          reader.readAsText(doc.file);
+        });
+      } catch (error) {
+        console.warn(`[FinancialAnalyst] Failed to extract text from ${doc.fileName}:`, error);
+        return '';
+      }
+    }
+    
+    return '';
+  }
+
+  performDistressedCreditAnalysis(financials, covenantData, subsidiaryStructure, companyData) {
+    // Enhanced distressed credit analysis leveraging all available data
+    const analysis = {
+      liquidityAnalysis: this.analyzeLiquidityPosition(financials, covenantData),
+      covenantCompliance: this.assessCovenantCompliance(covenantData, financials),
+      capitalStructure: this.analyzeCapitalStructure(financials, subsidiaryStructure),
+      maturityProfile: this.analyzeMaturityProfile(covenantData, financials),
+      recoveryScenarios: this.assessRecoveryScenarios(financials, subsidiaryStructure),
+      distressIndicators: this.identifyDistressIndicators(financials, covenantData),
+      overallDistressRating: 'Medium', // Will be calculated based on factors
+      lastUpdated: new Date()
+    };
+
+    // Calculate overall distress rating
+    analysis.overallDistressRating = this.calculateDistressRating(analysis);
+    
+    return analysis;
+  }
+
+  analyzeLiquidityPosition(financials, covenantData) {
+    const cash = this.parseNumber(financials.cash) || this.parseNumber(financials.cashAndEquivalents);
+    const currentAssets = this.parseNumber(financials.currentAssets);
+    const currentLiabilities = this.parseNumber(financials.currentLiabilities);
+    const operatingCashFlow = this.parseNumber(financials.operatingCashFlow);
+    const revenue = this.parseNumber(financials.revenue);
+    
+    // Calculate liquidity runway in months
+    let liquidityRunway = null;
+    if (cash && operatingCashFlow && operatingCashFlow < 0) {
+      liquidityRunway = Math.abs(cash / (operatingCashFlow / 12));
+    }
+
+    return {
+      cashPosition: cash || '[Data Unavailable]',
+      currentRatio: currentAssets && currentLiabilities ? (currentAssets / currentLiabilities).toFixed(2) : '[Data Unavailable]',
+      liquidityRunway: liquidityRunway ? `${liquidityRunway.toFixed(1)} months` : '[Requires Cash Flow Data]',
+      operatingCashFlow: operatingCashFlow || '[Data Unavailable]',
+      revolvingCreditAvailable: covenantData.revolvingCreditLimit ? 
+        `${covenantData.revolvingCreditLimit.value}` : '[Check Credit Agreements]',
+      assessment: this.assessLiquidityRisk({ cash, currentRatio: currentAssets/currentLiabilities, operatingCashFlow })
+    };
+  }
+
+  assessCovenantCompliance(covenantData, financials) {
+    const compliance = {
+      financialCovenants: [],
+      maintenanceTests: [],
+      complianceStatus: 'Unknown',
+      riskLevel: 'Medium'
+    };
+
+    // Analyze financial covenants from extracted data
+    Object.keys(covenantData).forEach(covenantKey => {
+      const covenant = covenantData[covenantKey];
+      if (covenant && typeof covenant === 'object' && covenant.value) {
+        compliance.financialCovenants.push({
+          covenantType: covenantKey,
+          requirement: covenant.value,
+          source: covenant.source,
+          confidence: covenant.confidence
+        });
+      }
+    });
+
+    // Determine overall compliance status
+    if (compliance.financialCovenants.length > 0) {
+      compliance.complianceStatus = 'Under Review';
+      compliance.riskLevel = 'Medium';
+    } else {
+      compliance.complianceStatus = 'Data Required';
+      compliance.riskLevel = 'Unknown';
+    }
+
+    return compliance;
+  }
+
+  analyzeCapitalStructure(financials, subsidiaryStructure) {
+    const totalDebt = this.parseNumber(financials.totalDebt);
+    const totalEquity = this.parseNumber(financials.totalEquity);
+    const totalAssets = this.parseNumber(financials.totalAssets);
+    
+    return {
+      totalDebt: totalDebt || '[Data Unavailable]',
+      totalEquity: totalEquity || '[Data Unavailable]',
+      debtToEquityRatio: totalDebt && totalEquity ? (totalDebt / totalEquity).toFixed(2) : '[Data Unavailable]',
+      debtToAssetsRatio: totalDebt && totalAssets ? ((totalDebt / totalAssets) * 100).toFixed(1) + '%' : '[Data Unavailable]',
+      subsidiaryCount: Object.keys(subsidiaryStructure).length,
+      structureComplexity: Object.keys(subsidiaryStructure).length > 5 ? 'High' : 
+                          Object.keys(subsidiaryStructure).length > 2 ? 'Medium' : 'Low'
+    };
+  }
+
+  analyzeMaturityProfile(covenantData, financials) {
+    // Analyze debt maturity from covenant data and financials
+    const maturityAnalysis = {
+      nearTermMaturities: [],
+      maturityWall: 'Data Required',
+      refinancingRisk: 'Medium',
+      averageMaturity: 'Unknown'
+    };
+
+    // Extract maturity information from covenant data
+    Object.keys(covenantData).forEach(key => {
+      if (key.toLowerCase().includes('maturity') || key.toLowerCase().includes('term')) {
+        const covenant = covenantData[key];
+        maturityAnalysis.nearTermMaturities.push({
+          description: key,
+          details: covenant.value || covenant,
+          source: covenant.source || 'Document Analysis'
+        });
+      }
+    });
+
+    return maturityAnalysis;
+  }
+
+  assessRecoveryScenarios(financials, subsidiaryStructure) {
+    const totalAssets = this.parseNumber(financials.totalAssets);
+    const totalDebt = this.parseNumber(financials.totalDebt);
+    
+    return {
+      assetCoverage: totalAssets && totalDebt ? ((totalAssets / totalDebt) * 100).toFixed(0) + '%' : '[Data Unavailable]',
+      liquidationValue: totalAssets ? `Est. ${(totalAssets * 0.6).toFixed(0)}M` : '[Asset Data Required]',
+      structuralSubordination: Object.keys(subsidiaryStructure).length > 0 ? 'Present' : 'Unknown',
+      recoveryEstimate: totalAssets && totalDebt && totalAssets > totalDebt ? 
+        'Potential Full Recovery' : 'Partial Recovery Likely'
+    };
+  }
+
+  identifyDistressIndicators(financials, covenantData) {
+    const indicators = [];
+    
+    // Financial indicators
+    const profitMargin = this.parseNumber(financials.profitMargin);
+    const operatingCashFlow = this.parseNumber(financials.operatingCashFlow);
+    const currentRatio = this.parseNumber(financials.currentRatio);
+    const debtToEquity = this.parseNumber(financials.debtToEquity);
+    
+    if (profitMargin < 0) indicators.push('Negative Profitability');
+    if (operatingCashFlow < 0) indicators.push('Negative Operating Cash Flow');
+    if (currentRatio < 1.0) indicators.push('Liquidity Constraints');
+    if (debtToEquity > 2.0) indicators.push('High Leverage');
+    
+    // Covenant indicators
+    if (Object.keys(covenantData).length > 0) {
+      indicators.push('Active Financial Covenants');
+    }
+    
+    return {
+      indicators: indicators,
+      riskLevel: indicators.length >= 3 ? 'High' : indicators.length >= 1 ? 'Medium' : 'Low',
+      count: indicators.length
+    };
+  }
+
+  calculateDistressRating(analysis) {
+    let riskScore = 0;
+    
+    // Liquidity risk
+    if (analysis.liquidityAnalysis.assessment === 'High') riskScore += 3;
+    else if (analysis.liquidityAnalysis.assessment === 'Medium') riskScore += 2;
+    else riskScore += 1;
+    
+    // Distress indicators
+    riskScore += analysis.distressIndicators.count;
+    
+    // Covenant compliance
+    if (analysis.covenantCompliance.riskLevel === 'High') riskScore += 2;
+    else if (analysis.covenantCompliance.riskLevel === 'Medium') riskScore += 1;
+    
+    // Determine overall rating
+    if (riskScore >= 6) return 'High';
+    if (riskScore >= 3) return 'Medium';
+    return 'Low';
   }
 
   async analyzeTrends(data) {

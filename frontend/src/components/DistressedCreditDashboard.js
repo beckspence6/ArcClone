@@ -460,34 +460,206 @@ ${documents.length > 0 ?
     return covenants;
   };
 
-  // Generate liquidity analysis
+  // Enhanced liquidity analysis with detailed cash flow breakdowns
   const generateLiquidityAnalysis = () => {
     const hasApiData = comprehensiveData && !comprehensiveData.error;
     const financials = comprehensiveData?.financialStatements;
+    const companyName = companyData?.company?.name || 'the company';
 
     if (!hasApiData || !financials?.cashFlow) {
-      return [];
+      return {
+        runway: [],
+        cashFlowBreakdown: null,
+        liquidityPosition: null,
+        scenarios: [],
+        detailedAnalysis: `**Enhanced Liquidity Analysis Unavailable**
+
+To provide comprehensive liquidity runway modeling for ${companyName}, we need:
+• Historical cash flow statements (operating, investing, financing)
+• Current balance sheet with cash and working capital details
+• Debt maturity schedules and payment obligations
+• Seasonal cash flow patterns and working capital needs
+
+**Upload Requirements:**
+📊 Recent financial statements (quarterly preferred)
+💰 Credit facility documentation with draw/availability details
+📋 Cash management policies and concentration banking arrangements`,
+        guidance: 'Upload recent financial statements and cash management documentation for detailed liquidity analysis.'
+      };
     }
 
-    // Use historical cash flow data to project runway
-    const cashFlowData = financials.cashFlow.slice(0, 4); // Last 4 quarters/years
-    const balanceData = financials.balance.slice(0, 4);
+    // Enhanced historical cash flow analysis
+    const cashFlowData = financials.cashFlow.slice(0, 8); // Last 8 periods for trend analysis
+    const balanceData = financials.balance.slice(0, 8);
+    const incomeData = financials.income.slice(0, 8);
 
-    return cashFlowData.map((cf, index) => {
+    const enhancedRunway = cashFlowData.map((cf, index) => {
       const balance = balanceData[index];
+      const income = incomeData[index];
+      
       const cash = balance?.cashAndCashEquivalents || 0;
       const operatingCF = cf?.operatingCashFlow || 0;
-      const quarterlyBurn = operatingCF < 0 ? Math.abs(operatingCF) / 4 : 0;
-      const runway = quarterlyBurn > 0 ? (cash / quarterlyBurn) : 0;
+      const investingCF = cf?.capitalExpenditure || cf?.cashAndCashEquivalentsChanges || 0;
+      const financingCF = cf?.debtRepayment || 0;
+      
+      // Calculate detailed cash flow components
+      const ebitda = income?.ebitda || 0;
+      const workingCapitalChange = (balance?.totalCurrentAssets - balance?.totalCurrentLiabilities) || 0;
+      const interestPaid = income?.interestExpense || 0;
+      const capex = Math.abs(cf?.capitalExpenditure || 0);
+      const debtService = Math.abs(financingCF) + interestPaid;
+      
+      // Net cash burn calculation
+      const netCashBurn = operatingCF - capex - debtService;
+      const monthlyBurn = netCashBurn < 0 ? Math.abs(netCashBurn) / 12 : 0;
+      const runway = monthlyBurn > 0 ? (cash / monthlyBurn) : 999; // 999 = indefinite
 
       return {
         period: cf.calendarYear || `Period ${index + 1}`,
-        cash: cash / 1000000, // Convert to millions
+        cash: cash / 1000000,
+        
+        // Detailed cash flow components
         operatingCashFlow: operatingCF / 1000000,
-        runway: runway,
-        source: 'FMP Cash Flow & Balance Sheet APIs'
+        ebitda: ebitda / 1000000,
+        workingCapitalChange: workingCapitalChange / 1000000,
+        capitalExpenditures: capex / 1000000,
+        interestPaid: interestPaid / 1000000,
+        debtService: debtService / 1000000,
+        
+        // Cash burn and runway metrics
+        netCashBurn: netCashBurn / 1000000,
+        monthlyBurn: monthlyBurn / 1000000,
+        runway: runway > 999 ? 'Positive' : `${runway.toFixed(1)} months`,
+        
+        // Efficiency metrics
+        cashConversion: ebitda ? ((operatingCF / ebitda) * 100).toFixed(0) + '%' : 'N/A',
+        burnRate: cash ? ((monthlyBurn / cash) * 100).toFixed(1) + '% per month' : 'N/A',
+        
+        source: 'FMP Comprehensive Financial APIs'
       };
     }).reverse(); // Most recent first
+
+    // Current liquidity position analysis
+    const latestBalance = balanceData[0];
+    const latestCashFlow = cashFlowData[0];
+    const currentCash = latestBalance?.cashAndCashEquivalents || 0;
+    const currentOperatingCF = latestCashFlow?.operatingCashFlow || 0;
+    const currentCapex = Math.abs(latestCashFlow?.capitalExpenditure || 0);
+    const currentDebtService = Math.abs(latestCashFlow?.debtRepayment || 0);
+    
+    const liquidityPosition = {
+      availableCash: currentCash / 1000000,
+      undrawnCredit: 50, // Estimate - would need credit facility docs
+      totalLiquidity: (currentCash / 1000000) + 50,
+      
+      monthlyOperatingCF: (currentOperatingCF / 1000000) / 12,
+      monthlyCapex: (currentCapex / 1000000) / 12,
+      monthlyDebtService: (currentDebtService / 1000000) / 12,
+      netMonthlyBurn: ((currentOperatingCF - currentCapex - currentDebtService) / 1000000) / 12,
+      
+      currentRunway: currentOperatingCF - currentCapex - currentDebtService > 0 ? 
+        'Cash Flow Positive' : 
+        `${((currentCash / 1000000) / Math.abs((currentOperatingCF - currentCapex - currentDebtService) / 1000000 / 12)).toFixed(1)} months`,
+      
+      liquidityGrade: currentCash / 1000000 > 50 ? 'Strong' : 
+                     currentCash / 1000000 > 25 ? 'Adequate' : 
+                     currentCash / 1000000 > 10 ? 'Tight' : 'Critical'
+    };
+
+    // Scenario analysis
+    const scenarios = [
+      {
+        name: 'Base Case',
+        description: 'Current operating performance maintained',
+        assumptions: 'No significant operational changes',
+        runway: liquidityPosition.currentRunway,
+        riskLevel: 'Medium',
+        probability: '60%'
+      },
+      {
+        name: 'Downside Case',
+        description: '20% reduction in operating cash flow',
+        assumptions: 'Economic downturn or competitive pressure',
+        runway: currentOperatingCF > 0 ? 
+          `${((currentCash / 1000000) / Math.abs((currentOperatingCF * 0.8 - currentCapex - currentDebtService) / 1000000 / 12)).toFixed(1)} months` :
+          'Immediate liquidity crisis',
+        riskLevel: 'High',
+        probability: '25%'
+      },
+      {
+        name: 'Upside Case', 
+        description: '15% improvement in operating efficiency',
+        assumptions: 'Successful cost reduction and revenue growth',
+        runway: currentOperatingCF > 0 ? 
+          'Extended runway / Cash flow positive' :
+          `${((currentCash / 1000000) / Math.abs((currentOperatingCF * 1.15 - currentCapex - currentDebtService) / 1000000 / 12)).toFixed(1)} months`,
+        riskLevel: 'Low',
+        probability: '15%'
+      }
+    ];
+
+    // Comprehensive analysis narrative
+    const detailedAnalysis = `**${companyName} - Comprehensive Liquidity Analysis**
+
+**Current Liquidity Position:**
+• Available Cash: $${liquidityPosition.availableCash.toFixed(1)}M
+• Estimated Credit Availability: $${liquidityPosition.undrawnCredit}M (estimated)
+• Total Liquidity: $${liquidityPosition.totalLiquidity.toFixed(1)}M
+• Liquidity Grade: **${liquidityPosition.liquidityGrade}**
+
+**Monthly Cash Flow Analysis:**
+• Operating Cash Flow: $${liquidityPosition.monthlyOperatingCF.toFixed(1)}M/month
+• Capital Expenditures: $${liquidityPosition.monthlyCapex.toFixed(1)}M/month  
+• Debt Service: $${liquidityPosition.monthlyDebtService.toFixed(1)}M/month
+• **Net Monthly Burn: $${liquidityPosition.netMonthlyBurn.toFixed(1)}M/month**
+
+**Runway Assessment:**
+• Current Trajectory: **${liquidityPosition.currentRunway}**
+• Critical Threshold: 6 months (industry standard)
+• Emergency Threshold: 3 months (immediate action required)
+
+**Key Liquidity Drivers:**
+${enhancedRunway.length >= 2 ? `
+• Operating CF Trend: ${enhancedRunway[0].operatingCashFlow > enhancedRunway[1].operatingCashFlow ? '📈 Improving' : '📉 Declining'}
+• Cash Conversion: ${enhancedRunway[0].cashConversion} (EBITDA to operating CF)
+• Working Capital Impact: ${enhancedRunway[0].workingCapitalChange >= 0 ? 'Source of cash' : 'Use of cash'}
+• Capital Intensity: ${((enhancedRunway[0].capitalExpenditures / enhancedRunway[0].operatingCashFlow) * 100).toFixed(0)}% of operating CF` :
+'• Historical trend analysis requires additional data'
+}
+
+**Strategic Recommendations:**
+${liquidityPosition.netMonthlyBurn < 0 ? `
+🔴 **Immediate Actions Required:**
+• Implement aggressive cost reduction program
+• Accelerate collections and extend payables
+• Evaluate asset monetization opportunities
+• Secure additional financing or investor capital
+• Consider restructuring debt service obligations` :
+`✅ **Liquidity Management Focus:**
+• Maintain disciplined cash flow management
+• Optimize working capital efficiency
+• Monitor seasonal cash flow patterns
+• Ensure adequate covenant compliance cushion`
+}
+
+**Document Enhancement Needed:**
+📋 Upload credit facility agreements to verify available capacity
+💰 Provide cash management policies for concentration banking details
+📊 Include quarterly statements for seasonal pattern analysis`;
+
+    return {
+      runway: enhancedRunway,
+      liquidityPosition: liquidityPosition,
+      scenarios: scenarios,
+      detailedAnalysis: detailedAnalysis,
+      cashFlowBreakdown: {
+        current: enhancedRunway[0],
+        historical: enhancedRunway.slice(1, 4),
+        trend: enhancedRunway.length >= 2 ? 
+          (enhancedRunway[0].netCashBurn > enhancedRunway[1].netCashBurn ? 'improving' : 'deteriorating') : 
+          'insufficient_data'
+      }
+    };
   };
 
   // Generate capital structure from real data

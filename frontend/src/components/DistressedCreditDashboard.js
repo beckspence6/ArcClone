@@ -782,7 +782,14 @@ ${liquidityPosition.netMonthlyBurn < 0 ? `
     return structure;
   };
 
-  const distressedMetrics = generateDistressedMetrics();
+  const distressedMetrics = enhancedMetrics || { 
+    distressScore: '[Analyzing...]',
+    riskLevel: '[Processing...]',
+    liquidityMonths: '[Calculating...]',
+    totalDebt: '[Loading...]',
+    guidance: 'Enhanced analysis in progress...',
+    confidence: 10
+  };
   const covenantAnalysis = generateCovenantAnalysis();
   const liquidityAnalysis = generateLiquidityAnalysis();
   const capitalStructure = generateCapitalStructure();

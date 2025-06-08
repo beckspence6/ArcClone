@@ -387,8 +387,8 @@ const Reports = ({ companyData }) => {
                     <Building2 className="w-6 h-6 text-blue-500" />
                     <h3 className="font-semibold text-gray-900">Company</h3>
                   </div>
-                  <p className="text-2xl font-bold text-gray-900">BlueSky</p>
-                  <p className="text-sm text-gray-600">Software • San Francisco, CA</p>
+                  <p className="text-2xl font-bold text-gray-900">{generateCompanyContent().displayName}</p>
+                  <p className="text-sm text-gray-600">{generateCompanyContent().industry} • {generateCompanyContent().companyType}</p>
                 </div>
 
                 <div className="bg-white rounded-xl p-6 border border-gray-200">
@@ -396,8 +396,10 @@ const Reports = ({ companyData }) => {
                     <DollarSign className="w-6 h-6 text-green-500" />
                     <h3 className="font-semibold text-gray-900">LTM Revenue</h3>
                   </div>
-                  <p className="text-2xl font-bold text-gray-900">$70.2M</p>
-                  <p className="text-sm text-green-600">+15% YoY growth</p>
+                  <p className="text-2xl font-bold text-gray-900">{generateCompanyContent().revenue}</p>
+                  <p className="text-sm text-green-600">
+                    {generateCompanyContent().revenue.includes('[') ? 'Data extraction in progress' : 'From financial analysis'}
+                  </p>
                 </div>
 
                 <div className="bg-white rounded-xl p-6 border border-gray-200">

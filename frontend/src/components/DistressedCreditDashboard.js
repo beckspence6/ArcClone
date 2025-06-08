@@ -69,11 +69,10 @@ const DistressedCreditDashboard = ({ companyData }) => {
         setLoading(true);
         console.log(`[DistressedCreditDashboard] Fetching distressed credit data for ${companyData.company.ticker}`);
         
-        const coordinator = new AgentCoordinator();
-        const data = await coordinator.orchestrateDataFetch(companyData.company.ticker, ['all']);
+        const data = await AgentCoordinator.orchestrateDataFetch(companyData.company.ticker, ['all']);
         
         // Cross-reference with user documents for enhanced credit analysis
-        const enhancedData = await coordinator.crossReferenceDocuments(
+        const enhancedData = await AgentCoordinator.crossReferenceDocuments(
           data, 
           companyData?.results?.documents?.documents || [], 
           companyData.company.ticker

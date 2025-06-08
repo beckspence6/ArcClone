@@ -36,10 +36,62 @@ const AddNewCompany = ({ onComplete, onCancel }) => {
   const [taggedFiles, setTaggedFiles] = useState({});
 
   const steps = [
-    { id: 'name', title: 'Company Name', subtitle: 'What distressed credit opportunity are you analyzing?' },
+    { id: 'company', title: 'Company Information', subtitle: 'Enter company name and ticker for analysis' },
     { id: 'upload', title: 'Document Upload', subtitle: 'Upload financial documents for AI analysis' },
     { id: 'review', title: 'Review & Tag', subtitle: 'Review uploaded documents and start analysis' }
   ];
+
+  // Real-time company search using FMP API
+  const searchCompanies = async (query) => {
+    if (!query || query.length < 2) {
+      setCompanySearchResults([]);
+      setShowCompanyDropdown(false);
+      return;
+    }
+
+    try {
+      setSearchingCompanies(true);
+      console.log(`[AddNewCompany] Searching for companies: ${query}`);
+      
+      const results = await FMPService.searchCompanies(query, 10);
+      
+      if (results && Array.isArray(results)) {
+        const formattedResults = results.map(company => ({
+          symbol: company.symbol,
+          name: company.name,
+          industry: company.industry || 'N/A',
+          sector: company.sector || 'N/A',
+          exchangeShortName: company.exchangeShortName || 'N/A',
+          currency: company.currency || 'USD',
+          isEtf: company.isEtf || false
+        }));
+        
+        setCompanySearchResults(formattedResults);
+        setShowCompanyDropdown(true);
+        console.log(`[AddNewCompany] Found ${formattedResults.length} companies`);
+      } else {
+        setCompanySearchResults([]);
+        setShowCompanyDropdown(false);
+      }
+    } catch (error) {
+      console.error('[AddNewCompany] Company search error:', error);
+      setCompanySearchResults([]);
+      setShowCompanyDropdown(false);
+      toast.error('Error searching companies. Please try again.');
+    } finally {
+      setSearchingCompanies(false);
+    }
+  };
+
+  const handleCompanySelect = (company) => {
+    setCompanyName(company.name);
+    setTicker(company.symbol);
+    setSelectedCompany(company);
+    setShowCompanyDropdown(false);
+    setCompanySearchResults([]);
+    setIsPrivateCompany(false);
+    toast.success(`Selected ${company.name} (${company.symbol})`);
+  };
 
   const documentTypes = [
     { id: '10k', label: '10-K (Annual Report)', color: 'blue', icon: '📊' },

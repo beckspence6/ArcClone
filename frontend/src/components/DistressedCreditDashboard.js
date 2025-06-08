@@ -56,6 +56,7 @@ const DistressedCreditDashboard = ({ companyData }) => {
   const [error, setError] = useState(null);
   const [selectedMetric, setSelectedMetric] = useState(null);
   const [showSourceModal, setShowSourceModal] = useState(false);
+  const [enhancedMetrics, setEnhancedMetrics] = useState(null);
 
   useEffect(() => {
     const fetchDistressedCreditData = async () => {

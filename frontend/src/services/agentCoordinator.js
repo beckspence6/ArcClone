@@ -3,6 +3,7 @@ import AlphaVantageService from './alphaVantageService';
 import FMPService from './FMPService';
 import MarketstackService from './MarketstackService';
 import TwelveDataService from './TwelveDataService';
+import SecApiService from './SecApiService';
 
 class AgentCoordinator {
   constructor() {

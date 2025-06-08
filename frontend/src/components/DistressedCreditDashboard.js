@@ -433,17 +433,6 @@ const DistressedCreditDashboard = ({ companyData }) => {
       </div>
     );
   }
-    switch (severity) {
-      case 'critical': return XCircle;
-      case 'high': return AlertTriangle;
-      case 'medium': return AlertCircle;
-      case 'low': return Info;
-      case 'violation': return XCircle;
-      case 'watch': return AlertTriangle;
-      case 'compliant': return CheckCircle;
-      default: return Info;
-    }
-  };
 
   const renderOverview = () => (
     <div className="space-y-6">

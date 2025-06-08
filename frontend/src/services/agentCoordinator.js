@@ -1426,8 +1426,9 @@ class ResearchAgent {
   async fetchMarketData(symbol) {
     try {
       // Use new multi-API orchestration instead of just AlphaVantage
-      const coordinator = new AgentCoordinator();
-      return await coordinator.orchestrateDataFetch(symbol, ['stockPrice', 'historical', 'profile']);
+      // Use the exported instance or create a temporary instance for internal use  
+      const coordInstance = this.orchestrateDataFetch ? this : new AgentCoordinator();
+      return await coordInstance.orchestrateDataFetch(symbol, ['stockPrice', 'historical', 'profile']);
     } catch (error) {
       throw new Error(`Market data fetch failed: ${error.message}`);
     }

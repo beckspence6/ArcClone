@@ -47,15 +47,13 @@ const CompanyOverview = ({ companyData }) => {
       try {
         setLoading(true);
         console.log(`[CompanyOverview] Fetching comprehensive data for ${companyData.company.ticker}`);
-        
         const data = await AgentCoordinator.orchestrateDataFetch(companyData.company.ticker);
-        
-        console.log('[CompanyOverview] Comprehensive data received:', data);
         setComprehensiveData(data);
         setError(null);
       } catch (err) {
         console.error('[CompanyOverview] Error fetching comprehensive data:', err);
         setError(err.message);
+        setComprehensiveData(null);
       } finally {
         setLoading(false);
       }
@@ -63,6 +61,33 @@ const CompanyOverview = ({ companyData }) => {
 
     fetchComprehensiveData();
   }, [companyData?.company?.ticker]);
+
+  // Enhanced company data with Gemini fallback
+  useEffect(() => {
+    const enhanceCompanyProfile = async () => {
+      const baseCompany = generateCompanyProfile();
+      
+      // Check if we need Gemini enhancement for missing data
+      const needsEnhancement = [
+        baseCompany.founded,
+        baseCompany.description,
+        baseCompany.industry,
+        baseCompany.website
+      ].some(field => field.includes('[') && field.includes('Pending]'));
+
+      if (needsEnhancement) {
+        console.log('[CompanyOverview] Enhancing company data with Gemini');
+        const enhanced = await enhanceCompanyDataWithGemini(baseCompany);
+        setEnhancedCompanyData(enhanced);
+      } else {
+        setEnhancedCompanyData(baseCompany);
+      }
+    };
+
+    if (!loading) {
+      enhanceCompanyProfile();
+    }
+  }, [comprehensiveData, loading]);
 
   // Enhanced company profile generation with multi-source data and Gemini fallback
   const generateCompanyProfile = () => {

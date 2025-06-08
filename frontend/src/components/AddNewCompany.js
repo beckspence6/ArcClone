@@ -266,9 +266,168 @@ const AddNewCompany = ({ onComplete, onCancel }) => {
     onComplete(companyData);
   };
 
-  const renderNameStep = () => (
+  const renderCompanyStep = () => (
     <motion.div
       className="space-y-8 max-w-md mx-auto"
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+    >
+      <div className="text-center">
+        <Building2 className="w-16 h-16 text-blue-500 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">{steps[currentStep].title}</h2>
+        <p className="text-gray-600">{steps[currentStep].subtitle}</p>
+      </div>
+
+      <div className="space-y-6">
+        {/* Private Company Toggle */}
+        <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-medium text-gray-900 mb-1">Private Company</h3>
+              <p className="text-gray-600 text-sm">Check if analyzing a private company (no stock ticker)</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isPrivateCompany}
+                onChange={(e) => {
+                  setIsPrivateCompany(e.target.checked);
+                  if (e.target.checked) {
+                    setSelectedCompany(null);
+                    setTicker('');
+                    setShowCompanyDropdown(false);
+                  }
+                }}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+        </div>
+
+        {isPrivateCompany ? (
+          /* Private Company Name Input */
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Company Name</label>
+            <input
+              type="text"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Enter private company name"
+            />
+            <p className="text-gray-500 text-sm mt-2">
+              For private companies, analysis will be based primarily on uploaded documents
+            </p>
+          </div>
+        ) : (
+          /* Public Company Search */
+          <div className="relative">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Search Public Company
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={companyName}
+                onChange={(e) => {
+                  setCompanyName(e.target.value);
+                  searchCompanies(e.target.value);
+                  if (!e.target.value) {
+                    setSelectedCompany(null);
+                    setTicker('');
+                  }
+                }}
+                className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Search by company name or ticker..."
+              />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              {searchingCompanies && (
+                <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-500 w-5 h-5 animate-spin" />
+              )}
+            </div>
+
+            {/* Search Results Dropdown */}
+            {showCompanyDropdown && companySearchResults.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-50 max-h-64 overflow-y-auto">
+                {companySearchResults.map((company, index) => (
+                  <motion.div
+                    key={`${company.symbol}-${index}`}
+                    className="px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors border-b border-gray-100 last:border-b-0"
+                    onClick={() => handleCompanySelect(company)}
+                    whileHover={{ backgroundColor: '#f9fafb' }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium text-gray-900">{company.name}</div>
+                        <div className="text-gray-600 text-sm">
+                          {company.symbol} • {company.exchangeShortName}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-blue-600 text-sm font-medium">{company.symbol}</div>
+                        {company.industry && (
+                          <div className="text-gray-500 text-xs">{company.industry}</div>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+
+            {/* No Results Message */}
+            {showCompanyDropdown && companySearchResults.length === 0 && companyName.length > 2 && !searchingCompanies && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-50 p-4">
+                <div className="flex items-center space-x-2 text-gray-600">
+                  <AlertCircle className="w-5 h-5" />
+                  <span>No companies found. Try a different search term or check "Private Company" above.</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Selected Company Display */}
+        {selectedCompany && (
+          <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">{selectedCompany.name}</h3>
+                <p className="text-blue-700 text-sm">
+                  {selectedCompany.symbol} • {selectedCompany.industry}
+                </p>
+              </div>
+            </div>
+            <div className="mt-3 text-blue-700 text-sm">
+              ✅ This company will have enhanced analysis with real-time financial data from APIs
+            </div>
+          </div>
+        )}
+
+        {isPrivateCompany && companyName && (
+          <div className="bg-orange-50 rounded-xl p-4 border border-orange-200">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">{companyName}</h3>
+                <p className="text-orange-700 text-sm">Private Company</p>
+              </div>
+            </div>
+            <div className="mt-3 text-orange-700 text-sm">
+              📋 Analysis will be based on uploaded financial documents and filings
+            </div>
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}

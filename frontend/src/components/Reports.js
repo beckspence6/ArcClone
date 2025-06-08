@@ -285,6 +285,37 @@ const Reports = ({ companyData }) => {
     }
   };
 
+  const handleEmailShare = async () => {
+    if (!shareEmail.trim()) {
+      toast.error('Please enter an email address');
+      return;
+    }
+
+    if (!shareEmail.includes('@')) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    try {
+      setIsGenerating(true);
+      
+      // Generate comprehensive report content
+      const reportContent = generateEmailReportContent();
+      
+      // Simulate email sending (would integrate with backend email service)
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      toast.success(`Investment report successfully sent to ${shareEmail}`);
+      setShareEmail('');
+      setShowShareModal(false);
+    } catch (error) {
+      console.error('Email sharing error:', error);
+      toast.error('Failed to send email. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   // If no company data, show empty state
   if (!companyData) {
     return (

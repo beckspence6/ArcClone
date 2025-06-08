@@ -1389,8 +1389,10 @@ class ResearchAgent {
       // If we have a ticker, use the new multi-API orchestration
       if (ticker) {
         console.log(`[ResearchAgent] Using multi-API orchestration for ${ticker}`);
-        const coordinator = new AgentCoordinator();
-        const comprehensiveData = await coordinator.orchestrateDataFetch(ticker);
+        // Use the exported instance or create a temporary instance for internal use
+        const comprehensiveData = await this.orchestrateDataFetch ? 
+          await this.orchestrateDataFetch(ticker) : 
+          await new AgentCoordinator().orchestrateDataFetch(ticker);
         
         return {
           name: companyName,

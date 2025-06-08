@@ -696,7 +696,7 @@ class GeminiService {
     } catch (error) {
       console.error('Error in enhanced chat:', error);
       return {
-        response: `I apologize, but I'm having difficulty analyzing that query for ${companyName}. This could be due to limited data availability or system constraints. Could you please try rephrasing your question or provide more specific details about what aspect of the distressed credit analysis you'd like to explore?`,
+        response: `I apologize, but I'm having difficulty analyzing that query for the company. This could be due to limited data availability or system constraints. Could you please try rephrasing your question or provide more specific details about what aspect of the distressed credit analysis you'd like to explore?`,
         confidence: 0.5,
         agentType: 'coordinator',
         error: error.message

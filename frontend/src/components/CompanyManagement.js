@@ -23,8 +23,8 @@ const CompanyManagement = ({ onSelectCompany, onCreateNew, companies = [], onDel
   const [selectedCompanies, setSelectedCompanies] = useState([]);
 
   const filteredCompanies = companies.filter(company =>
-    company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    company.industry?.toLowerCase().includes(searchTerm.toLowerCase())
+    (company?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (company?.industry || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getStatusColor = (status) => {

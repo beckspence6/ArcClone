@@ -477,28 +477,6 @@ What specific analysis would you like me to prepare? I can create both detailed 
     }
     return "Ask me about distressed credit analysis, covenant tracking, or financial modeling...";
   };
-      
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setIsTyping(false);
-      setAgentActivity([]);
-    }
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
-  const formatMessage = (content) => {
-    // Simple markdown-like formatting
-    return content
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/\n/g, '<br/>');
-  };
 
   return (
     <div className="flex h-screen bg-gray-50">

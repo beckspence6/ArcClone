@@ -112,9 +112,12 @@ class AgentCoordinator {
         console.warn(`[AgentCoordinator] ${apiName} failed for ${dataType}:`, error.message);
         lastError = error;
         
-        // Handle rate limiting
+        // Handle rate limiting and permission errors
         if (error.message.includes('429') || error.message.includes('rate limit')) {
           this.markAPILimited(apiName, 900000); // 15 minutes
+        } else if (error.message.includes('403') || error.message.includes('forbidden')) {
+          console.warn(`[AgentCoordinator] ${apiName} access forbidden for ${dataType} - possible API plan restriction`);
+          this.markAPILimited(apiName, 3600000); // 1 hour for permission errors
         }
       }
     }

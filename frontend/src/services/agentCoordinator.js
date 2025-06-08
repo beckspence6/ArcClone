@@ -1581,6 +1581,140 @@ class InsightsAgent {
       };
     }
   }
+
+  // SEC Data Formatting Methods - Convert SEC API responses to standard format
+
+  formatSECFinancials(secFinancials) {
+    // Convert SEC XBRL data to standard financial statements format
+    return {
+      income: [{
+        date: secFinancials.filingDate,
+        period: secFinancials.period,
+        revenue: secFinancials.revenue,
+        grossProfit: secFinancials.grossProfit,
+        operatingIncome: secFinancials.operatingIncome,
+        netIncome: secFinancials.netIncome,
+        interestExpense: secFinancials.interestExpense,
+        source: 'SEC XBRL Filing',
+        filingType: secFinancials.filingType,
+        confidence: 99
+      }],
+      balance: [{
+        date: secFinancials.filingDate,
+        period: secFinancials.period,
+        totalAssets: secFinancials.totalAssets,
+        totalLiabilities: secFinancials.totalLiabilities,
+        totalEquity: secFinancials.totalEquity,
+        totalDebt: secFinancials.totalDebt,
+        cashAndCashEquivalents: secFinancials.cash,
+        currentAssets: secFinancials.currentAssets,
+        currentLiabilities: secFinancials.currentLiabilities,
+        source: 'SEC XBRL Filing',
+        confidence: 99
+      }],
+      cashFlow: [{
+        date: secFinancials.filingDate,
+        period: secFinancials.period,
+        operatingCashFlow: secFinancials.operatingCashFlow,
+        investingCashFlow: secFinancials.investingCashFlow,
+        financingCashFlow: secFinancials.financingCashFlow,
+        source: 'SEC XBRL Filing',
+        confidence: 99
+      }],
+      metadata: {
+        source: 'SEC XBRL Filing',
+        sourceUrl: secFinancials.sourceUrl,
+        filingDate: secFinancials.filingDate,
+        accessionNumber: secFinancials.accessionNumber,
+        confidence: 99,
+        dataQuality: 'highest' // SEC data is highest quality
+      }
+    };
+  }
+
+  formatSECProfile(secProfile) {
+    // Convert SEC profile data to standard profile format
+    return {
+      companyName: secProfile.companyName,
+      symbol: secProfile.ticker,
+      cik: secProfile.cik,
+      industry: secProfile.industry,
+      sector: secProfile.industry, // Use industry as sector for now
+      description: secProfile.businessDescription,
+      sic: secProfile.sic,
+      
+      // Enhanced SEC-specific data
+      riskFactors: secProfile.riskFactors,
+      managementDiscussion: secProfile.managementDiscussion,
+      filingDate: secProfile.filingDate,
+      
+      // Metadata
+      source: 'SEC 10-K Filing',
+      sourceUrl: secProfile.sourceUrl,
+      confidence: 97,
+      dataQuality: 'regulatory' // Regulatory filings are authoritative
+    };
+  }
+
+  async addSECDataToFallback(dataType, symbol) {
+    // Add SEC API as primary source in fetchWithFallback
+    try {
+      switch (dataType) {
+        case 'companyProfile':
+          const profile = await SecApiService.getCompanyProfile(symbol);
+          if (profile) {
+            return {
+              data: this.formatSECProfile(profile),
+              source: 'SEC',
+              endpoint: '10-K Extractor',
+              confidence: 97
+            };
+          }
+          break;
+          
+        case 'financialStatements':
+          const financials = await SecApiService.getXBRLFinancials(symbol);
+          if (financials) {
+            return {
+              data: this.formatSECFinancials(financials),
+              source: 'SEC',
+              endpoint: 'XBRL-to-JSON',
+              confidence: 99
+            };
+          }
+          break;
+          
+        case 'executives':
+          const executives = await SecApiService.getExecutiveData(symbol);
+          if (executives) {
+            return {
+              data: executives.executives,
+              source: 'SEC',
+              endpoint: 'Executive Compensation',
+              confidence: 96
+            };
+          }
+          break;
+          
+        case 'subsidiaries':
+          const subsidiaries = await SecApiService.getSubsidiaries(symbol);
+          if (subsidiaries) {
+            return {
+              data: subsidiaries.subsidiaries,
+              source: 'SEC',
+              endpoint: 'Company Subsidiaries',
+              confidence: 98
+            };
+          }
+          break;
+      }
+      
+      return null; // Fallback to other APIs
+    } catch (error) {
+      console.warn(`[AgentCoordinator] SEC API failed for ${dataType}:`, error);
+      return null;
+    }
+  }
 }
 
 export default new AgentCoordinator();

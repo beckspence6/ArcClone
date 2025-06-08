@@ -360,7 +360,6 @@ const NewOnboardingFlow = ({ onComplete }) => {
                 value={formData.company}
                 onChange={(e) => {
                   setFormData({ ...formData, company: e.target.value });
-                  searchCompanies(e.target.value);
                 }}
                 className="w-full px-4 py-3 pl-10 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent backdrop-blur-lg"
                 placeholder="Search by company name or ticker..."

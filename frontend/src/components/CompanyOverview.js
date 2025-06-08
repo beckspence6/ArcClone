@@ -366,7 +366,7 @@ const CompanyOverview = ({ companyData }) => {
     }));
   };
 
-  const company = generateCompanyProfile();
+  const company = enhancedCompanyData || generateCompanyProfile();
   const metrics = generateFinancialMetrics();
   const revenueData = generateRevenueData();
   const managementData = generateManagementData();

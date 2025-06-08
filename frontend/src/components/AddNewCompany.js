@@ -757,7 +757,7 @@ const AddNewCompany = ({ onComplete, onCancel }) => {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
             >
-              {currentStep === 0 && renderNameStep()}
+              {currentStep === 0 && renderCompanyStep()}
               {currentStep === 1 && renderUploadStep()}
               {currentStep === 2 && renderReviewStep()}
             </motion.div>

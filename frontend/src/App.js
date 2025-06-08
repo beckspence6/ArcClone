@@ -105,6 +105,13 @@ function App() {
   };
 
   const handleCompanyCreated = async (companyData) => {
+    console.log('[App] Received company data:', companyData);
+    
+    // Extract company info from the new structure
+    const companyInfo = companyData.company || {};
+    const companyName = companyInfo.name || companyData.name || 'Unknown Company';
+    const ticker = companyInfo.ticker || '';
+    
     // Add company to list with complete data structure
     const newCompany = {
       ...companyData,
@@ -113,10 +120,15 @@ function App() {
       lastUpdated: new Date().toISOString(),
       analysisData: {
         company: {
-          name: companyData.name,
-          industry: companyData.industry || 'Not specified',
+          name: companyName,
+          ticker: ticker,
+          selectedCompany: companyInfo.selectedCompany,
+          isPrivateCompany: companyInfo.isPrivateCompany,
+          industry: companyInfo.industry || 'Not specified',
           sector: 'Distressed Credit',
-          description: companyData.description || 'Company under distressed credit analysis'
+          description: companyInfo.selectedCompany?.name ? 
+            `${companyInfo.selectedCompany.name} (${ticker}) - Distressed credit analysis target` : 
+            `${companyName} - Company under distressed credit analysis`
         },
         financials: {
           revenue: 'N/A',
@@ -137,6 +149,8 @@ function App() {
       }
     };
     
+    console.log('[App] Created company structure:', newCompany);
+    
     setCompanies(prev => [newCompany, ...prev]);
     setCurrentCompany(newCompany);
     
@@ -151,7 +165,11 @@ function App() {
       
       const analysisResult = await AgentCoordinator.analyzeCompany(
         files,
-        { companyName: companyData.name },
+        { 
+          companyName: companyName, 
+          ticker: ticker,
+          ...companyInfo 
+        },
         (progress, message, agent) => {
           setAnalysisProgress(progress);
         }
@@ -165,7 +183,8 @@ function App() {
           ...newCompany.analysisData,
           company: {
             ...newCompany.analysisData.company,
-            name: companyData.name, // Ensure company name is preserved
+            name: companyName,
+            ticker: ticker
           },
           ...analysisResult,
           // Override with real analysis results while preserving company info

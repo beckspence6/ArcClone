@@ -10,50 +10,20 @@ class GeminiService {
 
   async analyzeDocument(text, fileName) {
     try {
-      const prompt = `
-        Analyze the following financial document and extract key information:
-        
-        Document: ${fileName}
-        Content: ${text}
-        
-        Please provide a JSON response with the following structure:
-        {
-          "company": {
-            "name": "Company Name",
-            "industry": "Industry",
-            "sector": "Sector",
-            "description": "Brief description"
-          },
-          "financials": {
-            "revenue": "Latest revenue",
-            "grossMargin": "Gross margin percentage",
-            "netIncome": "Net income",
-            "totalAssets": "Total assets",
-            "totalDebt": "Total debt",
-            "cashAndEquivalents": "Cash and cash equivalents"
-          },
-          "keyMetrics": {
-            "revenueGrowth": "Revenue growth rate",
-            "profitMargin": "Profit margin",
-            "roa": "Return on assets",
-            "roe": "Return on equity",
-            "debtToEquity": "Debt to equity ratio"
-          },
-          "insights": [
-            "Key insight 1",
-            "Key insight 2",
-            "Key insight 3"
-          ],
-          "risks": [
-            "Risk factor 1",
-            "Risk factor 2",
-            "Risk factor 3"
-          ],
-          "confidence": 0.95
-        }
-        
-        Focus on extracting numerical data and provide realistic estimates if exact numbers aren't available.
-      `;
+      // Determine document type for specialized analysis
+      const docType = this.identifyDocumentType(fileName, text);
+      
+      let prompt = '';
+      
+      if (docType === '10k' || docType === '10q') {
+        prompt = this.buildSECFilingPrompt(text, fileName, docType);
+      } else if (docType === 'credit_agreement' || docType === 'indenture') {
+        prompt = this.buildCreditDocumentPrompt(text, fileName, docType);
+      } else if (docType === '8k') {
+        prompt = this.build8KPrompt(text, fileName);
+      } else {
+        prompt = this.buildGeneralFinancialPrompt(text, fileName);
+      }
 
       const result = await this.model.generateContent(prompt);
       const response = await result.response;
@@ -61,11 +31,260 @@ class GeminiService {
       
       // Clean the response and parse JSON
       const cleanResponse = text_response.replace(/```json|```/g, '').trim();
-      return JSON.parse(cleanResponse);
+      const analysis = JSON.parse(cleanResponse);
+      
+      // Add document metadata
+      analysis.documentMetadata = {
+        fileName: fileName,
+        documentType: docType,
+        analyzedAt: new Date().toISOString(),
+        extractionMethod: 'Gemini Advanced Analysis'
+      };
+      
+      return analysis;
     } catch (error) {
       console.error('Error analyzing document:', error);
       return this.getFallbackAnalysis(fileName);
     }
+  }
+
+  identifyDocumentType(fileName, text) {
+    const name = fileName.toLowerCase();
+    const content = text.toLowerCase();
+    
+    if (name.includes('10-k') || content.includes('form 10-k')) return '10k';
+    if (name.includes('10-q') || content.includes('form 10-q')) return '10q';
+    if (name.includes('8-k') || content.includes('form 8-k')) return '8k';
+    if (name.includes('credit') || name.includes('loan') || content.includes('credit agreement')) return 'credit_agreement';
+    if (name.includes('indenture') || content.includes('indenture')) return 'indenture';
+    if (name.includes('financial') || name.includes('statement')) return 'financial_statement';
+    
+    return 'general';
+  }
+
+  buildSECFilingPrompt(text, fileName, docType) {
+    return `
+      ADVANCED SEC FILING ANALYSIS - ${docType.toUpperCase()}
+      
+      Document: ${fileName}
+      Content: ${text.substring(0, 50000)} // Limit to avoid token limits
+      
+      CRITICAL: This is a ${docType} filing. Extract ALL the following with PRECISE details:
+      
+      1. SUBSIDIARY STRUCTURE ANALYSIS (CRITICAL):
+         - Map ALL subsidiaries, holding companies (HoldCos), operating companies (OpCos)
+         - Identify Special Purpose Vehicles (SPVs) and Special Purpose Entities (SPEs)
+         - For EACH subsidiary: name, jurisdiction, ownership percentage, debt amount, asset value
+         - Extract guarantor vs non-guarantor subsidiaries
+         - Note any restricted subsidiaries or unrestricted subsidiaries
+      
+      2. DETAILED DEBT ANALYSIS:
+         - Total consolidated debt and breakdown by subsidiary
+         - Senior secured debt, senior unsecured debt, subordinated debt
+         - Credit facilities: revolving credit, term loans, bonds
+         - Maturity dates, interest rates, covenants for each facility
+         - Cross-default provisions and guarantees
+      
+      3. COVENANT EXTRACTION (VERBATIM):
+         - Extract EXACT covenant language with thresholds
+         - Financial maintenance covenants (DSCR, leverage, coverage ratios)
+         - Negative covenants (restrictions on distributions, investments, debt)
+         - Affirmative covenants (reporting, insurance, compliance)
+         - Include covenant testing dates and cure mechanisms
+      
+      4. FINANCIAL STATEMENT DETAILS:
+         - Revenue by segment/subsidiary if disclosed
+         - EBITDA calculations and adjustments
+         - Working capital by major subsidiary
+         - Capital expenditures by segment
+         - Cash flow from operations, investing, financing
+      
+      Return JSON with this EXACT structure:
+      {
+        "company": {
+          "name": "Exact company name",
+          "industry": "Industry classification",
+          "fiscalYearEnd": "Fiscal year end date",
+          "reportingPeriod": "Period covered by this filing",
+          "filingDate": "Date of filing"
+        },
+        "subsidiaryStructure": [
+          {
+            "name": "Subsidiary exact name",
+            "type": "OpCo/HoldCo/SPV/SPE",
+            "jurisdiction": "State/Country of incorporation",
+            "ownershipPercentage": "Ownership %",
+            "isGuarantor": true/false,
+            "debt": {
+              "amount": "Debt amount if specified",
+              "description": "Type and details of debt"
+            },
+            "assets": {
+              "amount": "Asset value if specified",
+              "description": "Key assets held"
+            },
+            "parentEntity": "Direct parent entity name"
+          }
+        ],
+        "debtStructure": {
+          "totalConsolidatedDebt": "Total debt amount",
+          "facilities": [
+            {
+              "name": "Facility name (e.g., Term Loan A)",
+              "type": "Revolving Credit/Term Loan/Bonds",
+              "amount": "Outstanding amount",
+              "maturityDate": "Maturity date",
+              "interestRate": "Interest rate",
+              "guarantors": ["List of guarantor subsidiaries"],
+              "collateral": "Description of collateral",
+              "issuer": "Which entity issued/borrowed"
+            }
+          ]
+        },
+        "covenants": [
+          {
+            "name": "Exact covenant name",
+            "type": "Financial/Negative/Affirmative",
+            "exactLanguage": "VERBATIM text from document",
+            "threshold": "Numeric threshold if applicable",
+            "testingDate": "When covenant is tested",
+            "applicableDebt": "Which debt facility this applies to",
+            "cureProvisions": "Cure mechanisms if any",
+            "documentSection": "Section reference in document"
+          }
+        ],
+        "financials": {
+          "revenue": "Latest revenue",
+          "revenueBySegment": {},
+          "ebitda": "EBITDA amount",
+          "ebitdaAdjustments": "Description of adjustments",
+          "netIncome": "Net income",
+          "totalAssets": "Total assets",
+          "totalDebt": "Total debt",
+          "cashAndEquivalents": "Cash amount",
+          "workingCapital": "Working capital"
+        },
+        "riskFactors": [
+          "Key risk factors identified in document"
+        ],
+        "materialEvents": [
+          "Any material events or changes mentioned"
+        ],
+        "confidence": 0.XX,
+        "extractionNotes": "Any limitations or notes about extraction"
+      }
+    `;
+  }
+
+  buildCreditDocumentPrompt(text, fileName, docType) {
+    return `
+      CREDIT AGREEMENT DEEP ANALYSIS
+      
+      Document: ${fileName}
+      Type: ${docType}
+      Content: ${text.substring(0, 50000)}
+      
+      EXTRACT EVERY COVENANT AND TERM with PRECISION:
+      
+      1. BORROWER AND GUARANTOR STRUCTURE:
+         - Primary borrower entity name and details
+         - Each guarantor entity with guarantee amount/scope
+         - Non-guarantor subsidiaries and restrictions
+      
+      2. COMPLETE COVENANT ANALYSIS:
+         Extract VERBATIM language for EVERY covenant including:
+         - Financial maintenance covenants (exact thresholds, testing periods)
+         - Negative covenants (prohibited actions, exceptions)
+         - Affirmative covenants (required actions, reporting)
+         - Include ALL defined terms and calculation methodologies
+      
+      3. DEBT FACILITY DETAILS:
+         - Credit facility type and amount
+         - Term loan details, revolving credit details
+         - Interest rates (base rate + margin)
+         - Maturity dates, amortization schedule
+         - Optional prepayment terms, mandatory prepayments
+      
+      4. SECURITY AND COLLATERAL:
+         - Detailed description of collateral
+         - Perfection requirements
+         - Release conditions
+      
+      5. DEFAULT AND ACCELERATION:
+         - Events of default (exact language)
+         - Cross-default thresholds
+         - Acceleration procedures
+      
+      Return JSON:
+      {
+        "facilityDetails": {
+          "facilityType": "Credit Agreement/Term Loan/etc",
+          "totalCommitment": "Total facility amount",
+          "borrower": "Primary borrower name",
+          "lenders": ["Lender names if mentioned"],
+          "interestRate": "Interest rate structure",
+          "maturityDate": "Final maturity",
+          "governingLaw": "Governing law"
+        },
+        "guarantorStructure": [
+          {
+            "name": "Guarantor entity name",
+            "guaranteeType": "Full/Limited/Specific",
+            "guaranteeAmount": "Amount if limited",
+            "guaranteeScope": "What is guaranteed"
+          }
+        ],
+        "covenants": {
+          "financial": [
+            {
+              "name": "Covenant name",
+              "verbatimText": "EXACT language from document",
+              "threshold": "Numeric threshold",
+              "testingFrequency": "Monthly/Quarterly/Annual",
+              "firstTestDate": "Date of first test",
+              "calculationMethod": "How to calculate",
+              "exceptions": "Any exceptions or adjustments",
+              "cureRights": "Cure mechanisms available"
+            }
+          ],
+          "negative": [
+            {
+              "restriction": "What is prohibited",
+              "verbatimText": "EXACT language",
+              "exceptions": "Permitted exceptions",
+              "thresholds": "Any dollar thresholds"
+            }
+          ],
+          "affirmative": [
+            {
+              "requirement": "What is required",
+              "verbatimText": "EXACT language",
+              "frequency": "How often",
+              "deliveryDate": "When required"
+            }
+          ]
+        },
+        "collateral": {
+          "description": "Detailed collateral description",
+          "perfectionRequirements": "How security interests are perfected",
+          "releaseConditions": "When collateral can be released"
+        },
+        "eventsOfDefault": [
+          {
+            "event": "Description of default event",
+            "verbatimText": "EXACT language from document",
+            "graceGeriod": "Cure period if any",
+            "threshold": "Dollar threshold if applicable"
+          }
+        ],
+        "keyDefinitions": {
+          "EBITDA": "How EBITDA is defined in this agreement",
+          "TotalDebt": "How debt is defined",
+          "other": "Other key defined terms"
+        },
+        "confidence": 0.XX
+      }
+    `;
   }
 
   async generateInsights(companyData, question) {

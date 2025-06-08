@@ -1,34 +1,39 @@
-/**
- * SEC API Service - Strategic Implementation for Free Tier (100 credits per endpoint)
- * 
- * This service prioritizes SEC data as the most accurate source of truth for public companies.
- * Implements aggressive caching and strategic credit management for the 100-credit limit.
- */
-
 import axios from 'axios';
 
 class SecApiService {
   constructor() {
-    this.baseURL = 'https://api.sec-api.io';
     this.apiKey = process.env.REACT_APP_SECAPI_KEY;
-    this.creditUsage = new Map(); // Track credits per endpoint
-    this.cache = new Map(); // Aggressive caching for credit conservation
-    this.cacheTimeout = 24 * 60 * 60 * 1000; // 24 hours cache for SEC data
+    this.baseURL = 'https://api.sec-api.io';
+    this.backendURL = process.env.REACT_APP_BACKEND_URL;
     
-    // Initialize axios instance
+    // Client for direct SEC API calls (for simple, non-credit-intensive operations)
     this.client = axios.create({
       baseURL: this.baseURL,
       timeout: 30000,
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': 'Stratum-Platform/1.0'
+        'User-Agent': 'Stratum-Credit-Analysis/2.0'
       }
     });
 
-    // Initialize credit tracking
-    this.initializeCreditTracking();
+    // Client for backend proxy calls (for credit-intensive operations)
+    this.backendClient = axios.create({
+      baseURL: this.backendURL,
+      timeout: 60000,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
     
-    console.log('[SecApiService] Initialized with strategic credit management');
+    // Credit usage tracking
+    this.creditUsage = new Map();
+    this.maxCreditsPerEndpoint = 100;
+    
+    // Cache for API responses (aggressive caching to conserve credits)
+    this.cache = new Map();
+    this.cacheTimeout = 3600000; // 1 hour cache
+    
+    this.initializeCreditTracking();
   }
 
   initializeCreditTracking() {

@@ -219,7 +219,7 @@ const CompanyOverview = ({ companyData }) => {
     const hasApiData = comprehensiveData && !comprehensiveData.error;
     const financials = comprehensiveData?.financialStatements;
 
-    if (!hasApiData || !financials?.income) {
+    if (!hasApiData || !financials?.income || !Array.isArray(financials.income) || financials.income.length === 0) {
       return []; // Return empty array instead of mock data
     }
 

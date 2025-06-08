@@ -497,7 +497,7 @@ const CompanyOverview = ({ companyData }) => {
             <div className="text-center">
               <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
               <p className="text-gray-600">Loading comprehensive company data...</p>
-              <p className="text-sm text-gray-500 mt-2">Fetching from multiple financial APIs</p>
+              <p className="text-sm text-gray-500 mt-2">Prioritizing SEC filings and regulatory data</p>
             </div>
           </div>
         </div>

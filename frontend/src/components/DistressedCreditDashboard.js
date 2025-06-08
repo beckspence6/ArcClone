@@ -978,6 +978,7 @@ const DistressedCreditDashboard = ({ companyData }) => {
             className="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
+            onClick={() => window.location.reload()}
           >
             <RefreshCw className="w-4 h-4" />
             <span>Refresh Data</span>
@@ -986,12 +987,26 @@ const DistressedCreditDashboard = ({ companyData }) => {
             className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
+            onClick={() => {/* TODO: Implement export functionality */}}
           >
             <Download className="w-4 h-4" />
             <span>Export Report</span>
           </motion.button>
         </div>
       </div>
+
+      {/* Error State */}
+      {error && (
+        <div className="mb-8 bg-red-50 border border-red-200 rounded-xl p-6">
+          <div className="flex items-start space-x-3">
+            <AlertCircle className="w-6 h-6 text-red-600 mt-1" />
+            <div>
+              <h3 className="text-lg font-semibold text-red-900">Error Loading Data</h3>
+              <p className="text-red-700 mt-1">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="mb-8">
@@ -1030,6 +1045,66 @@ const DistressedCreditDashboard = ({ companyData }) => {
           {renderContent()}
         </motion.div>
       </AnimatePresence>
+
+      {/* Source Attribution Modal */}
+      {showSourceModal && selectedMetric && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+          >
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xl font-semibold text-gray-900">Data Source Information</h3>
+              <button 
+                onClick={() => setShowSourceModal(false)}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-gray-600">Primary Source</p>
+                <p className="font-medium text-gray-900">{selectedMetric.sourceAttribution?.primary || 'N/A'}</p>
+              </div>
+              {selectedMetric.sourceAttribution?.income && (
+                <div>
+                  <p className="text-sm text-gray-600">Income Statement Data</p>
+                  <p className="font-medium text-gray-900">{selectedMetric.sourceAttribution.income}</p>
+                </div>
+              )}
+              {selectedMetric.sourceAttribution?.balance && (
+                <div>
+                  <p className="text-sm text-gray-600">Balance Sheet Data</p>
+                  <p className="font-medium text-gray-900">{selectedMetric.sourceAttribution.balance}</p>
+                </div>
+              )}
+              {selectedMetric.sourceAttribution?.cashFlow && (
+                <div>
+                  <p className="text-sm text-gray-600">Cash Flow Data</p>
+                  <p className="font-medium text-gray-900">{selectedMetric.sourceAttribution.cashFlow}</p>
+                </div>
+              )}
+              <div>
+                <p className="text-sm text-gray-600">Confidence Level</p>
+                <div className="flex items-center space-x-2">
+                  <div className="flex-1 h-2 bg-gray-200 rounded-full">
+                    <div 
+                      className="h-2 bg-blue-600 rounded-full"
+                      style={{ width: `${selectedMetric.sourceAttribution?.confidence || 0}%` }}
+                    />
+                  </div>
+                  <span className="text-sm font-medium text-gray-900">
+                    {selectedMetric.sourceAttribution?.confidence || 0}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };

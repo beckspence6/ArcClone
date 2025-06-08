@@ -226,18 +226,18 @@ const CompanyOverview = ({ companyData }) => {
         priority: 'high'
       };
 
-      const grossProfit = latestIncome.grossProfit || (latestIncome.revenue - latestIncome.costOfRevenue);
-      const prevGrossProfit = prevIncome?.grossProfit || (prevIncome?.revenue - prevIncome?.costOfRevenue);
+      // Gross margin calculation
+      const grossProfit = latestIncome.grossProfit || (latestIncome.revenue && latestIncome.costOfRevenue ? latestIncome.revenue - latestIncome.costOfRevenue : null);
+      const grossMargin = grossProfit && latestIncome.revenue ? (grossProfit / latestIncome.revenue * 100) : null;
       
       metrics.grossMargin = {
-        value: latestIncome.revenue && grossProfit ? 
-          `${(grossProfit / latestIncome.revenue * 100).toFixed(1)}%` : 
-          '[Gross Margin Unavailable]',
-        change: prevIncome?.revenue && prevGrossProfit ? 
-          `${((grossProfit / latestIncome.revenue) - (prevGrossProfit / prevIncome.revenue)) * 100 >= 0 ? '+' : ''}${(((grossProfit / latestIncome.revenue) - (prevGrossProfit / prevIncome.revenue)) * 100).toFixed(1)}%` : 
-          '[Change Unavailable]',
+        value: grossMargin ? `${grossMargin.toFixed(1)}%` : '[Margin Data Pending]',
+        change: prevIncome ? 'Trend Analysis Pending' : '[Comparison Unavailable]',
         source: `${comprehensiveData.sourceAttribution?.income?.source || 'FMP'} Income Statement API`,
         formula: '(Revenue - Cost of Goods Sold) / Revenue × 100',
+        confidence: grossMargin ? 94 : 35,
+        priority: 'high'
+      };
         confidence: 94,
         endpoint: comprehensiveData.sourceAttribution?.income?.endpoint || '/v3/income-statement/{symbol}'
       };

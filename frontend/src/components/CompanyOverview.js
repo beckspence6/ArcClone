@@ -766,7 +766,7 @@ const CompanyOverview = ({ companyData }) => {
                         Confidence: {typeof selectedMetric.confidence === 'number' ? selectedMetric.confidence : 0}%
                       </span>
                     </div>
-                    {selectedMetric.confidence === 0 && (
+                    {(typeof selectedMetric.confidence === 'number' ? selectedMetric.confidence : 0) === 0 && (
                       <span className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
                         Data Unavailable
                       </span>

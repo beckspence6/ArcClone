@@ -9,7 +9,7 @@ import statistics
 from datetime import datetime
 
 # Get the backend URL from the frontend .env file
-BACKEND_URL = "https://bb5ed14f-6082-4b9d-bf66-406f017aa699.preview.emergentagent.com"
+BACKEND_URL = "https://7af9b103-8451-45fe-9301-f81bf94bc839.preview.emergentagent.com"
 API_URL = f"{BACKEND_URL}/api"
 
 class BackendTester:

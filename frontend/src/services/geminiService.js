@@ -444,8 +444,211 @@ class GeminiService {
     }
   }
 
-  // Enhanced chat function with company-specific context
-  async chatWithAI(query, companyContext) {
+  // Enhanced SEC filing analysis
+  async extractSECData(text, companyTicker = null) {
+    try {
+      const prompt = `
+        EXPERT SEC FILING ANALYST - EXTRACT COMPREHENSIVE FINANCIAL DATA
+        
+        Company: ${companyTicker || 'Unknown'}
+        Document Type: SEC Filing (10-K/10-Q)
+        
+        Analyze this SEC filing text and extract detailed financial information:
+        
+        Text: ${text.substring(0, 8000)}
+        
+        Extract and return JSON with:
+        {
+          "revenue": "value with source note",
+          "netIncome": "value with source note", 
+          "totalAssets": "value with source note",
+          "totalLiabilities": "value with source note",
+          "totalEquity": "value with source note",
+          "totalDebt": "value with source note",
+          "cash": "value with source note",
+          "operatingCashFlow": "value with source note",
+          "freeCashFlow": "value with source note",
+          "operatingIncome": "value with source note",
+          "grossProfit": "value with source note",
+          "currentAssets": "value with source note",
+          "currentLiabilities": "value with source note",
+          "longTermDebt": "value with source note",
+          "workingCapital": "calculated from current assets - current liabilities",
+          "retainedEarnings": "value with source note",
+          "confidence": 0.95,
+          "filingType": "10-K/10-Q",
+          "reportingPeriod": "extracted period"
+        }
+        
+        Instructions:
+        1. Extract exact financial statement values
+        2. Include currency and units (millions, thousands)
+        3. Note the specific financial statement source (Balance Sheet, Income Statement, Cash Flow)
+        4. Return "[Data Unavailable]" if information not found
+        5. Calculate derived metrics when base data is available
+      `;
+
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response;
+      const text_response = response.text();
+      
+      const cleanResponse = text_response.replace(/```json|```/g, '').trim();
+      return JSON.parse(cleanResponse);
+    } catch (error) {
+      console.error('Error extracting SEC data:', error);
+      return {
+        revenue: '[Data Unavailable]',
+        netIncome: '[Data Unavailable]',
+        confidence: 0.3,
+        error: error.message
+      };
+    }
+  }
+
+  // Enhanced covenant analysis for credit agreements
+  async extractCovenantData(text, companyTicker = null) {
+    try {
+      const prompt = `
+        EXPERT CREDIT ANALYST - COVENANT EXTRACTION SPECIALIST
+        
+        Company: ${companyTicker || 'Unknown'}
+        Document Type: Credit Agreement / Bond Indenture
+        
+        Analyze this credit document and extract detailed covenant information:
+        
+        Text: ${text.substring(0, 8000)}
+        
+        Extract and return JSON with:
+        {
+          "financialCovenants": {
+            "minimumLiquidityRequirement": "value and threshold",
+            "maximumLeverageRatio": "value and threshold", 
+            "minimumInterestCoverageRatio": "value and threshold",
+            "minimumEBITDARequirement": "value and threshold",
+            "maximumCapitalExpenditures": "value and threshold",
+            "minimumTangibleNetWorth": "value and threshold",
+            "maximumDebtToEBITDA": "value and threshold"
+          },
+          "operationalCovenants": {
+            "businessRestrictions": "key restrictions",
+            "acquisitionLimitations": "acquisition limits",
+            "dividendRestrictions": "dividend policy",
+            "assetDisposalLimitations": "disposal restrictions"
+          },
+          "defaultTriggers": {
+            "paymentDefault": "grace period and terms",
+            "covenantDefault": "cure periods",
+            "crossDefault": "cross-default provisions",
+            "materialAdverseChange": "MAC clause details"
+          },
+          "creditFacilityDetails": {
+            "totalCommitment": "facility size",
+            "maturityDate": "final maturity",
+            "pricingGrid": "interest rate structure",
+            "revolvingCreditLimit": "revolving facility size",
+            "termLoanAmount": "term loan amount"
+          },
+          "securityInterests": {
+            "collateralDescription": "assets securing debt",
+            "guarantors": "subsidiary guarantors",
+            "securityPriority": "lien priority"
+          },
+          "confidence": 0.9
+        }
+        
+        Instructions:
+        1. Extract exact covenant thresholds and requirements
+        2. Identify all financial maintenance tests
+        3. Note grace periods and cure mechanisms
+        4. Extract facility sizing and pricing details
+        5. Return "[Not Specified]" if specific covenant not found
+      `;
+
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response;
+      const text_response = response.text();
+      
+      const cleanResponse = text_response.replace(/```json|```/g, '').trim();
+      return JSON.parse(cleanResponse);
+    } catch (error) {
+      console.error('Error extracting covenant data:', error);
+      return {
+        financialCovenants: {},
+        operationalCovenants: {},
+        confidence: 0.3,
+        error: error.message
+      };
+    }
+  }
+
+  // Enhanced subsidiary structure analysis
+  async extractSubsidiaryStructure(text, companyTicker = null) {
+    try {
+      const prompt = `
+        EXPERT CORPORATE STRUCTURE ANALYST - SUBSIDIARY MAPPING SPECIALIST
+        
+        Company: ${companyTicker || 'Unknown'}
+        Document Type: Corporate Filing / 10-K / Bankruptcy Document
+        
+        Analyze this document and map the corporate subsidiary structure:
+        
+        Text: ${text.substring(0, 8000)}
+        
+        Extract and return JSON with:
+        {
+          "parentCompany": {
+            "name": "parent entity name",
+            "jurisdiction": "incorporation state/country",
+            "type": "entity type"
+          },
+          "subsidiaries": {
+            "subsidiary1": {
+              "name": "subsidiary name",
+              "jurisdiction": "incorporation location", 
+              "ownershipPercentage": "ownership %",
+              "businessDescription": "business activities",
+              "guarantorStatus": "guarantor/non-guarantor",
+              "significantAssets": "key assets if mentioned"
+            }
+          },
+          "structuralSubordination": {
+            "description": "subordination explanation",
+            "impactOnRecovery": "recovery implications",
+            "keyRisks": "structural risks"
+          },
+          "guaranteeStructure": {
+            "subsidiaryGuarantors": ["list of guarantor subsidiaries"],
+            "nonGuarantorSubsidiaries": ["list of non-guarantor subsidiaries"],
+            "guaranteeScope": "full/limited guarantee details"
+          },
+          "confidence": 0.85
+        }
+        
+        Instructions:
+        1. Map complete ownership structure
+        2. Identify guarantor vs non-guarantor subsidiaries
+        3. Note jurisdictional differences
+        4. Assess structural subordination risks
+        5. Extract exact ownership percentages
+        6. Return "[Not Disclosed]" if information not available
+      `;
+
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response;
+      const text_response = response.text();
+      
+      const cleanResponse = text_response.replace(/```json|```/g, '').trim();
+      return JSON.parse(cleanResponse);
+    } catch (error) {
+      console.error('Error extracting subsidiary structure:', error);
+      return {
+        parentCompany: {},
+        subsidiaries: {},
+        confidence: 0.3,
+        error: error.message
+      };
+    }
+  }
     try {
       const companyName = companyContext?.company?.name || 'the company';
       const ticker = companyContext?.company?.ticker;

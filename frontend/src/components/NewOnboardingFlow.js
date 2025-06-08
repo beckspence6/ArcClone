@@ -16,9 +16,12 @@ import {
   Search,
   MapPin,
   TrendingUp,
-  Calendar
+  Calendar,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 import StratumLogo from './Logo';
+import FMPService from '../services/FMPService';
 import toast from 'react-hot-toast';
 
 const NewOnboardingFlow = ({ onComplete }) => {

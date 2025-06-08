@@ -186,7 +186,7 @@ class AgentCoordinator {
         
         // Handle SEC API calls with special processing
         if (apiName === 'SEC') {
-          result = await this.addSECDataToFallback(dataType, symbol);
+          result = await this.fetchSECDataForType(dataType, symbol, params);
         } else {
           result = await this.callAPI(apiName, dataType, symbol, params);
         }

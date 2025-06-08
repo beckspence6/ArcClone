@@ -14,10 +14,403 @@ class AgentCoordinator {
       insightsAgent: new InsightsAgent()
     };
     
+    // API priority configuration for intelligent fallbacks
+    this.apiPriority = {
+      companyProfile: ['FMP', 'TwelveData', 'AlphaVantage'],
+      stockPrice: ['FMP', 'Marketstack', 'TwelveData', 'AlphaVantage'],
+      financialStatements: ['FMP', 'TwelveData', 'AlphaVantage'],
+      historicalData: ['FMP', 'Marketstack', 'TwelveData', 'AlphaVantage'],
+      ratios: ['FMP', 'TwelveData'],
+      news: ['FMP'],
+      executives: ['FMP']
+    };
+    
+    // Rate limit tracking
+    this.rateLimits = new Map();
+    this.requestQueue = new Map();
+    
     this.activeAnalysis = null;
     this.analysisHistory = [];
   }
 
+  // Central data orchestration method
+  async orchestrateDataFetch(symbol, dataTypes = ['all']) {
+    console.log(`[AgentCoordinator] Orchestrating data fetch for ${symbol}`);
+    
+    const companyData = {
+      symbol: symbol,
+      profile: null,
+      stockPrice: null,
+      financialStatements: null,
+      historicalData: null,
+      ratios: null,
+      news: null,
+      executives: null,
+      sourceAttribution: {},
+      errors: [],
+      lastUpdated: new Date()
+    };
+
+    // Fetch company profile
+    if (dataTypes.includes('all') || dataTypes.includes('profile')) {
+      companyData.profile = await this.fetchWithFallback('companyProfile', symbol);
+    }
+
+    // Fetch stock price
+    if (dataTypes.includes('all') || dataTypes.includes('stockPrice')) {
+      companyData.stockPrice = await this.fetchWithFallback('stockPrice', symbol);
+    }
+
+    // Fetch financial statements
+    if (dataTypes.includes('all') || dataTypes.includes('financials')) {
+      companyData.financialStatements = await this.fetchWithFallback('financialStatements', symbol);
+    }
+
+    // Fetch historical data
+    if (dataTypes.includes('all') || dataTypes.includes('historical')) {
+      companyData.historicalData = await this.fetchWithFallback('historicalData', symbol);
+    }
+
+    // Fetch ratios
+    if (dataTypes.includes('all') || dataTypes.includes('ratios')) {
+      companyData.ratios = await this.fetchWithFallback('ratios', symbol);
+    }
+
+    // Fetch news
+    if (dataTypes.includes('all') || dataTypes.includes('news')) {
+      companyData.news = await this.fetchWithFallback('news', symbol);
+    }
+
+    // Fetch executives
+    if (dataTypes.includes('all') || dataTypes.includes('executives')) {
+      companyData.executives = await this.fetchWithFallback('executives', symbol);
+    }
+
+    console.log(`[AgentCoordinator] Data orchestration complete for ${symbol}`, companyData);
+    return companyData;
+  }
+
+  // Intelligent fallback logic with rate limit management
+  async fetchWithFallback(dataType, symbol, params = {}) {
+    const apiList = this.apiPriority[dataType] || ['FMP'];
+    let lastError = null;
+
+    for (const apiName of apiList) {
+      if (this.isAPILimited(apiName)) {
+        console.log(`[AgentCoordinator] ${apiName} is rate limited, skipping`);
+        continue;
+      }
+
+      try {
+        const result = await this.callAPI(apiName, dataType, symbol, params);
+        if (result && !result.error) {
+          // Record successful source
+          this.recordSourceAttribution(dataType, apiName, symbol);
+          return result;
+        }
+      } catch (error) {
+        console.warn(`[AgentCoordinator] ${apiName} failed for ${dataType}:`, error.message);
+        lastError = error;
+        
+        // Handle rate limiting
+        if (error.message.includes('429') || error.message.includes('rate limit')) {
+          this.markAPILimited(apiName, 900000); // 15 minutes
+        }
+      }
+    }
+
+    // All APIs failed, return error with attribution
+    const errorResult = {
+      error: true,
+      message: `[Data Unavailable] - All APIs failed for ${dataType}`,
+      lastError: lastError?.message,
+      symbol: symbol,
+      dataType: dataType,
+      attemptedAPIs: apiList,
+      guidance: this.getDataGuidance(dataType)
+    };
+
+    this.recordSourceAttribution(dataType, 'ERROR', symbol, errorResult);
+    return errorResult;
+  }
+
+  // API calling logic
+  async callAPI(apiName, dataType, symbol, params = {}) {
+    switch (apiName) {
+      case 'FMP':
+        return await this.callFMPAPI(dataType, symbol, params);
+      case 'Marketstack':
+        return await this.callMarketstackAPI(dataType, symbol, params);
+      case 'TwelveData':
+        return await this.callTwelveDataAPI(dataType, symbol, params);
+      case 'AlphaVantage':
+        return await this.callAlphaVantageAPI(dataType, symbol, params);
+      default:
+        throw new Error(`Unknown API: ${apiName}`);
+    }
+  }
+
+  async callFMPAPI(dataType, symbol, params) {
+    switch (dataType) {
+      case 'companyProfile':
+        return await FMPService.getCompanyProfile(symbol);
+      case 'stockPrice':
+        return await FMPService.getQuote(symbol);
+      case 'financialStatements':
+        const [income, balance, cashFlow] = await Promise.all([
+          FMPService.getIncomeStatement(symbol, 'annual', 3),
+          FMPService.getBalanceSheet(symbol, 'annual', 3),
+          FMPService.getCashFlowStatement(symbol, 'annual', 3)
+        ]);
+        return { income, balance, cashFlow };
+      case 'historicalData':
+        return await FMPService.getHistoricalMarketCap(symbol);
+      case 'ratios':
+        const [ratios, metrics] = await Promise.all([
+          FMPService.getRatios(symbol, 'annual', 3),
+          FMPService.getKeyMetrics(symbol, 'annual', 3)
+        ]);
+        return { ratios, metrics };
+      case 'news':
+        return await FMPService.getStockNews(symbol, 10);
+      case 'executives':
+        return await FMPService.getKeyExecutives(symbol);
+      default:
+        throw new Error(`FMP does not support data type: ${dataType}`);
+    }
+  }
+
+  async callMarketstackAPI(dataType, symbol, params) {
+    switch (dataType) {
+      case 'stockPrice':
+        const data = await MarketstackService.getLatestQuote(symbol);
+        return MarketstackService.normalizeQuoteData(data);
+      case 'historicalData':
+        return await MarketstackService.getEODData(symbol, null, null, 100);
+      default:
+        throw new Error(`Marketstack does not support data type: ${dataType}`);
+    }
+  }
+
+  async callTwelveDataAPI(dataType, symbol, params) {
+    switch (dataType) {
+      case 'companyProfile':
+        return await TwelveDataService.getStatistics(symbol);
+      case 'stockPrice':
+        const data = await TwelveDataService.getQuote(symbol);
+        return TwelveDataService.normalizeQuoteData(data);
+      case 'financialStatements':
+        const [income, balance, cashFlow] = await Promise.all([
+          TwelveDataService.getIncomeStatement(symbol),
+          TwelveDataService.getBalanceSheet(symbol),
+          TwelveDataService.getCashFlow(symbol)
+        ]);
+        return { income, balance, cashFlow };
+      case 'historicalData':
+        const timeSeriesData = await TwelveDataService.getTimeSeries(symbol, '1day', 100);
+        return TwelveDataService.normalizeTimeSeriesData(timeSeriesData);
+      default:
+        throw new Error(`TwelveData does not support data type: ${dataType}`);
+    }
+  }
+
+  async callAlphaVantageAPI(dataType, symbol, params) {
+    switch (dataType) {
+      case 'companyProfile':
+        return await AlphaVantageService.getCompanyOverview(symbol);
+      case 'stockPrice':
+        return await AlphaVantageService.getStockPrice(symbol);
+      case 'financialStatements':
+        const [income, balance, cashFlow] = await Promise.all([
+          AlphaVantageService.getIncomeStatement(symbol),
+          AlphaVantageService.getBalanceSheet(symbol),
+          AlphaVantageService.getCashFlow(symbol)
+        ]);
+        return { income, balance, cashFlow };
+      case 'historicalData':
+        return await AlphaVantageService.getHistoricalData(symbol, 'daily');
+      default:
+        throw new Error(`AlphaVantage does not support data type: ${dataType}`);
+    }
+  }
+
+  // Rate limit management
+  isAPILimited(apiName) {
+    const limitInfo = this.rateLimits.get(apiName);
+    if (!limitInfo) return false;
+    
+    const now = Date.now();
+    if (now > limitInfo.resetTime) {
+      this.rateLimits.delete(apiName);
+      return false;
+    }
+    
+    return true;
+  }
+
+  markAPILimited(apiName, duration = 900000) {
+    this.rateLimits.set(apiName, {
+      limitedAt: Date.now(),
+      resetTime: Date.now() + duration
+    });
+    console.log(`[AgentCoordinator] ${apiName} marked as rate limited for ${duration/1000} seconds`);
+  }
+
+  // Source attribution tracking
+  recordSourceAttribution(dataType, source, symbol, errorInfo = null) {
+    const key = `${dataType}_${symbol}`;
+    if (!this.sourceAttribution) {
+      this.sourceAttribution = {};
+    }
+    
+    this.sourceAttribution[key] = {
+      source: source,
+      timestamp: new Date(),
+      symbol: symbol,
+      dataType: dataType,
+      success: !errorInfo,
+      error: errorInfo,
+      endpoint: this.getEndpointInfo(source, dataType)
+    };
+  }
+
+  getEndpointInfo(source, dataType) {
+    const endpointMap = {
+      'FMP': {
+        'companyProfile': '/v3/profile/{symbol}',
+        'stockPrice': '/v3/quote/{symbol}',
+        'financialStatements': '/v3/income-statement/{symbol}, /v3/balance-sheet-statement/{symbol}, /v3/cash-flow-statement/{symbol}',
+        'ratios': '/v3/ratios/{symbol}',
+        'news': '/v3/stock_news?tickers={symbol}',
+        'executives': '/v3/key-executives/{symbol}'
+      },
+      'Marketstack': {
+        'stockPrice': '/v1/eod/latest?symbols={symbol}',
+        'historicalData': '/v1/eod?symbols={symbol}'
+      },
+      'TwelveData': {
+        'companyProfile': '/statistics?symbol={symbol}',
+        'stockPrice': '/quote?symbol={symbol}',
+        'financialStatements': '/income_statement, /balance_sheet, /cash_flow'
+      },
+      'AlphaVantage': {
+        'companyProfile': 'OVERVIEW',
+        'stockPrice': 'GLOBAL_QUOTE',
+        'financialStatements': 'INCOME_STATEMENT, BALANCE_SHEET, CASH_FLOW'
+      }
+    };
+    
+    return endpointMap[source]?.[dataType] || 'Unknown endpoint';
+  }
+
+  getDataGuidance(dataType) {
+    const guidanceMap = {
+      'companyProfile': 'Ensure the company ticker symbol is correct and the company is publicly traded.',
+      'stockPrice': 'Real-time quotes may require premium API access. Historical closing prices are available.',
+      'financialStatements': 'Annual financial statements are typically available for public companies. Please upload recent 10-K filings for private companies.',
+      'ratios': 'Financial ratios require recent financial statement data. Please ensure financial statements are available.',
+      'news': 'Company news requires a valid ticker symbol. Private companies may have limited news coverage.',
+      'executives': 'Executive information is typically available for public companies in SEC filings.'
+    };
+    
+    return guidanceMap[dataType] || 'Please verify the company information and try again.';
+  }
+
+  // Cross-reference with user documents
+  async crossReferenceDocuments(apiData, userDocuments, symbol) {
+    if (!userDocuments || userDocuments.length === 0) {
+      return apiData;
+    }
+
+    try {
+      console.log(`[AgentCoordinator] Cross-referencing API data with ${userDocuments.length} user documents for ${symbol}`);
+      
+      // Extract financial data from documents
+      const documentData = await this.extractDataFromDocuments(userDocuments, symbol);
+      
+      // Compare and merge data
+      const mergedData = this.mergeDataSources(apiData, documentData, symbol);
+      
+      // Flag discrepancies
+      const discrepancies = this.identifyDiscrepancies(apiData, documentData);
+      
+      return {
+        ...mergedData,
+        discrepancies: discrepancies,
+        dataSources: {
+          api: apiData,
+          documents: documentData
+        },
+        crossReferenced: true
+      };
+    } catch (error) {
+      console.error(`[AgentCoordinator] Error cross-referencing documents:`, error);
+      return {
+        ...apiData,
+        crossReferenceError: error.message
+      };
+    }
+  }
+
+  async extractDataFromDocuments(userDocuments, symbol) {
+    const extractedData = {};
+    
+    for (const doc of userDocuments) {
+      try {
+        const text = doc.extractedText || await this.extractTextFromDocument(doc);
+        const analysis = await GeminiService.extractFinancialData(text, symbol);
+        
+        if (analysis && analysis.financialData) {
+          Object.assign(extractedData, analysis.financialData);
+        }
+      } catch (error) {
+        console.warn(`[AgentCoordinator] Failed to extract from document ${doc.fileName}:`, error);
+      }
+    }
+    
+    return extractedData;
+  }
+
+  mergeDataSources(apiData, documentData, symbol) {
+    // Prioritize document data over API data for more specific information
+    const merged = { ...apiData };
+    
+    Object.keys(documentData).forEach(key => {
+      if (documentData[key] && documentData[key] !== null) {
+        if (merged[key] && merged[key] !== documentData[key]) {
+          // Flag difference
+          merged[`${key}_discrepancy`] = {
+            api: merged[key],
+            document: documentData[key],
+            source_priority: 'document'
+          };
+        }
+        merged[key] = documentData[key];
+        merged[`${key}_source`] = 'User Document';
+      }
+    });
+    
+    return merged;
+  }
+
+  identifyDiscrepancies(apiData, documentData) {
+    const discrepancies = [];
+    
+    Object.keys(documentData).forEach(key => {
+      if (apiData[key] && documentData[key] && apiData[key] !== documentData[key]) {
+        discrepancies.push({
+          field: key,
+          apiValue: apiData[key],
+          documentValue: documentData[key],
+          recommendation: 'Document value preferred for accuracy'
+        });
+      }
+    });
+    
+    return discrepancies;
+  }
+
+  // Rest of the existing methods remain the same...
   async analyzeCompany(files, companyInfo, onProgress = () => {}) {
     const analysisId = Date.now().toString();
     
@@ -32,7 +425,7 @@ class AgentCoordinator {
 
     try {
       // Step 1: Initialize analysis
-      onProgress(5, "Initializing AI agents...", "coordinator");
+      onProgress(5, "Initializing AI systems...", "coordinator");
       await this.delay(500);
 
       // Step 2: Document processing
@@ -41,17 +434,29 @@ class AgentCoordinator {
       this.activeAnalysis.results.documents = documentResults;
       await this.delay(1000);
 
-      // Step 3: Company detection and enrichment
-      onProgress(30, "Detecting company and gathering data...", "researchAgent");
-      const companyData = await this.agents.researchAgent.detectAndEnrichCompany(
-        documentResults, 
-        companyInfo
-      );
+      // Step 3: Multi-API data orchestration
+      onProgress(30, "Gathering comprehensive market data...", "researchAgent");
+      let companyData = null;
+      
+      if (companyInfo?.ticker) {
+        // Fetch comprehensive data from all APIs
+        companyData = await this.orchestrateDataFetch(companyInfo.ticker);
+        
+        // Cross-reference with user documents
+        companyData = await this.crossReferenceDocuments(companyData, documentResults.documents, companyInfo.ticker);
+      } else {
+        // Detect company from documents first
+        companyData = await this.agents.researchAgent.detectAndEnrichCompany(
+          documentResults, 
+          companyInfo
+        );
+      }
+      
       this.activeAnalysis.results.company = companyData;
       await this.delay(1500);
 
-      // Step 4: Financial analysis
-      onProgress(50, "Analyzing financial metrics...", "financialAnalyst");
+      // Step 4: Enhanced financial analysis with real data
+      onProgress(50, "Analyzing comprehensive financial metrics...", "financialAnalyst");
       const financialAnalysis = await this.agents.financialAnalyst.analyzeFinancials(
         documentResults,
         companyData
@@ -59,8 +464,8 @@ class AgentCoordinator {
       this.activeAnalysis.results.financials = financialAnalysis;
       await this.delay(1500);
 
-      // Step 5: Generate insights
-      onProgress(75, "Generating investment insights...", "insightsAgent");
+      // Step 5: Generate intelligent insights
+      onProgress(75, "Generating AI-powered insights...", "insightsAgent");
       const insights = await this.agents.insightsAgent.generateInsights({
         ...this.activeAnalysis.results
       });
@@ -68,7 +473,7 @@ class AgentCoordinator {
       await this.delay(1000);
 
       // Step 6: Coordination and finalization
-      onProgress(90, "Coordinating final analysis...", "coordinator");
+      onProgress(90, "Finalizing comprehensive analysis...", "coordinator");
       const finalResult = await this.agents.coordinator.coordinateResults(
         this.activeAnalysis.results
       );

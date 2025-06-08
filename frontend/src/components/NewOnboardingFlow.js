@@ -166,8 +166,6 @@ const NewOnboardingFlow = ({ onComplete }) => {
     switch (currentStep) {
       case 1:
         return formData.email && formData.password && formData.firstName && formData.lastName;
-      case 2:
-        return formData.isPrivateCompany ? formData.company : formData.selectedCompany;
       default:
         return true;
     }

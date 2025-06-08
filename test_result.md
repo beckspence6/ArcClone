@@ -232,17 +232,17 @@ frontend:
         agent: "main"
         comment: "Basic sidebar exists but needs company switcher dropdown, 'Back to Portfolio' button, current company indicator"
 
-  - task: "CompanyOverview Data Integration"
+  - task: "DistressedCreditDashboard Data Integration"
     implemented: true
     working: true
-    file: "CompanyOverview.js"
+    file: "DistressedCreditDashboard.js"
     stuck_count: 0
     priority: "high"
     needs_retesting: true
     status_history:
       - working: true
         agent: "main"
-        comment: "Completely transformed CompanyOverview.js to eliminate all mock data and use real multi-API infrastructure with comprehensive source attribution, intelligent fallbacks showing '[Data Unavailable]' with guidance, and cross-referencing capabilities."
+        comment: "Completely transformed DistressedCreditDashboard.js to eliminate ALL mock data and implement comprehensive distressed credit analysis using real multi-API data with advanced covenant analysis, liquidity projections, capital structure analysis, and intelligent risk flag generation based on actual financial metrics."
       - working: true
         agent: "testing"
         comment: "Verified that backend API is fully functional and ready to handle requests from the enhanced frontend with multi-API infrastructure. Backend tests show excellent performance and all endpoints are working correctly."

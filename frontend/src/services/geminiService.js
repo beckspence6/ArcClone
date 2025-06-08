@@ -497,6 +497,7 @@ class GeminiService {
       };
     }
   }
+  async generateInsights(companyData, question) {
     try {
       const prompt = `
         Based on the following company data, answer this question: "${question}"

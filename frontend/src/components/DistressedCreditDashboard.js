@@ -849,7 +849,14 @@ ${liquidityPosition.netMonthlyBurn < 0 ? `
   }
 
   const renderOverview = () => {
-    const metrics = generateDistressedMetrics();
+    const metrics = enhancedMetrics || { 
+      distressScore: '[Analyzing...]',
+      riskLevel: '[Processing...]',
+      liquidityMonths: '[Calculating...]',
+      totalDebt: '[Loading...]',
+      guidance: 'Enhanced analysis in progress...',
+      confidence: 10
+    };
     const covenants = generateCovenantAnalysis();
     const violationCount = covenants.filter(c => c.status === 'violation').length;
 

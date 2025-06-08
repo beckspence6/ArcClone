@@ -368,10 +368,7 @@ const Reports = ({ companyData }) => {
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Executive summary</h2>
               <div className="bg-white rounded-xl p-6 border border-gray-200">
                 <p className="text-gray-700 leading-relaxed">
-                  BlueSky Software presents a compelling investment opportunity in the enterprise software space. 
-                  The company has demonstrated strong revenue growth with LTM revenue of $70.2M and improving gross margins of 81.3%. 
-                  The business model is subscription-based with high customer retention rates and expanding market presence in the 
-                  project management sector.
+                  {generateCompanyContent().executiveSummary}
                 </p>
               </div>
             </motion.section>

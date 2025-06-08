@@ -398,7 +398,7 @@ const Reports = ({ companyData }) => {
                   </div>
                   <p className="text-2xl font-bold text-gray-900">{generateCompanyContent().revenue}</p>
                   <p className="text-sm text-green-600">
-                    {generateCompanyContent().revenue.includes('[') ? 'Data extraction in progress' : 'From financial analysis'}
+                    {generateCompanyContent().revenue && generateCompanyContent().revenue.includes('[') ? 'Data extraction in progress' : 'From financial analysis'}
                   </p>
                 </div>
 

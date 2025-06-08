@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import GeminiService from '../services/GeminiService';
 import { 
   Building2,
   MapPin,

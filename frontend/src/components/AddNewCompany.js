@@ -25,6 +25,12 @@ import FMPService from '../services/FMPService';
 const AddNewCompany = ({ onComplete, onCancel }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [companyName, setCompanyName] = useState('');
+  const [ticker, setTicker] = useState('');
+  const [selectedCompany, setSelectedCompany] = useState(null);
+  const [isPrivateCompany, setIsPrivateCompany] = useState(false);
+  const [companySearchResults, setCompanySearchResults] = useState([]);
+  const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
+  const [searchingCompanies, setSearchingCompanies] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [processingFiles, setProcessingFiles] = useState(false);
   const [taggedFiles, setTaggedFiles] = useState({});

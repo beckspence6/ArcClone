@@ -129,10 +129,6 @@ const NewOnboardingFlow = ({ onComplete }) => {
         name: `${formData.firstName} ${formData.lastName}`,
         firstName: formData.firstName,
         lastName: formData.lastName,
-        company: formData.company,
-        ticker: formData.ticker,
-        selectedCompany: formData.selectedCompany,
-        isPrivateCompany: formData.isPrivateCompany,
         role: formData.role,
         avatar: `https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face`,
         preferences: {

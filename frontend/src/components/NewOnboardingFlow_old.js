@@ -88,12 +88,103 @@ const NewOnboardingFlow = ({ onComplete }) => {
       setSearchingCompanies(false);
     }
   };
+  const companyDatabase = [
+    { 
+      symbol: 'AAPL', 
+      name: 'Apple Inc.', 
+      industry: 'Technology', 
+      sector: 'Consumer Electronics',
+      location: 'Cupertino, CA',
+      founded: 1976,
+      marketCap: '$2.8T'
+    },
+    { 
+      symbol: 'MSFT', 
+      name: 'Microsoft Corporation', 
+      industry: 'Technology', 
+      sector: 'Software',
+      location: 'Redmond, WA',
+      founded: 1975,
+      marketCap: '$2.4T'
+    },
+    { 
+      symbol: 'GOOGL', 
+      name: 'Alphabet Inc.', 
+      industry: 'Technology', 
+      sector: 'Internet Services',
+      location: 'Mountain View, CA',
+      founded: 1998,
+      marketCap: '$1.7T'
+    },
+    { 
+      symbol: 'AMZN', 
+      name: 'Amazon.com Inc.', 
+      industry: 'E-commerce', 
+      sector: 'Consumer Discretionary',
+      location: 'Seattle, WA',
+      founded: 1994,
+      marketCap: '$1.5T'
+    },
+    { 
+      symbol: 'TSLA', 
+      name: 'Tesla Inc.', 
+      industry: 'Automotive', 
+      sector: 'Electric Vehicles',
+      location: 'Austin, TX',
+      founded: 2003,
+      marketCap: '$800B'
+    },
+    { 
+      symbol: 'META', 
+      name: 'Meta Platforms Inc.', 
+      industry: 'Technology', 
+      sector: 'Social Media',
+      location: 'Menlo Park, CA',
+      founded: 2004,
+      marketCap: '$750B'
+    },
+    { 
+      symbol: 'NFLX', 
+      name: 'Netflix Inc.', 
+      industry: 'Entertainment', 
+      sector: 'Streaming Services',
+      location: 'Los Gatos, CA',
+      founded: 1997,
+      marketCap: '$180B'
+    },
+    { 
+      symbol: 'NVDA', 
+      name: 'NVIDIA Corporation', 
+      industry: 'Technology', 
+      sector: 'Semiconductors',
+      location: 'Santa Clara, CA',
+      founded: 1993,
+      marketCap: '$1.2T'
+    }
+  ];
+
+  const handleCompanySearch = (searchTerm) => {
+    setFormData(prev => ({ ...prev, company: searchTerm }));
+    
+    if (searchTerm.length >= 2) {
+      const results = companyDatabase.filter(company => 
+        company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        company.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        company.industry.toLowerCase().includes(searchTerm.toLowerCase())
+      ).slice(0, 6);
+      
+      setCompanySearchResults(results);
+      setShowCompanyDropdown(true);
+    } else {
+      setCompanySearchResults([]);
+      setShowCompanyDropdown(false);
+    }
+  };
 
   const handleCompanySelect = (company) => {
     setFormData(prev => ({ 
       ...prev, 
       company: company.name,
-      ticker: company.symbol,
       selectedCompany: company,
       industry: company.industry
     }));
@@ -136,9 +227,6 @@ const NewOnboardingFlow = ({ onComplete }) => {
         firstName: formData.firstName,
         lastName: formData.lastName,
         company: formData.company,
-        ticker: formData.ticker,
-        selectedCompany: formData.selectedCompany,
-        isPrivateCompany: formData.isPrivateCompany,
         role: formData.role,
         avatar: `https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face`,
         preferences: {
@@ -168,7 +256,7 @@ const NewOnboardingFlow = ({ onComplete }) => {
       case 1:
         return formData.email && formData.password && formData.firstName && formData.lastName;
       case 2:
-        return formData.isPrivateCompany ? formData.company : formData.selectedCompany;
+        return formData.isPrivateCompany || formData.selectedCompany;
       default:
         return true;
     }
@@ -313,14 +401,14 @@ const NewOnboardingFlow = ({ onComplete }) => {
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
           <div className="relative">
+            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-4 py-3 pl-10 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent backdrop-blur-lg"
-              placeholder="you@company.com"
+              className="w-full pl-12 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent backdrop-blur-lg"
+              placeholder="your@email.com"
             />
-            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           </div>
         </div>
 
@@ -328,14 +416,14 @@ const NewOnboardingFlow = ({ onComplete }) => {
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
           <div className="relative">
+            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type={showPassword ? 'text' : 'password'}
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-full px-4 py-3 pl-10 pr-10 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent backdrop-blur-lg"
-              placeholder="Create a strong password"
+              className="w-full pl-12 pr-12 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent backdrop-blur-lg"
+              placeholder="Create a secure password"
             />
-            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
@@ -344,6 +432,73 @@ const NewOnboardingFlow = ({ onComplete }) => {
               {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
           </div>
+        </div>
+
+        {/* Company Search */}
+        <div className="relative">
+          <label className="block text-sm font-medium text-gray-300 mb-2">Company to Analyze</label>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              value={formData.company}
+              onChange={(e) => handleCompanySearch(e.target.value)}
+              onFocus={() => {
+                if (companySearchResults.length > 0) setShowCompanyDropdown(true);
+              }}
+              className="w-full pl-12 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent backdrop-blur-lg"
+              placeholder="Search for a company (e.g., Apple, AAPL, Tesla)"
+            />
+          </div>
+
+          {/* Company Search Dropdown */}
+          <AnimatePresence>
+            {showCompanyDropdown && companySearchResults.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-lg rounded-xl border border-white/20 z-50 max-h-64 overflow-y-auto"
+              >
+                {companySearchResults.map((company, index) => (
+                  <motion.button
+                    key={company.symbol}
+                    onClick={() => handleCompanySelect(company)}
+                    className="w-full p-4 text-left hover:bg-blue-50/50 transition-colors border-b border-gray-200/20 last:border-b-0 first:rounded-t-xl last:rounded-b-xl"
+                    whileHover={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+                            <span className="text-white font-bold text-sm">{company.symbol}</span>
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-gray-900">{company.name}</h4>
+                            <div className="flex items-center space-x-2 text-sm text-gray-600">
+                              <span>{company.industry}</span>
+                              <span>•</span>
+                              <div className="flex items-center space-x-1">
+                                <MapPin className="w-3 h-3" />
+                                <span>{company.location}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium text-gray-900">{company.marketCap}</p>
+                        <div className="flex items-center space-x-1 text-xs text-gray-500">
+                          <Calendar className="w-3 h-3" />
+                          <span>Founded {company.founded}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Role */}
@@ -521,8 +676,6 @@ const NewOnboardingFlow = ({ onComplete }) => {
       </div>
     </motion.div>
   );
-
-  const renderPreferencesStep = () => (
     <motion.div
       className="space-y-8 max-w-md mx-auto"
       initial={{ opacity: 0, y: 30 }}
@@ -596,12 +749,12 @@ const NewOnboardingFlow = ({ onComplete }) => {
             key={i}
             className="absolute w-1 h-1 bg-blue-400 rounded-full"
             initial={{
-              x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1200),
-              y: Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 800),
+              x: Math.random() * window.innerWidth,
+              y: Math.random() * window.innerHeight,
             }}
             animate={{
-              x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1200),
-              y: Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 800),
+              x: Math.random() * window.innerWidth,
+              y: Math.random() * window.innerHeight,
             }}
             transition={{
               duration: Math.random() * 20 + 20,
@@ -661,8 +814,7 @@ const NewOnboardingFlow = ({ onComplete }) => {
           >
             {currentStep === 0 && renderWelcomeStep()}
             {currentStep === 1 && renderAccountStep()}
-            {currentStep === 2 && renderCompanyStep()}
-            {currentStep === 3 && renderPreferencesStep()}
+            {currentStep === 2 && renderPreferencesStep()}
           </motion.div>
         </AnimatePresence>
 

@@ -376,6 +376,161 @@ const Reports = ({ companyData }) => {
     setExpandedSection(expandedSection === section ? null : section);
   };
 
+  const handleBulkExport = async () => {
+    if (selectedReports.length === 0) {
+      toast.error('Please select at least one report to export');
+      return;
+    }
+
+    try {
+      setIsGenerating(true);
+      const companyName = generateCompanyContent().companyName;
+      const timestamp = new Date().toISOString().split('T')[0];
+      
+      // Create comprehensive PDF with all selected reports
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      
+      // Cover page
+      pdf.setFontSize(24);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Comprehensive Investment Package', pageWidth / 2, 40, { align: 'center' });
+      
+      pdf.setFontSize(18);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(companyName, pageWidth / 2, 55, { align: 'center' });
+      
+      pdf.setFontSize(12);
+      pdf.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth / 2, 70, { align: 'center' });
+      pdf.text(`Reports Included: ${selectedReports.length}`, pageWidth / 2, 80, { align: 'center' });
+      
+      // Table of contents
+      pdf.addPage();
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Table of Contents', 20, 30);
+      
+      let yPos = 50;
+      selectedReports.forEach((reportId, index) => {
+        const report = reportTemplates.find(r => r.id === reportId);
+        if (report) {
+          pdf.setFontSize(11);
+          pdf.setFont('helvetica', 'normal');
+          pdf.text(`${index + 1}. ${report.title}`, 25, yPos);
+          pdf.text(`Page ${index + 3}`, pageWidth - 40, yPos);
+          yPos += 8;
+        }
+      });
+      
+      // Generate each selected report
+      for (let i = 0; i < selectedReports.length; i++) {
+        const reportId = selectedReports[i];
+        const template = reportTemplates.find(r => r.id === reportId);
+        
+        if (template) {
+          pdf.addPage();
+          
+          // Report header
+          pdf.setFontSize(18);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(template.title, 20, 30);
+          
+          pdf.setFontSize(12);
+          pdf.setFont('helvetica', 'normal');
+          pdf.text(template.description, 20, 45);
+          
+          // Report content
+          yPos = 65;
+          const content = generateReportContent(template.id);
+          const splitContent = pdf.splitTextToSize(content, pageWidth - 40);
+          
+          splitContent.forEach(line => {
+            if (yPos > pageHeight - 20) {
+              pdf.addPage();
+              yPos = 25;
+            }
+            pdf.text(line, 20, yPos);
+            yPos += 5;
+          });
+          
+          // Add includes section
+          yPos += 10;
+          if (yPos > pageHeight - 50) {
+            pdf.addPage();
+            yPos = 25;
+          }
+          
+          pdf.setFontSize(11);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text('Report Includes:', 20, yPos);
+          yPos += 8;
+          
+          pdf.setFont('helvetica', 'normal');
+          template.includes.forEach(item => {
+            if (yPos > pageHeight - 20) {
+              pdf.addPage();
+              yPos = 25;
+            }
+            pdf.text(`• ${item}`, 25, yPos);
+            yPos += 6;
+          });
+        }
+      }
+      
+      // Add footer to all pages
+      const totalPages = pdf.internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+        pdf.text('Confidential - Investment Analysis Package', 20, pageHeight - 10);
+      }
+      
+      // Save the comprehensive PDF
+      const fileName = `${companyName.replace(/\s+/g, '_')}_Complete_Analysis_Package_${timestamp}.pdf`;
+      pdf.save(fileName);
+      
+      toast.success(`Complete analysis package exported: ${fileName}`);
+      setSelectedReports([]);
+      setShowBulkExport(false);
+      
+    } catch (error) {
+      console.error('Bulk export error:', error);
+      toast.error('Failed to export package. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const generateReportContent = (reportId) => {
+    const companyName = generateCompanyContent().companyName;
+    
+    switch (reportId) {
+      case 'distress-summary':
+        return `This report provides a comprehensive overview of ${companyName}'s financial distress indicators, including covenant compliance analysis, liquidity runway assessment, and key risk factor identification. The analysis incorporates real-time financial data and document-based insights to deliver actionable intelligence for distressed credit investment decisions.`;
+      
+      case 'covenant-analysis':
+        return `Detailed covenant tracking and compliance analysis for ${companyName}, examining debt service coverage ratios, leverage constraints, and financial maintenance requirements. This report includes trend analysis, violation alerts, and strategic recommendations for covenant management and waiver negotiations.`;
+      
+      case 'liquidity-forecast':
+        return `Comprehensive liquidity and cash flow analysis for ${companyName}, featuring detailed runway modeling, burn rate calculations, and scenario-based projections. The forecast includes working capital optimization strategies and contingency planning for various market conditions.`;
+      
+      case 'capital-structure':
+        return `In-depth capital structure analysis for ${companyName}, mapping debt waterfall scenarios, recovery rate assessments, and intercreditor dynamics. This analysis provides critical insights for understanding relative value and recovery potential across the capital structure.`;
+      
+      case 'investment-memo':
+        return `Executive investment committee memorandum for ${companyName}, synthesizing key financial metrics, strategic positioning, and investment thesis development. This memo provides decision-makers with concise yet comprehensive analysis for informed capital allocation decisions.`;
+      
+      case 'maturity-analysis':
+        return `Debt maturity wall analysis for ${companyName}, examining upcoming refinancing requirements, market conditions impact, and strategic alternatives evaluation. This report identifies potential liquidity events and refinancing strategies across different time horizons.`;
+      
+      default:
+        return `Comprehensive financial analysis for ${companyName}, providing institutional-grade insights and recommendations for investment decision-making.`;
+    }
+  };
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Main Content */}

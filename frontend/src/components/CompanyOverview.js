@@ -62,28 +62,44 @@ const CompanyOverview = ({ companyData }) => {
     fetchComprehensiveData();
   }, [companyData?.company?.ticker]);
 
-  // Generate dynamic company profile from real API data
+  // Enhanced company profile generation with multi-source data and Gemini fallback
   const generateCompanyProfile = () => {
     const hasApiData = comprehensiveData && !comprehensiveData.error;
-    const profile = comprehensiveData?.profile;
+    const profile = comprehensiveData?.profile?.[0] || comprehensiveData?.profile;
+    const companyName = companyData?.company?.name || profile?.companyName || '[Company Name]';
+    const ticker = companyData?.company?.ticker || profile?.symbol;
     
-    // Basic company info with fallbacks showing [Data Unavailable] instead of mock data
+    // Start with base company data
     const company = {
-      name: companyData?.company?.name || '[Company Name Unavailable]',
-      ticker: companyData?.company?.ticker || '[Ticker Unavailable]',
-      industry: profile?.[0]?.industry || companyData?.company?.industry || '[Industry Unavailable]',
-      sector: profile?.[0]?.sector || '[Sector Unavailable]',
-      location: profile?.[0]?.address || profile?.[0]?.city || '[Location Unavailable]',
-      founded: profile?.[0]?.ipoDate ? new Date(profile[0].ipoDate).getFullYear() : '[Founded Date Unavailable]',
-      employees: profile?.[0]?.fullTimeEmployees || '[Employee Count Unavailable]',
-      description: profile?.[0]?.description || companyData?.company?.description || '[Company Description Unavailable]',
-      website: profile?.[0]?.website || '[Website Unavailable]',
-      marketCap: profile?.[0]?.mktCap || '[Market Cap Unavailable]',
-      
-      // Source attribution for profile data
-      profileSource: hasApiData ? 'FMP Company Profile API' : 'User Documents',
-      profileConfidence: hasApiData ? 95 : 70
+      name: companyName,
+      ticker: ticker || '[No Ticker]',
+      industry: profile?.industry || companyData?.company?.industry || '[Industry Pending]',
+      sector: profile?.sector || '[Sector Pending]',
+      description: profile?.description || '[Description Pending]',
+      website: profile?.website || '[Website Pending]',
+      founded: profile?.foundedYear || profile?.ipoDate || '[Founded Date Pending]',
+      employees: profile?.fullTimeEmployees || '[Employee Count Pending]',
+      marketCap: profile?.mktCap ? `$${(profile.mktCap / 1000000000).toFixed(2)}B` : '[Market Cap Pending]',
+      profileConfidence: 50
     };
+
+    // Enhance with API data if available
+    if (hasApiData && profile) {
+      company.industry = profile.industry || company.industry;
+      company.sector = profile.sector || company.sector;
+      company.description = profile.description || company.description;
+      company.website = profile.website || company.website;
+      company.founded = profile.foundedYear || profile.ipoDate?.split('-')[0] || company.founded;
+      company.employees = profile.fullTimeEmployees ? profile.fullTimeEmployees.toLocaleString() : company.employees;
+      company.marketCap = profile.mktCap ? `$${(profile.mktCap / 1000000000).toFixed(2)}B` : company.marketCap;
+      company.profileConfidence = 95;
+    }
+
+    // Use Gemini fallback for missing critical data points
+    if (company.founded === '[Founded Date Pending]' || company.description === '[Description Pending]') {
+      company.needsGeminiEnhancement = true;
+      company.geminiQuery = `Get founding date, industry details, and business description for ${companyName} ${ticker ? `(${ticker})` : ''}`;
+    }
 
     return company;
   };

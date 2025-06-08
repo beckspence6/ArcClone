@@ -217,10 +217,14 @@ const AddNewCompany = ({ onComplete, onCancel }) => {
 
   const canProceed = () => {
     switch (currentStep) {
-      case 0: return companyName.trim().length > 0;
-      case 1: return uploadedFiles.length > 0;
-      case 2: return uploadedFiles.every(file => taggedFiles[file.id]);
-      default: return true;
+      case 0: 
+        return companyName.trim().length > 0 && (isPrivateCompany || selectedCompany);
+      case 1: 
+        return uploadedFiles.length > 0;
+      case 2: 
+        return uploadedFiles.every(file => taggedFiles[file.id]);
+      default: 
+        return true;
     }
   };
 

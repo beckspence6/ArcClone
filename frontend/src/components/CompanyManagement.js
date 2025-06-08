@@ -169,11 +169,11 @@ const CompanyManagement = ({ onSelectCompany, onCreateNew, companies = [], onDel
 
                   {/* Status */}
                   <div className="flex items-center space-x-2 mb-4">
-                    <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(company.status)}`}>
+                    <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(company?.status || 'analyzing')}`}>
                       <StatusIcon className="w-3 h-3" />
-                      <span className="capitalize">{company.status}</span>
+                      <span className="capitalize">{company?.status || 'analyzing'}</span>
                     </div>
-                    {company.lastAnalyzed && (
+                    {company?.lastAnalyzed && (
                       <span className="text-xs text-gray-500">
                         Analyzed {new Date(company.lastAnalyzed).toLocaleDateString()}
                       </span>
@@ -184,19 +184,19 @@ const CompanyManagement = ({ onSelectCompany, onCreateNew, companies = [], onDel
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
                       <p className="text-xs text-gray-600">Total Debt</p>
-                      <p className="text-sm font-semibold text-gray-900">{company.totalDebt || 'N/A'}</p>
+                      <p className="text-sm font-semibold text-gray-900">{company?.totalDebt || 'N/A'}</p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-600">Liquidity</p>
-                      <p className="text-sm font-semibold text-gray-900">{company.liquidity || 'N/A'}</p>
+                      <p className="text-sm font-semibold text-gray-900">{company?.liquidity || 'N/A'}</p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-600">Next Maturity</p>
-                      <p className="text-sm font-semibold text-gray-900">{company.nextMaturity || 'N/A'}</p>
+                      <p className="text-sm font-semibold text-gray-900">{company?.nextMaturity || 'N/A'}</p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-600">Documents</p>
-                      <p className="text-sm font-semibold text-gray-900">{company.documentCount || 0}</p>
+                      <p className="text-sm font-semibold text-gray-900">{company?.documentCount || 0}</p>
                     </div>
                   </div>
 

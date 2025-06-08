@@ -15,7 +15,7 @@ class AgentCoordinator {
       insightsAgent: new InsightsAgent()
     };
     
-    // API priority configuration - SEC data is highest priority for public companies
+    // API priority configuration - SEC data is HIGHEST priority for public companies
     this.apiPriority = {
       companyProfile: ['SEC', 'FMP', 'TwelveData', 'AlphaVantage'],
       stockPrice: ['FMP', 'Marketstack', 'TwelveData', 'AlphaVantage'],
@@ -24,7 +24,12 @@ class AgentCoordinator {
       ratios: ['SEC', 'FMP', 'TwelveData'], // SEC calculated ratios preferred
       executives: ['SEC', 'FMP'], // SEC filings are definitive source
       subsidiaries: ['SEC'], // Only SEC has accurate subsidiary data
-      ownership: ['SEC'] // SEC filings for ownership data
+      ownership: ['SEC'], // SEC filings for ownership data
+      covenants: ['SEC'], // SEC filings and user documents for covenant analysis
+      debtStructure: ['SEC'], // SEC filings for debt structure analysis
+      insiderTrading: ['SEC'], // SEC Form 144, 3/4/5 data
+      litigation: ['SEC'], // SEC litigation releases
+      institutionalHoldings: ['SEC'] // SEC Form 13F data
     };
     
     // Rate limit tracking

@@ -490,7 +490,7 @@ const CompanyOverview = ({ companyData }) => {
                       {metric.source !== 'N/A' ? metric.source.split(' ')[0] : 'No Data'}
                     </span>
                     <span className="text-gray-500">
-                      {metric.confidence}% confidence
+                      {typeof metric.confidence === 'number' ? metric.confidence : 0}% confidence
                     </span>
                   </div>
                   

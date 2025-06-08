@@ -201,14 +201,14 @@ const CompanyManagement = ({ onSelectCompany, onCreateNew, companies = [], onDel
                   </div>
 
                   {/* Risk Flags */}
-                  {company.riskFlags && Array.isArray(company.riskFlags) && company.riskFlags.length > 0 && (
+                  {company?.riskFlags && Array.isArray(company.riskFlags) && company.riskFlags.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {company.riskFlags.slice(0, 3).map((flag, i) => (
                         <span
                           key={i}
                           className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full"
                         >
-                          {typeof flag === 'string' ? flag : flag.title || 'Risk Flag'}
+                          {typeof flag === 'string' ? flag : flag?.title || 'Risk Flag'}
                         </span>
                       ))}
                       {company.riskFlags.length > 3 && (
@@ -226,15 +226,15 @@ const CompanyManagement = ({ onSelectCompany, onCreateNew, companies = [], onDel
                     <div className="flex items-center space-x-4 text-xs text-gray-600">
                       <div className="flex items-center space-x-1">
                         <FileText className="w-3 h-3" />
-                        <span>{company.documentCount || 0} docs</span>
+                        <span>{company?.documentCount || 0} docs</span>
                       </div>
                       <div className="flex items-center space-x-1">
                         <BarChart3 className="w-3 h-3" />
-                        <span>{company.analysisCount || 0} analyses</span>
+                        <span>{company?.analysisCount || 0} analyses</span>
                       </div>
                     </div>
                     <span className="text-xs text-gray-500">
-                      Updated {company.lastUpdated ? new Date(company.lastUpdated).toLocaleDateString() : 'Never'}
+                      Updated {company?.lastUpdated ? new Date(company.lastUpdated).toLocaleDateString() : 'Never'}
                     </span>
                   </div>
                 </div>

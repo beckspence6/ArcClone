@@ -497,20 +497,46 @@ What specific analysis would you like me to prepare? I can create both detailed 
     return "Ask me about distressed credit analysis, covenant tracking, or financial modeling...";
   };
 
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Chat Area */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
         <div className="bg-white border-b border-gray-200 px-8 py-6">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <Bot className="w-6 h-6 text-white" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                <Bot className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">AI Assistant</h1>
+                <p className="text-gray-600">
+                  {companyData?.company?.name 
+                    ? `Enhanced distressed credit analysis for ${companyData.company.name}`
+                    : "Natural language financial analysis"
+                  }
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">AI Assistant</h1>
-              <p className="text-gray-600">Natural language financial analysis</p>
-            </div>
+            
+            {companyData?.company?.name && (
+              <div className="text-right">
+                <div className="flex items-center space-x-2 text-sm text-green-600">
+                  <CheckCircle className="w-4 h-4" />
+                  <span>Company Context Active</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Real-time data and document analysis enabled
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -601,7 +627,12 @@ What specific analysis would you like me to prepare? I can create both detailed 
                   <div className="bg-white border border-gray-200 rounded-xl p-4">
                     <div className="flex items-center space-x-2">
                       <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
-                      <span className="text-gray-600">AI agents are analyzing...</span>
+                      <span className="text-gray-600">
+                        {companyData?.company?.name 
+                          ? 'Analyzing company-specific data...' 
+                          : 'AI agents are processing...'
+                        }
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -614,18 +645,23 @@ What specific analysis would you like me to prepare? I can create both detailed 
 
         {/* Input Area */}
         <div className="bg-white border-t border-gray-200 p-6">
-          {/* Sample Questions */}
+          {/* Enhanced Sample Questions */}
           {messages.length === 1 && (
             <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-3">Try asking:</p>
-              <div className="flex flex-wrap gap-2">
-                {sampleQuestions.slice(0, 3).map((question, index) => (
+              <p className="text-sm text-gray-600 mb-3">
+                {companyData?.company?.name 
+                  ? `Try asking about ${companyData.company.name}:` 
+                  : 'Try asking:'
+                }
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {contextualSuggestions.slice(0, 4).map((question, index) => (
                   <motion.button
                     key={index}
                     onClick={() => setInputMessage(question)}
-                    className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg transition-colors"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg transition-colors text-left"
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
                   >
                     {question}
                   </motion.button>
@@ -641,7 +677,7 @@ What specific analysis would you like me to prepare? I can create both detailed 
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Ask me about BlueSky's financials, trends, or risks..."
+                placeholder={getPlaceholderText()}
                 className="w-full resize-none border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                 rows="1"
                 style={{ minHeight: '44px', maxHeight: '120px' }}
@@ -661,7 +697,7 @@ What specific analysis would you like me to prepare? I can create both detailed 
         </div>
       </div>
 
-      {/* Agent Activity Sidebar */}
+      {/* Enhanced Agent Activity Sidebar */}
       <AnimatePresence>
         {agentActivity.length > 0 && (
           <motion.div
@@ -672,7 +708,7 @@ What specific analysis would you like me to prepare? I can create both detailed 
           >
             <div className="flex items-center space-x-2 mb-6">
               <Zap className="w-5 h-5 text-yellow-500" />
-              <h3 className="font-semibold text-gray-900">Agent Activity</h3>
+              <h3 className="font-semibold text-gray-900">AI Agent Activity</h3>
             </div>
 
             <div className="space-y-4">

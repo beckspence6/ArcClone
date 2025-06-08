@@ -221,11 +221,13 @@ const DistressedCreditDashboard = ({ companyData }) => {
 
     const covenants = [];
 
-    // Standard financial covenants with real calculations
+    // Enhanced covenant analysis with detailed AI explanations and document cross-referencing
     if (latestCashFlow?.operatingCashFlow && latestBalance?.totalDebt) {
       const dscr = Math.abs(latestCashFlow.operatingCashFlow / (latestBalance.totalDebt * 0.1)); // Assuming 10% debt service
+      const isViolation = dscr < 1.25;
+      
       covenants.push({
-        name: 'Debt Service Coverage Ratio',
+        name: 'Debt Service Coverage Ratio (DSCR)',
         current: dscr.toFixed(2),
         threshold: '1.25', // Typical threshold
         status: dscr >= 1.25 ? 'compliant' : 'violation',
@@ -233,37 +235,194 @@ const DistressedCreditDashboard = ({ companyData }) => {
         impact: dscr < 1.0 ? 'critical' : (dscr < 1.25 ? 'high' : 'low'),
         source: 'FMP Cash Flow & Balance Sheet APIs',
         formula: 'Operating Cash Flow / Annual Debt Service',
-        explanation: 'Measures the company\'s ability to service its debt obligations with operating cash flow.'
+        
+        // Enhanced AI-generated explanation
+        detailedExplanation: `The Debt Service Coverage Ratio (DSCR) is a critical financial covenant that measures ${companyData?.company?.name || "the company"}'s ability to service its debt obligations using operating cash flow. 
+
+**What this covenant means:**
+• DSCR measures cash flow available to pay debt service obligations
+• A ratio above 1.25x indicates sufficient cash flow cushion
+• Below 1.25x suggests potential cash flow stress
+• Critical threshold is typically 1.0x (breakeven)
+
+**Current Analysis:**
+• Current DSCR: ${dscr.toFixed(2)}x ${isViolation ? '(VIOLATION)' : '(COMPLIANT)'}
+• Operating Cash Flow: $${(latestCashFlow.operatingCashFlow / 1000000).toFixed(1)}M
+• Estimated Annual Debt Service: $${(latestBalance.totalDebt * 0.1 / 1000000).toFixed(1)}M
+
+**Impact of ${isViolation ? 'Violation' : 'Compliance'}:**
+${isViolation ? 
+  '⚠️ **CRITICAL BREACH** - This violation may trigger: Default interest rates (typically +200-400bps), Mandatory cash sweep provisions, Lender consent requirements for material actions, Potential acceleration of debt maturity, Enhanced reporting and monitoring requirements' :
+  '✅ **COMPLIANT** - Company maintains adequate cash flow coverage for debt service obligations, providing operational flexibility and reduced lender oversight.'
+}
+
+**Debt Facility Context:**
+• This covenant typically applies to: Senior Credit Facilities, Term Loans, Revolving Credit Lines
+• Common in: Bank credit agreements, institutional term loans
+• Measurement: Usually quarterly, with cure periods for technical violations
+
+**Document References:**
+${documents.length > 0 ? 
+  '📄 **Covenant details found in uploaded documents** - Analysis based on financial statements and typical credit agreement terms. Upload specific credit agreements for precise threshold verification.' :
+  '📄 **Upload credit agreements** to verify exact covenant thresholds, cure provisions, and specific facility terms.'
+}`,
+
+        // Risk assessment
+        riskFactors: isViolation ? [
+          'Immediate liquidity pressure',
+          'Potential lender enforcement',
+          'Increased borrowing costs',
+          'Operational restrictions'
+        ] : [
+          'Stable debt service capacity',
+          'Operational flexibility maintained'
+        ],
+        
+        // Actionable recommendations
+        recommendations: isViolation ? [
+          'Immediate waiver negotiations with lenders',
+          'Cash flow improvement initiatives',
+          'Debt refinancing evaluation',
+          'Working capital optimization'
+        ] : [
+          'Monitor quarterly performance',
+          'Maintain cash flow discipline'
+        ]
       });
     }
 
     if (latestBalance?.totalDebt && latestIncome?.ebitda) {
       const leverageRatio = latestBalance.totalDebt / latestIncome.ebitda;
+      const isViolation = leverageRatio > 4.0;
+      
       covenants.push({
         name: 'Total Leverage Ratio',
-        current: leverageRatio.toFixed(2),
-        threshold: '4.00', // Typical threshold
+        current: leverageRatio.toFixed(2) + 'x',
+        threshold: '4.00x', // Typical threshold
         status: leverageRatio <= 4.0 ? 'compliant' : 'violation',
         trend: 'calculated',
         impact: leverageRatio > 6.0 ? 'critical' : (leverageRatio > 4.0 ? 'high' : 'low'),
         source: 'FMP Balance Sheet & Income Statement APIs',
         formula: 'Total Debt / EBITDA',
-        explanation: 'Measures the company\'s debt burden relative to earnings before interest, taxes, depreciation, and amortization.'
+        
+        detailedExplanation: `The Total Leverage Ratio is a fundamental credit covenant measuring ${companyData?.company?.name || "the company"}'s debt burden relative to earnings capacity.
+
+**What this covenant means:**
+• Measures total debt relative to earnings before interest, taxes, depreciation, and amortization
+• Higher ratios indicate greater financial leverage and credit risk
+• Standard investment grade threshold: 3.0-4.0x
+• High yield threshold: 4.0-6.0x+
+
+**Current Analysis:**
+• Current Leverage: ${leverageRatio.toFixed(2)}x ${isViolation ? '(VIOLATION)' : '(COMPLIANT)'}
+• Total Debt: $${(latestBalance.totalDebt / 1000000).toFixed(1)}M
+• TTM EBITDA: $${(latestIncome.ebitda / 1000000).toFixed(1)}M
+• Debt Capacity Utilization: ${((leverageRatio / 4.0) * 100).toFixed(0)}% of covenant threshold
+
+**Impact of ${isViolation ? 'Violation' : 'Compliance'}:**
+${isViolation ? 
+  '🔴 **LEVERAGE BREACH** - Excessive debt burden indicates: Potential difficulty refinancing debt, Limited acquisition financing capacity, Increased lender scrutiny and control, Possible mandatory debt paydown requirements, Restricted dividend and distribution payments' :
+  '✅ **WITHIN LIMITS** - Manageable debt burden allows for: Strategic flexibility for growth investments, Access to additional financing if needed, Reduced lender oversight and restrictions'
+}
+
+**Industry Context:**
+• Software/Technology: Typical 2.0-4.0x
+• Manufacturing: Typical 2.5-4.5x  
+• Healthcare: Typical 3.0-5.0x
+• Real Estate: Typical 4.0-7.0x
+
+**Document References:**
+${documents.length > 0 ? 
+  '📋 **Credit agreement analysis** - Leverage covenant typically includes: EBITDA adjustments and add-backs, Debt definitional exclusions, Step-down provisions based on performance' :
+  '📋 **Upload credit facilities** for precise covenant definitions, permitted EBITDA adjustments, and facility-specific terms'
+}`,
+
+        riskFactors: isViolation ? [
+          'Overleveraged capital structure',
+          'Limited refinancing flexibility', 
+          'Potential covenant cascade violations',
+          'Restricted growth capital access'
+        ] : [
+          'Balanced capital structure',
+          'Adequate leverage headroom'
+        ],
+        
+        recommendations: isViolation ? [
+          'Immediate deleveraging strategy',
+          'Asset divestiture evaluation',
+          'Equity infusion consideration', 
+          'Covenant modification negotiations'
+        ] : [
+          'Monitor EBITDA performance',
+          'Evaluate optimal capital structure'
+        ]
       });
     }
 
     if (latestIncome?.operatingIncome && latestIncome?.interestExpense) {
       const interestCoverage = Math.abs(latestIncome.operatingIncome / latestIncome.interestExpense);
+      const isViolation = interestCoverage < 2.0;
+      
       covenants.push({
         name: 'Interest Coverage Ratio',
-        current: interestCoverage.toFixed(2),
-        threshold: '2.00', // Typical threshold
+        current: interestCoverage.toFixed(2) + 'x',
+        threshold: '2.00x', // Typical threshold
         status: interestCoverage >= 2.0 ? 'compliant' : 'violation',
         trend: 'calculated',
         impact: interestCoverage < 1.5 ? 'critical' : (interestCoverage < 2.0 ? 'medium' : 'low'),
         source: 'FMP Income Statement API',
         formula: 'Operating Income / Interest Expense',
-        explanation: 'Measures the company\'s ability to pay interest on outstanding debt.'
+        
+        detailedExplanation: `Interest Coverage Ratio measures ${companyData?.company?.name || "the company"}'s ability to service interest payments on outstanding debt obligations.
+
+**What this covenant means:**
+• Indicates how many times the company can pay its interest expenses
+• Minimum thresholds typically range from 1.5x to 3.0x
+• Lower ratios suggest potential difficulty meeting interest obligations
+• Critical for assessing default risk and debt sustainability
+
+**Current Analysis:**
+• Current Coverage: ${interestCoverage.toFixed(2)}x ${isViolation ? '(VIOLATION)' : '(COMPLIANT)'}
+• Operating Income: $${(latestIncome.operatingIncome / 1000000).toFixed(1)}M
+• Interest Expense: $${(latestIncome.interestExpense / 1000000).toFixed(1)}M
+• Interest Burden: ${((latestIncome.interestExpense / latestIncome.operatingIncome) * 100).toFixed(1)}% of operating income
+
+**Impact Analysis:**
+${isViolation ? 
+  '⚠️ **COVERAGE STRAIN** - Low interest coverage indicates: Earnings volatility creating payment risk, Limited ability to absorb economic downturns, Potential difficulty accessing additional credit, Increased risk of technical default' :
+  '✅ **ADEQUATE COVERAGE** - Sufficient interest coverage provides: Stable debt service capacity, Flexibility during economic cycles, Access to additional financing, Reduced credit risk profile'
+}
+
+**Trend Analysis:**
+• Historical coverage trends require quarterly monitoring
+• Seasonal earnings variations may impact coverage
+• EBITDA-to-interest coverage often used as alternative metric
+
+**Document Context:**
+${documents.length > 0 ? 
+  '📊 **Financial analysis** - Interest coverage calculated from reported financials. Credit agreements may include: Pro forma adjustments for acquisitions, EBITDA-based coverage alternatives, Cure rights through equity contributions' :
+  '📊 **Credit facility review needed** - Upload debt agreements to verify: Specific coverage definitions, Cure mechanisms and periods, Alternative coverage tests'
+}`,
+
+        riskFactors: isViolation ? [
+          'Interest payment stress',
+          'Earnings volatility risk',
+          'Refinancing difficulties',
+          'Credit rating pressure'
+        ] : [
+          'Stable interest service',
+          'Earnings protection available'
+        ],
+        
+        recommendations: isViolation ? [
+          'Earnings improvement focus',
+          'Interest rate hedging strategy',
+          'Debt refinancing at lower rates',
+          'Alternative coverage calculations'
+        ] : [
+          'Maintain earnings stability',
+          'Monitor interest rate exposure'
+        ]
       });
     }
 

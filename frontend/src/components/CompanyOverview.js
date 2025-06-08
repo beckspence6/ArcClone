@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Building2,
@@ -20,82 +20,245 @@ import {
   CheckCircle,
   Target,
   Layers,
-  Activity
+  Activity,
+  Loader2
 } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart } from 'recharts';
+import AgentCoordinator from '../services/agentCoordinator';
 
 const CompanyOverview = ({ companyData }) => {
   const [showSourceModal, setShowSourceModal] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState(null);
   const [showFormula, setShowFormula] = useState(false);
+  const [comprehensiveData, setComprehensiveData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Company data with source tracking
-  const company = {
-    name: companyData?.company?.name || 'Sample Company',
-    industry: companyData?.company?.industry || 'Software',
-    location: 'San Francisco, CA',
-    founded: 2015,
-    employees: 328,
-    description: companyData?.company?.description || 'BlueSky Software is a leading provider of cloud-based enterprise solutions, specializing in scalable project management and collaboration tools for mid-to-large-sized organizations.',
-    logo: '🔵',
-    website: 'www.blueskysoft.com',
-    
-    // Key metrics with source attribution
-    metrics: {
-      ltmRevenue: {
-        value: '$37.4M',
-        change: '+15.2%',
-        source: 'Financial Statements Q3 2024.xlsx, Page 3',
-        formula: 'Sum of quarterly revenue for last 12 months',
-        confidence: 96
-      },
-      grossMargin: {
-        value: '29.8%',
-        change: '+2.1%',
-        source: 'Income Statement, Line 23',
-        formula: '(Revenue - COGS) / Revenue × 100',
-        confidence: 94
-      },
-      cash: {
-        value: '$3.3M',
-        change: '-12.5%',
-        source: 'Balance Sheet Q3 2024, Cash & Equivalents',
-        formula: 'Cash + Cash Equivalents + Short-term Investments',
-        confidence: 98
-      },
-      existingDebt: {
-        value: '$2.1M',
-        change: '+5.3%',
-        source: 'Balance Sheet, Long-term Debt',
-        formula: 'Total Debt - Current Portion of Long-term Debt',
-        confidence: 97
+  useEffect(() => {
+    const fetchComprehensiveData = async () => {
+      if (!companyData?.company?.ticker) {
+        console.warn('[CompanyOverview] No ticker available, using document data only');
+        setLoading(false);
+        return;
       }
-    },
 
-    // Management team
-    management: [
-      { name: 'Emily Thompson', role: 'CEO', tenure: '5 years' },
-      { name: 'Michael Harris', role: 'CFO', tenure: '3 years' },
-      { name: 'David Chen', role: 'CTO', tenure: '4 years' }
-    ],
+      try {
+        setLoading(true);
+        console.log(`[CompanyOverview] Fetching comprehensive data for ${companyData.company.ticker}`);
+        
+        const coordinator = new AgentCoordinator();
+        const data = await coordinator.orchestrateDataFetch(companyData.company.ticker);
+        
+        console.log('[CompanyOverview] Comprehensive data received:', data);
+        setComprehensiveData(data);
+        setError(null);
+      } catch (err) {
+        console.error('[CompanyOverview] Error fetching comprehensive data:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    // Key investors
-    investors: [
-      { name: 'Sequoia Capital', type: 'VC', stake: 'Series C' },
-      { name: 'aFe, Left Lane Capital', type: 'VC', stake: 'Series B' },
-      { name: 'NFX, Greylock Partners', type: 'VC', stake: 'Series A' }
-    ],
+    fetchComprehensiveData();
+  }, [companyData?.company?.ticker]);
 
-    // Recent performance data
-    revenueData: [
-      { quarter: 'Q1 2023', revenue: 28.2, margin: 26.5 },
-      { quarter: 'Q2 2023', revenue: 30.1, margin: 27.8 },
-      { quarter: 'Q3 2023', revenue: 32.5, margin: 28.2 },
-      { quarter: 'Q4 2023', revenue: 34.8, margin: 28.9 },
-      { quarter: 'Q1 2024', revenue: 36.2, margin: 29.1 },
-      { quarter: 'Q2 2024', revenue: 37.4, margin: 29.8 }
-    ]
+  // Generate dynamic company profile from real API data
+  const generateCompanyProfile = () => {
+    const hasApiData = comprehensiveData && !comprehensiveData.error;
+    const profile = comprehensiveData?.profile;
+    
+    // Basic company info with fallbacks showing [Data Unavailable] instead of mock data
+    const company = {
+      name: companyData?.company?.name || '[Company Name Unavailable]',
+      ticker: companyData?.company?.ticker || '[Ticker Unavailable]',
+      industry: profile?.[0]?.industry || companyData?.company?.industry || '[Industry Unavailable]',
+      sector: profile?.[0]?.sector || '[Sector Unavailable]',
+      location: profile?.[0]?.address || profile?.[0]?.city || '[Location Unavailable]',
+      founded: profile?.[0]?.ipoDate ? new Date(profile[0].ipoDate).getFullYear() : '[Founded Date Unavailable]',
+      employees: profile?.[0]?.fullTimeEmployees || '[Employee Count Unavailable]',
+      description: profile?.[0]?.description || companyData?.company?.description || '[Company Description Unavailable]',
+      website: profile?.[0]?.website || '[Website Unavailable]',
+      marketCap: profile?.[0]?.mktCap || '[Market Cap Unavailable]',
+      
+      // Source attribution for profile data
+      profileSource: hasApiData ? 'FMP Company Profile API' : 'User Documents',
+      profileConfidence: hasApiData ? 95 : 70
+    };
+
+    return company;
   };
+
+  // Generate financial metrics from real API data with source attribution
+  const generateFinancialMetrics = () => {
+    const hasApiData = comprehensiveData && !comprehensiveData.error;
+    const financials = comprehensiveData?.financialStatements;
+    const ratios = comprehensiveData?.ratios;
+    const quote = comprehensiveData?.stockPrice;
+
+    const metrics = {};
+
+    if (hasApiData && financials?.income?.[0]) {
+      const latestIncome = financials.income[0];
+      const prevIncome = financials.income[1];
+      
+      metrics.ltmRevenue = {
+        value: latestIncome.revenue ? `$${(latestIncome.revenue / 1000000).toFixed(1)}M` : '[Revenue Unavailable]',
+        change: prevIncome?.revenue ? 
+          `${((latestIncome.revenue - prevIncome.revenue) / prevIncome.revenue * 100).toFixed(1)}%` : 
+          '[Change Unavailable]',
+        source: `${comprehensiveData.sourceAttribution?.income?.source || 'FMP'} Income Statement API`,
+        formula: 'Total Revenue for last 12 months',
+        confidence: 96,
+        endpoint: comprehensiveData.sourceAttribution?.income?.endpoint || '/v3/income-statement/{symbol}'
+      };
+
+      const grossProfit = latestIncome.grossProfit || (latestIncome.revenue - latestIncome.costOfRevenue);
+      const prevGrossProfit = prevIncome?.grossProfit || (prevIncome?.revenue - prevIncome?.costOfRevenue);
+      
+      metrics.grossMargin = {
+        value: latestIncome.revenue && grossProfit ? 
+          `${(grossProfit / latestIncome.revenue * 100).toFixed(1)}%` : 
+          '[Gross Margin Unavailable]',
+        change: prevIncome?.revenue && prevGrossProfit ? 
+          `${((grossProfit / latestIncome.revenue) - (prevGrossProfit / prevIncome.revenue)) * 100 >= 0 ? '+' : ''}${(((grossProfit / latestIncome.revenue) - (prevGrossProfit / prevIncome.revenue)) * 100).toFixed(1)}%` : 
+          '[Change Unavailable]',
+        source: `${comprehensiveData.sourceAttribution?.income?.source || 'FMP'} Income Statement API`,
+        formula: '(Revenue - Cost of Goods Sold) / Revenue × 100',
+        confidence: 94,
+        endpoint: comprehensiveData.sourceAttribution?.income?.endpoint || '/v3/income-statement/{symbol}'
+      };
+    }
+
+    if (hasApiData && financials?.balance?.[0]) {
+      const latestBalance = financials.balance[0];
+      const prevBalance = financials.balance[1];
+      
+      metrics.cash = {
+        value: latestBalance.cashAndCashEquivalents ? 
+          `$${(latestBalance.cashAndCashEquivalents / 1000000).toFixed(1)}M` : 
+          '[Cash Unavailable]',
+        change: prevBalance?.cashAndCashEquivalents ? 
+          `${((latestBalance.cashAndCashEquivalents - prevBalance.cashAndCashEquivalents) / prevBalance.cashAndCashEquivalents * 100).toFixed(1)}%` : 
+          '[Change Unavailable]',
+        source: `${comprehensiveData.sourceAttribution?.balance?.source || 'FMP'} Balance Sheet API`,
+        formula: 'Cash + Cash Equivalents + Short-term Investments',
+        confidence: 98,
+        endpoint: comprehensiveData.sourceAttribution?.balance?.endpoint || '/v3/balance-sheet-statement/{symbol}'
+      };
+
+      metrics.totalDebt = {
+        value: latestBalance.totalDebt ? 
+          `$${(latestBalance.totalDebt / 1000000).toFixed(1)}M` : 
+          '[Total Debt Unavailable]',
+        change: prevBalance?.totalDebt ? 
+          `${((latestBalance.totalDebt - prevBalance.totalDebt) / prevBalance.totalDebt * 100).toFixed(1)}%` : 
+          '[Change Unavailable]',
+        source: `${comprehensiveData.sourceAttribution?.balance?.source || 'FMP'} Balance Sheet API`,
+        formula: 'Short-term Debt + Long-term Debt',
+        confidence: 97,
+        endpoint: comprehensiveData.sourceAttribution?.balance?.endpoint || '/v3/balance-sheet-statement/{symbol}'
+      };
+    }
+
+    if (hasApiData && quote && !quote.error) {
+      metrics.currentPrice = {
+        value: quote.price ? `$${parseFloat(quote.price).toFixed(2)}` : '[Price Unavailable]',
+        change: quote.changesPercentage ? 
+          `${quote.changesPercentage >= 0 ? '+' : ''}${parseFloat(quote.changesPercentage).toFixed(2)}%` : 
+          '[Change Unavailable]',
+        source: `${comprehensiveData.sourceAttribution?.stockPrice?.source || 'FMP'} Quote API`,
+        formula: 'Latest traded price',
+        confidence: 99,
+        endpoint: comprehensiveData.sourceAttribution?.stockPrice?.endpoint || '/v3/quote/{symbol}'
+      };
+    }
+
+    // If no API data, show data unavailable messages with guidance
+    if (!hasApiData || Object.keys(metrics).length === 0) {
+      return {
+        ltmRevenue: {
+          value: '[Data Unavailable]',
+          change: '[Change Unavailable]',
+          source: 'N/A',
+          formula: 'Total Revenue for last 12 months',
+          confidence: 0,
+          guidance: 'Please ensure the company ticker is correct and the company is publicly traded.'
+        },
+        grossMargin: {
+          value: '[Data Unavailable]',
+          change: '[Change Unavailable]',
+          source: 'N/A',
+          formula: '(Revenue - Cost of Goods Sold) / Revenue × 100',
+          confidence: 0,
+          guidance: 'Financial statement data not available via API. Please upload recent financial statements.'
+        },
+        cash: {
+          value: '[Data Unavailable]',
+          change: '[Change Unavailable]',
+          source: 'N/A',
+          formula: 'Cash + Cash Equivalents + Short-term Investments',
+          confidence: 0,
+          guidance: 'Balance sheet data not available via API. Please upload recent balance sheet.'
+        },
+        totalDebt: {
+          value: '[Data Unavailable]',
+          change: '[Change Unavailable]',
+          source: 'N/A',
+          formula: 'Short-term Debt + Long-term Debt',
+          confidence: 0,
+          guidance: 'Debt information not available via API. Please upload recent balance sheet or credit agreements.'
+        }
+      };
+    }
+
+    return metrics;
+  };
+
+  // Generate historical revenue data from API
+  const generateRevenueData = () => {
+    const hasApiData = comprehensiveData && !comprehensiveData.error;
+    const financials = comprehensiveData?.financialStatements;
+
+    if (!hasApiData || !financials?.income) {
+      return []; // Return empty array instead of mock data
+    }
+
+    // Convert annual data to quarterly format for chart
+    return financials.income.slice(0, 6).reverse().map((item, index) => {
+      const revenue = item.revenue ? item.revenue / 1000000 : 0;
+      const grossProfit = item.grossProfit || (item.revenue - item.costOfRevenue) || 0;
+      const margin = item.revenue ? (grossProfit / item.revenue * 100) : 0;
+      
+      return {
+        period: item.calendarYear || `Period ${index + 1}`,
+        revenue: parseFloat(revenue.toFixed(1)),
+        margin: parseFloat(margin.toFixed(1))
+      };
+    });
+  };
+
+  // Generate management team from API
+  const generateManagementData = () => {
+    const hasApiData = comprehensiveData && !comprehensiveData.error;
+    const executives = comprehensiveData?.executives;
+
+    if (!hasApiData || !executives || executives.length === 0) {
+      return []; // Return empty array instead of mock data
+    }
+
+    return executives.slice(0, 5).map(exec => ({
+      name: exec.name || '[Name Unavailable]',
+      role: exec.title || '[Title Unavailable]',
+      tenure: exec.yearBorn ? `${new Date().getFullYear() - exec.yearBorn} years old` : '[Age Unavailable]',
+      source: `${comprehensiveData.sourceAttribution?.executives?.source || 'FMP'} Executives API`
+    }));
+  };
+
+  const company = generateCompanyProfile();
+  const metrics = generateFinancialMetrics();
+  const revenueData = generateRevenueData();
+  const managementData = generateManagementData();
 
   const handleMetricClick = (metricKey, metricData) => {
     setSelectedMetric({ key: metricKey, ...metricData });
@@ -106,25 +269,66 @@ const CompanyOverview = ({ companyData }) => {
     setShowFormula(prev => prev === metricKey ? false : metricKey);
   };
 
+  if (loading) {
+    return (
+      <div className="p-8 bg-gray-50 min-h-screen">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
+              <p className="text-gray-600">Loading comprehensive company data...</p>
+              <p className="text-sm text-gray-500 mt-2">Fetching from multiple financial APIs</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
+        {/* API Data Status Alert */}
+        {error && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
+            <div className="flex items-start space-x-3">
+              <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-yellow-800">Limited Data Available</h4>
+                <p className="text-sm text-yellow-700 mt-1">
+                  API data unavailable: {error}. Displaying information from uploaded documents only.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Company Header - Arc Intelligence Style */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 mb-8 text-white">
           <div className="flex items-start justify-between">
             <div className="flex items-start space-x-6">
               <div className="w-20 h-20 bg-white bg-opacity-20 rounded-2xl flex items-center justify-center text-4xl">
-                {company.logo}
+                {company.ticker !== '[Ticker Unavailable]' ? company.ticker.substring(0, 2) : '🏢'}
               </div>
               <div>
                 <h1 className="text-4xl font-bold mb-2">{company.name}</h1>
                 <div className="flex items-center space-x-4 text-blue-100 text-lg mb-3">
                   <span>{company.industry}</span>
-                  <span>•</span>
-                  <div className="flex items-center space-x-1">
-                    <MapPin className="w-4 h-4" />
-                    <span>{company.location}</span>
-                  </div>
+                  {company.sector !== '[Sector Unavailable]' && (
+                    <>
+                      <span>•</span>
+                      <span>{company.sector}</span>
+                    </>
+                  )}
+                  {company.location !== '[Location Unavailable]' && (
+                    <>
+                      <span>•</span>
+                      <div className="flex items-center space-x-1">
+                        <MapPin className="w-4 h-4" />
+                        <span>{company.location}</span>
+                      </div>
+                    </>
+                  )}
                 </div>
                 <p className="text-blue-100 text-sm max-w-3xl leading-relaxed">
                   {company.description}
@@ -134,22 +338,27 @@ const CompanyOverview = ({ companyData }) => {
             <div className="text-right">
               <div className="flex items-center space-x-2 text-blue-100 mb-2">
                 <Eye className="w-4 h-4" />
-                <span className="text-sm">AI Confidence: 94%</span>
+                <span className="text-sm">Data Confidence: {company.profileConfidence}%</span>
               </div>
-              <a 
-                href={`https://${company.website}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center space-x-1 text-blue-100 hover:text-white transition-colors"
-              >
-                <span className="text-sm">{company.website}</span>
-                <ExternalLink className="w-3 h-3" />
-              </a>
+              <div className="text-sm text-blue-100 mb-2">
+                Source: {company.profileSource}
+              </div>
+              {company.website !== '[Website Unavailable]' && (
+                <a 
+                  href={company.website.startsWith('http') ? company.website : `https://${company.website}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center space-x-1 text-blue-100 hover:text-white transition-colors"
+                >
+                  <span className="text-sm">{company.website}</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Quick Stats Grid */}
+        {/* Quick Stats Grid - Real Data */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <motion.div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
             <div className="flex items-center justify-between mb-4">
@@ -157,34 +366,63 @@ const CompanyOverview = ({ companyData }) => {
               <span className="text-2xl font-bold text-gray-900">{company.founded}</span>
             </div>
             <h3 className="font-semibold text-gray-900 mb-1">Founded</h3>
-            <p className="text-sm text-gray-600">{new Date().getFullYear() - company.founded} years in business</p>
+            <p className="text-sm text-gray-600">
+              {company.founded !== '[Founded Date Unavailable]' 
+                ? `${new Date().getFullYear() - company.founded} years in business`
+                : 'Date not available via API'
+              }
+            </p>
           </motion.div>
 
           <motion.div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <Users className="w-8 h-8 text-green-600" />
-              <span className="text-2xl font-bold text-gray-900">{company.employees}</span>
+              <span className="text-2xl font-bold text-gray-900">
+                {company.employees !== '[Employee Count Unavailable]' 
+                  ? company.employees.toLocaleString() 
+                  : '[N/A]'
+                }
+              </span>
             </div>
             <h3 className="font-semibold text-gray-900 mb-1">Total Employees</h3>
-            <p className="text-sm text-gray-600">Across all departments</p>
+            <p className="text-sm text-gray-600">
+              {company.employees !== '[Employee Count Unavailable]' 
+                ? 'Full-time employees' 
+                : 'Data not available via API'
+              }
+            </p>
           </motion.div>
 
           <motion.div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <TrendingUp className="w-8 h-8 text-purple-600" />
-              <span className="text-2xl font-bold text-gray-900">Series C</span>
+              <span className="text-2xl font-bold text-gray-900">
+                {company.ticker !== '[Ticker Unavailable]' ? company.ticker : '[N/A]'}
+              </span>
             </div>
-            <h3 className="font-semibold text-gray-900 mb-1">Latest Round</h3>
-            <p className="text-sm text-gray-600">Led by Sequoia Capital</p>
+            <h3 className="font-semibold text-gray-900 mb-1">Ticker Symbol</h3>
+            <p className="text-sm text-gray-600">
+              {company.ticker !== '[Ticker Unavailable]' ? 'Public company' : 'Private company or ticker not available'}
+            </p>
           </motion.div>
 
           <motion.div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <Building2 className="w-8 h-8 text-orange-600" />
-              <span className="text-2xl font-bold text-gray-900">$36M</span>
+              <span className="text-2xl font-bold text-gray-900">
+                {company.marketCap !== '[Market Cap Unavailable]' 
+                  ? `$${(company.marketCap / 1000000000).toFixed(1)}B`
+                  : '[N/A]'
+                }
+              </span>
             </div>
-            <h3 className="font-semibold text-gray-900 mb-1">Total Funding</h3>
-            <p className="text-sm text-gray-600">Across all rounds</p>
+            <h3 className="font-semibold text-gray-900 mb-1">Market Cap</h3>
+            <p className="text-sm text-gray-600">
+              {company.marketCap !== '[Market Cap Unavailable]' 
+                ? 'Current market valuation' 
+                : 'Market cap not available'
+              }
+            </p>
           </motion.div>
         </div>
 

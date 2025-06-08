@@ -5,6 +5,7 @@ import uuid
 import time
 import os
 import sys
+import statistics
 from datetime import datetime
 
 # Get the backend URL from the frontend .env file
@@ -18,10 +19,11 @@ class BackendTester:
             "total_tests": 0,
             "passed_tests": 0,
             "failed_tests": 0,
-            "test_details": []
+            "test_details": [],
+            "performance_metrics": {}
         }
 
-    def log_test(self, test_name, passed, response=None, error=None):
+    def log_test(self, test_name, passed, response=None, error=None, performance_data=None):
         """Log test results"""
         result = {
             "test_name": test_name,
@@ -38,11 +40,16 @@ class BackendTester:
         
         if error:
             result["error"] = str(error)
+            
+        if performance_data:
+            result["performance"] = performance_data
         
         self.test_results["total_tests"] += 1
         if passed:
             self.test_results["passed_tests"] += 1
             print(f"✅ PASS: {test_name}")
+            if performance_data:
+                print(f"    Response Time: {performance_data.get('avg_response_time', 'N/A')}ms")
         else:
             self.test_results["failed_tests"] += 1
             print(f"❌ FAIL: {test_name}")
@@ -61,11 +68,17 @@ class BackendTester:
     def test_root_endpoint(self):
         """Test the root endpoint"""
         try:
+            start_time = time.time()
             response = self.session.get(f"{API_URL}/")
+            response_time = (time.time() - start_time) * 1000  # Convert to ms
+            
+            performance_data = {"response_time": response_time}
+            
             return self.log_test(
                 "Root Endpoint", 
                 response.status_code == 200 and "message" in response.json(),
-                response
+                response,
+                performance_data=performance_data
             )
         except Exception as e:
             return self.log_test("Root Endpoint", False, error=str(e))
@@ -75,7 +88,10 @@ class BackendTester:
         try:
             client_name = f"test_client_{uuid.uuid4()}"
             payload = {"client_name": client_name}
+            
+            start_time = time.time()
             response = self.session.post(f"{API_URL}/status", json=payload)
+            response_time = (time.time() - start_time) * 1000  # Convert to ms
             
             # Check if response is successful and contains expected data
             success = (
@@ -85,7 +101,9 @@ class BackendTester:
                 "timestamp" in response.json()
             )
             
-            return self.log_test("Status POST Endpoint", success, response)
+            performance_data = {"response_time": response_time}
+            
+            return self.log_test("Status POST Endpoint", success, response, performance_data=performance_data)
         except Exception as e:
             return self.log_test("Status POST Endpoint", False, error=str(e))
 
@@ -97,7 +115,9 @@ class BackendTester:
             self.session.post(f"{API_URL}/status", json={"client_name": client_name})
             
             # Now get all status checks
+            start_time = time.time()
             response = self.session.get(f"{API_URL}/status")
+            response_time = (time.time() - start_time) * 1000  # Convert to ms
             
             # Check if response is successful and contains data
             success = (
@@ -107,7 +127,9 @@ class BackendTester:
                 all("client_name" in item for item in response.json())
             )
             
-            return self.log_test("Status GET Endpoint", success, response)
+            performance_data = {"response_time": response_time}
+            
+            return self.log_test("Status GET Endpoint", success, response, performance_data=performance_data)
         except Exception as e:
             return self.log_test("Status GET Endpoint", False, error=str(e))
 
@@ -118,10 +140,12 @@ class BackendTester:
             client_name = f"mongodb_test_{uuid.uuid4()}"
             
             # Post a new status check
+            start_time = time.time()
             post_response = self.session.post(
                 f"{API_URL}/status", 
                 json={"client_name": client_name}
             )
+            post_time = (time.time() - start_time) * 1000  # Convert to ms
             
             if post_response.status_code != 200:
                 return self.log_test(
@@ -132,7 +156,9 @@ class BackendTester:
                 )
             
             # Get all status checks
+            start_time = time.time()
             get_response = self.session.get(f"{API_URL}/status")
+            get_time = (time.time() - start_time) * 1000  # Convert to ms
             
             if get_response.status_code != 200:
                 return self.log_test(
@@ -146,11 +172,18 @@ class BackendTester:
             status_checks = get_response.json()
             found = any(check.get("client_name") == client_name for check in status_checks)
             
+            performance_data = {
+                "write_time": post_time,
+                "read_time": get_time,
+                "total_time": post_time + get_time
+            }
+            
             return self.log_test(
                 "MongoDB Integration", 
                 found, 
                 get_response if not found else None,
-                "Test data not found in database" if not found else None
+                "Test data not found in database" if not found else None,
+                performance_data=performance_data
             )
         except Exception as e:
             return self.log_test("MongoDB Integration", False, error=str(e))
@@ -169,7 +202,19 @@ class BackendTester:
                 "Access-Control-Allow-Headers" in headers
             )
             
-            return self.log_test("CORS Configuration", cors_headers_present, response)
+            # Also test a GET request to check CORS headers
+            get_response = self.session.get(f"{API_URL}/", headers={"Origin": "http://localhost:3000"})
+            get_headers = get_response.headers
+            
+            cors_get_headers_present = (
+                "Access-Control-Allow-Origin" in get_headers
+            )
+            
+            return self.log_test(
+                "CORS Configuration", 
+                cors_headers_present and cors_get_headers_present, 
+                response
+            )
         except Exception as e:
             return self.log_test("CORS Configuration", False, error=str(e))
 
@@ -186,14 +231,126 @@ class BackendTester:
             # Check if we get a proper error response (4xx status code)
             is_error_status = 400 <= response.status_code < 500
             
+            # Test with missing required field
+            missing_field_response = self.session.post(
+                f"{API_URL}/status", 
+                json={"wrong_field": "test"},
+            )
+            
+            # Check if we get a proper error response (4xx status code)
+            is_missing_field_error = 400 <= missing_field_response.status_code < 500
+            
             return self.log_test(
                 "Error Handling", 
-                is_error_status, 
+                is_error_status and is_missing_field_error, 
                 response,
                 "Expected 4xx error but got " + str(response.status_code) if not is_error_status else None
             )
         except Exception as e:
             return self.log_test("Error Handling", False, error=str(e))
+            
+    def test_environment_variables(self):
+        """Test that environment variables are properly loaded"""
+        try:
+            # We can't directly check environment variables on the server,
+            # but we can infer their availability by testing the endpoints
+            # that depend on them (MongoDB connection)
+            
+            # Test MongoDB connection by creating and retrieving data
+            client_name = f"env_test_{uuid.uuid4()}"
+            
+            # Post a new status check
+            post_response = self.session.post(
+                f"{API_URL}/status", 
+                json={"client_name": client_name}
+            )
+            
+            if post_response.status_code != 200:
+                return self.log_test(
+                    "Environment Variables", 
+                    False, 
+                    post_response, 
+                    "Failed to create test data, possible MongoDB connection issue"
+                )
+            
+            # Get all status checks
+            get_response = self.session.get(f"{API_URL}/status")
+            
+            if get_response.status_code != 200:
+                return self.log_test(
+                    "Environment Variables", 
+                    False, 
+                    get_response, 
+                    "Failed to retrieve status checks, possible MongoDB connection issue"
+                )
+            
+            # Check if our test client name is in the response
+            status_checks = get_response.json()
+            found = any(check.get("client_name") == client_name for check in status_checks)
+            
+            return self.log_test(
+                "Environment Variables", 
+                found, 
+                get_response if not found else None,
+                "Test data not found in database, possible environment variable issue" if not found else None
+            )
+        except Exception as e:
+            return self.log_test("Environment Variables", False, error=str(e))
+            
+    def test_performance(self):
+        """Test API performance by measuring response times"""
+        try:
+            endpoint = f"{API_URL}/"
+            num_requests = 5
+            response_times = []
+            
+            print(f"    Running performance test ({num_requests} requests)...")
+            
+            for i in range(num_requests):
+                start_time = time.time()
+                response = self.session.get(endpoint)
+                end_time = time.time()
+                
+                if response.status_code != 200:
+                    return self.log_test(
+                        "Performance", 
+                        False, 
+                        response, 
+                        f"Request {i+1} failed with status code {response.status_code}"
+                    )
+                
+                response_time = (end_time - start_time) * 1000  # Convert to ms
+                response_times.append(response_time)
+                
+                # Small delay to avoid overwhelming the server
+                time.sleep(0.1)
+            
+            # Calculate statistics
+            avg_response_time = statistics.mean(response_times)
+            max_response_time = max(response_times)
+            min_response_time = min(response_times)
+            
+            # Consider the test passed if average response time is under 500ms
+            # This threshold can be adjusted based on requirements
+            passed = avg_response_time < 500
+            
+            performance_data = {
+                "avg_response_time": f"{avg_response_time:.2f}ms",
+                "max_response_time": f"{max_response_time:.2f}ms",
+                "min_response_time": f"{min_response_time:.2f}ms",
+                "num_requests": num_requests
+            }
+            
+            self.test_results["performance_metrics"] = performance_data
+            
+            return self.log_test(
+                "Performance", 
+                passed, 
+                performance_data=performance_data,
+                error=f"Average response time ({avg_response_time:.2f}ms) exceeds threshold (500ms)" if not passed else None
+            )
+        except Exception as e:
+            return self.log_test("Performance", False, error=str(e))
 
     def run_all_tests(self):
         """Run all tests and return results"""
@@ -206,12 +363,21 @@ class BackendTester:
         self.test_mongodb_integration()
         self.test_cors_configuration()
         self.test_error_handling()
+        self.test_environment_variables()
+        self.test_performance()
         
         # Print summary
         print("\n📊 Test Summary:")
         print(f"Total Tests: {self.test_results['total_tests']}")
         print(f"Passed: {self.test_results['passed_tests']}")
         print(f"Failed: {self.test_results['failed_tests']}")
+        
+        if "performance_metrics" in self.test_results:
+            print("\n⚡ Performance Metrics:")
+            metrics = self.test_results["performance_metrics"]
+            print(f"Average Response Time: {metrics.get('avg_response_time', 'N/A')}")
+            print(f"Maximum Response Time: {metrics.get('max_response_time', 'N/A')}")
+            print(f"Minimum Response Time: {metrics.get('min_response_time', 'N/A')}")
         
         return self.test_results
 

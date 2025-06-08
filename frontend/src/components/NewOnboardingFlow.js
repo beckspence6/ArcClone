@@ -32,18 +32,62 @@ const NewOnboardingFlow = ({ onComplete }) => {
     firstName: '',
     lastName: '',
     company: '',
+    ticker: '',
     selectedCompany: null,
     role: 'analyst',
     industry: '',
     notifications: true,
-    marketUpdates: false
+    marketUpdates: false,
+    isPrivateCompany: false
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [companySearchResults, setCompanySearchResults] = useState([]);
   const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
+  const [searchingCompanies, setSearchingCompanies] = useState(false);
 
-  // Mock company database - in production, this would come from API
+  // Real-time company search using FMP API
+  const searchCompanies = async (query) => {
+    if (!query || query.length < 2) {
+      setCompanySearchResults([]);
+      setShowCompanyDropdown(false);
+      return;
+    }
+
+    try {
+      setSearchingCompanies(true);
+      console.log(`[OnboardingFlow] Searching for companies: ${query}`);
+      
+      // Use FMP search API for real company data
+      const results = await FMPService.searchCompanies(query, 10);
+      
+      if (results && Array.isArray(results)) {
+        const formattedResults = results.map(company => ({
+          symbol: company.symbol,
+          name: company.name,
+          industry: company.industry || 'N/A',
+          sector: company.sector || 'N/A',
+          exchangeShortName: company.exchangeShortName || 'N/A',
+          currency: company.currency || 'USD',
+          isEtf: company.isEtf || false
+        }));
+        
+        setCompanySearchResults(formattedResults);
+        setShowCompanyDropdown(true);
+        console.log(`[OnboardingFlow] Found ${formattedResults.length} companies`);
+      } else {
+        setCompanySearchResults([]);
+        setShowCompanyDropdown(false);
+      }
+    } catch (error) {
+      console.error('[OnboardingFlow] Company search error:', error);
+      setCompanySearchResults([]);
+      setShowCompanyDropdown(false);
+      toast.error('Error searching companies. Please try again.');
+    } finally {
+      setSearchingCompanies(false);
+    }
+  };
   const companyDatabase = [
     { 
       symbol: 'AAPL', 

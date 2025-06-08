@@ -46,8 +46,7 @@ const CompanyOverview = ({ companyData }) => {
         setLoading(true);
         console.log(`[CompanyOverview] Fetching comprehensive data for ${companyData.company.ticker}`);
         
-        const coordinator = new AgentCoordinator();
-        const data = await coordinator.orchestrateDataFetch(companyData.company.ticker);
+        const data = await AgentCoordinator.orchestrateDataFetch(companyData.company.ticker);
         
         console.log('[CompanyOverview] Comprehensive data received:', data);
         setComprehensiveData(data);

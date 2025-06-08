@@ -245,7 +245,13 @@ const AddNewCompany = ({ onComplete, onCancel }) => {
   const handleComplete = () => {
     const companyData = {
       id: Date.now(),
-      name: companyName,
+      company: {
+        name: companyName,
+        ticker: ticker,
+        selectedCompany: selectedCompany,
+        isPrivateCompany: isPrivateCompany,
+        industry: selectedCompany?.industry || 'Unknown'
+      },
       status: 'analyzing',
       createdAt: new Date().toISOString(),
       documentCount: uploadedFiles.length,
@@ -256,6 +262,7 @@ const AddNewCompany = ({ onComplete, onCancel }) => {
       }))
     };
     
+    console.log('[AddNewCompany] Company data being passed:', companyData);
     onComplete(companyData);
   };
 

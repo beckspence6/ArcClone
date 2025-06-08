@@ -1632,7 +1632,142 @@ class InsightsAgent {
     }
   }
 
-  // SEC Data Formatting Methods - Convert SEC API responses to standard format
+  // SEC-specific data fetching method
+  async fetchSECDataForType(dataType, symbol, params = {}) {
+    console.log(`[AgentCoordinator] Fetching SEC data type: ${dataType} for ${symbol}`);
+    
+    try {
+      switch (dataType) {
+        case 'companyProfile':
+          const companyLookup = await SecApiService.getCompanyLookup(symbol);
+          if (companyLookup.success) {
+            return this.formatSECCompanyProfile(companyLookup);
+          }
+          break;
+          
+        case 'financialStatements':
+          const coreFilings = await SecApiService.fetchCoreFilings(symbol);
+          if (coreFilings.success && coreFilings.filings.annual_10k.length > 0) {
+            const latestFiling = coreFilings.filings.annual_10k[0];
+            const xbrlData = await SecApiService.getXBRLData(latestFiling.accession_number);
+            if (xbrlData.success) {
+              return this.formatSECFinancials(xbrlData);
+            }
+          }
+          break;
+          
+        case 'executives':
+          const executiveData = await SecApiService.getExecutiveCompensation(symbol);
+          return executiveData;
+          
+        case 'subsidiaries':
+          const subsidiaryData = await SecApiService.getSubsidiaryData(symbol);
+          return subsidiaryData;
+          
+        case 'covenants':
+          const covenantData = await this.getSECCovenantData(symbol);
+          return covenantData;
+          
+        case 'debtStructure':
+          const debtData = await this.getSECDebtStructure(symbol);
+          return debtData;
+          
+        case 'insiderTrading':
+          const insiderData = await SecApiService.getInsiderTrading(symbol);
+          return insiderData;
+          
+        case 'litigation':
+          const litigationData = await SecApiService.getLitigationReleases(symbol);
+          return litigationData;
+          
+        case 'institutionalHoldings':
+          const holdingsData = await SecApiService.getForm13FHoldings(symbol);
+          return holdingsData;
+          
+        case 'ownership':
+          const ownershipData = await SecApiService.getForm13DG(symbol);
+          return ownershipData;
+          
+        default:
+          throw new Error(`SEC data type ${dataType} not supported`);
+      }
+      
+      throw new Error(`No SEC data available for ${dataType}`);
+      
+    } catch (error) {
+      console.error(`[AgentCoordinator] SEC data fetch failed for ${dataType}:`, error);
+      return {
+        error: true,
+        message: `SEC ${dataType} data unavailable: ${error.message}`,
+        source: 'SEC API',
+        guidance: `For ${dataType}, ensure the company has recent SEC filings and proper ticker symbol.`
+      };
+    }
+  }
+
+  // SEC-specific covenant data fetching
+  async getSECCovenantData(symbol) {
+    try {
+      const coreFilings = await SecApiService.fetchCoreFilings(symbol);
+      if (coreFilings.success && coreFilings.filings.annual_10k.length > 0) {
+        const latestFiling = coreFilings.filings.annual_10k[0];
+        const covenantAnalysis = await SecApiService.analyzeFilingContent(
+          symbol, 
+          latestFiling.link_to_html, 
+          'covenant'
+        );
+        return covenantAnalysis;
+      }
+      throw new Error('No recent filings available for covenant analysis');
+    } catch (error) {
+      return {
+        error: true,
+        message: `Covenant data unavailable: ${error.message}`,
+        source: 'SEC Filing Analysis'
+      };
+    }
+  }
+
+  // SEC-specific debt structure data fetching
+  async getSECDebtStructure(symbol) {
+    try {
+      const coreFilings = await SecApiService.fetchCoreFilings(symbol);
+      if (coreFilings.success && coreFilings.filings.annual_10k.length > 0) {
+        const latestFiling = coreFilings.filings.annual_10k[0];
+        const debtAnalysis = await SecApiService.analyzeFilingContent(
+          symbol, 
+          latestFiling.link_to_html, 
+          'debt_structure'
+        );
+        return debtAnalysis;
+      }
+      throw new Error('No recent filings available for debt structure analysis');
+    } catch (error) {
+      return {
+        error: true,
+        message: `Debt structure data unavailable: ${error.message}`,
+        source: 'SEC Filing Analysis'
+      };
+    }
+  }
+
+  // SEC data formatting methods
+  formatSECCompanyProfile(companyLookup) {
+    if (!companyLookup.success) return null;
+    
+    return {
+      symbol: companyLookup.ticker,
+      companyName: companyLookup.companyData?.mapping?.name || companyLookup.companyData?.entity_details?.name,
+      cik: companyLookup.cik,
+      sector: companyLookup.companyData?.entity_details?.sic_description,
+      industry: companyLookup.companyData?.entity_details?.business_description,
+      description: companyLookup.companyData?.entity_details?.business_description,
+      website: companyLookup.companyData?.entity_details?.website,
+      address: companyLookup.companyData?.entity_details?.addresses?.[0],
+      source: 'SEC EDGAR Entities',
+      confidence: 98
+    };
+  }
 
   formatSECFinancials(secFinancials) {
     // Convert SEC XBRL data to standard financial statements format

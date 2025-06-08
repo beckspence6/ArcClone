@@ -160,10 +160,18 @@ class AgentCoordinator {
       }
 
       try {
-        const result = await this.callAPI(apiName, dataType, symbol, params);
+        let result;
+        
+        // Handle SEC API calls with special processing
+        if (apiName === 'SEC') {
+          result = await this.addSECDataToFallback(dataType, symbol);
+        } else {
+          result = await this.callAPI(apiName, dataType, symbol, params);
+        }
+        
         if (result && !result.error) {
-          // Record successful source
-          this.recordSourceAttribution(dataType, apiName, symbol);
+          // Record successful source with enhanced attribution for SEC
+          this.recordSourceAttribution(dataType, apiName, symbol, result);
           return result;
         }
       } catch (error) {

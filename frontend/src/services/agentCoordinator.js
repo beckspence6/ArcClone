@@ -1769,25 +1769,35 @@ class InsightsAgent {
     };
   }
 
-  formatSECProfile(secProfile) {
-    // Convert SEC profile data to standard profile format
+  formatSECProfile(companyData) {
+    // Convert SEC company lookup data to standard profile format
+    if (!companyData || !companyData.success) return null;
+    
+    const mapping = companyData.companyData?.mapping;
+    const entityDetails = companyData.companyData?.entity_details;
+    
     return {
-      companyName: secProfile.companyName,
-      symbol: secProfile.ticker,
-      cik: secProfile.cik,
-      industry: secProfile.industry,
-      sector: secProfile.industry, // Use industry as sector for now
-      description: secProfile.businessDescription,
-      sic: secProfile.sic,
+      companyName: mapping?.name || entityDetails?.name || '[Data Unavailable - Requires SEC Filing]',
+      symbol: companyData.ticker || mapping?.ticker,
+      cik: companyData.cik,
+      industry: entityDetails?.sic_description || '[Data Unavailable - Requires SEC Filing]',
+      sector: entityDetails?.sic_description || '[Data Unavailable - Requires SEC Filing]',
+      description: entityDetails?.business_description || '[Data Unavailable - Requires SEC Filing]',
+      sic: entityDetails?.sic,
+      website: entityDetails?.website,
+      address: entityDetails?.addresses?.[0],
       
       // Enhanced SEC-specific data
-      riskFactors: secProfile.riskFactors,
-      managementDiscussion: secProfile.managementDiscussion,
-      filingDate: secProfile.filingDate,
+      entityType: entityDetails?.entity_type,
+      fiscalYearEnd: entityDetails?.fiscal_year_end,
+      stateOfIncorporation: entityDetails?.state_of_incorporation,
+      
+      // Recent filing context
+      recentFilings: companyData.companyData?.recent_filings?.filings?.slice(0, 3) || [],
       
       // Metadata
-      source: 'SEC 10-K Filing',
-      sourceUrl: secProfile.sourceUrl,
+      source: 'SEC EDGAR Entities & Mapping APIs',
+      sourceUrl: `https://www.sec.gov/edgar/browse/?CIK=${companyData.cik}`,
       confidence: 97,
       dataQuality: 'regulatory' // Regulatory filings are authoritative
     };

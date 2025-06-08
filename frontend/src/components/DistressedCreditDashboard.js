@@ -828,64 +828,137 @@ const DistressedCreditDashboard = ({ companyData }) => {
     );
   };
 
-  const renderDistressFlags = () => (
-    <div className="space-y-4">
-      {distressedData.distressFlags.map((flag) => {
-        const Icon = getSeverityIcon(flag.severity);
-        return (
-          <motion.div
-            key={flag.id}
-            className="bg-white rounded-xl border border-gray-200 overflow-hidden"
-            whileHover={{ scale: 1.01 }}
-          >
-            <div className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-start space-x-3">
-                  <Icon className={`w-6 h-6 mt-1 ${getSeverityColor(flag.severity).split(' ')[0]}`} />
-                  <div>
-                    <div className="flex items-center space-x-2 mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900">{flag.title}</h3>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(flag.severity)}`}>
-                        {flag.severity}
-                      </span>
-                      <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
-                        {flag.category}
-                      </span>
+  const renderDistressFlags = () => {
+    const metrics = generateDistressedMetrics();
+    const covenants = generateCovenantAnalysis();
+    const liquidityData = generateLiquidityAnalysis();
+
+    // Generate risk flags based on real data
+    const flags = [];
+
+    // Add covenant violations
+    const violations = covenants.filter(c => c.status === 'violation');
+    if (violations.length > 0) {
+      flags.push({
+        id: 'covenant-violations',
+        severity: 'critical',
+        category: 'Financial',
+        title: 'Covenant Violations',
+        description: `${violations.length} active covenant violation${violations.length > 1 ? 's' : ''} including ${violations.map(v => v.name).join(', ')}`,
+        impact: 'Potential acceleration of debt',
+        timeline: '30 days',
+        lastUpdated: new Date().toISOString()
+      });
+    }
+
+    // Add liquidity concerns
+    if (metrics.liquidityMonths && metrics.liquidityMonths !== '[Cannot Calculate]' && parseFloat(metrics.liquidityMonths) < 12) {
+      flags.push({
+        id: 'liquidity-risk',
+        severity: 'high',
+        category: 'Liquidity',
+        title: 'Low Cash Reserves',
+        description: `Current cash runway of ${metrics.liquidityMonths} months with negative cash flow`,
+        impact: 'Working capital constraints',
+        timeline: '60 days',
+        lastUpdated: new Date().toISOString()
+      });
+    }
+
+    // Add leverage concerns
+    if (metrics.debtToEquity && metrics.debtToEquity !== '[Ratio Unavailable]' && parseFloat(metrics.debtToEquity) > 3) {
+      flags.push({
+        id: 'high-leverage',
+        severity: 'medium',
+        category: 'Capital Structure',
+        title: 'High Leverage',
+        description: `Debt to Equity ratio of ${metrics.debtToEquity}x exceeds industry standards`,
+        impact: 'Increased financial risk',
+        timeline: '90 days',
+        lastUpdated: new Date().toISOString()
+      });
+    }
+
+    // Add interest coverage concerns
+    if (metrics.interestCoverage && metrics.interestCoverage !== '[Coverage Unavailable]' && parseFloat(metrics.interestCoverage) < 2) {
+      flags.push({
+        id: 'interest-coverage',
+        severity: 'high',
+        category: 'Financial',
+        title: 'Low Interest Coverage',
+        description: `Interest coverage ratio of ${metrics.interestCoverage}x indicates potential debt service issues`,
+        impact: 'Debt service risk',
+        timeline: '60 days',
+        lastUpdated: new Date().toISOString()
+      });
+    }
+
+    return (
+      <div className="space-y-4">
+        {flags.length === 0 ? (
+          <div className="bg-green-50 border border-green-200 rounded-xl p-6">
+            <div className="flex items-center space-x-3">
+              <CheckCircle className="w-6 h-6 text-green-600" />
+              <p className="text-green-800">No critical risk flags identified at this time.</p>
+            </div>
+          </div>
+        ) : (
+          flags.map((flag) => {
+            const Icon = getSeverityIcon(flag.severity);
+            return (
+              <motion.div
+                key={flag.id}
+                className="bg-white rounded-xl border border-gray-200 overflow-hidden"
+                whileHover={{ scale: 1.01 }}
+              >
+                <div className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-start space-x-3">
+                      <Icon className={`w-6 h-6 mt-1 ${getSeverityColor(flag.severity).split(' ')[0]}`} />
+                      <div>
+                        <div className="flex items-center space-x-2 mb-2">
+                          <h3 className="text-lg font-semibold text-gray-900">{flag.title}</h3>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(flag.severity)}`}>
+                            {flag.severity}
+                          </span>
+                          <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
+                            {flag.category}
+                          </span>
+                        </div>
+                        <p className="text-gray-700 mb-3">{flag.description}</p>
+                        
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <p className="text-gray-600">Potential Impact</p>
+                            <p className="font-medium text-gray-900">{flag.impact}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600">Timeline</p>
+                            <p className="font-medium text-gray-900">{flag.timeline}</p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-gray-700 mb-3">{flag.description}</p>
                     
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className="text-gray-600">Potential Impact</p>
-                        <p className="font-medium text-gray-900">{flag.impact}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-600">Timeline</p>
-                        <p className="font-medium text-gray-900">{flag.timeline}</p>
-                      </div>
+                    <div className="text-right text-sm text-gray-500">
+                      Updated: {new Date(flag.lastUpdated).toLocaleDateString()}
                     </div>
                   </div>
                 </div>
-                
-                <div className="text-right text-sm text-gray-500">
-                  Updated: {new Date(flag.lastUpdated).toLocaleDateString()}
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        );
-      })}
-    </div>
-  );
+              </motion.div>
+            );
+          })
+        )}
+      </div>
+    );
+  };
 
   const renderContent = () => {
     switch (activeTab) {
       case 'overview': return renderOverview();
-      case 'maturity': return renderMaturityWall();
       case 'covenants': return renderCovenants();
       case 'liquidity': return renderLiquidity();
       case 'structure': return renderCapitalStructure();
-      case 'flags': return renderDistressFlags();
       default: return renderOverview();
     }
   };

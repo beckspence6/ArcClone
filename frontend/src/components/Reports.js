@@ -510,8 +510,7 @@ const Reports = ({ companyData }) => {
                   <span className="text-sm text-gray-500">DATA ROOM</span>
                 </div>
                 <p className="text-gray-700 mb-6">
-                  As of 9/30/24, BlueSky had $19.7 million cash and $15.0 million long-term debt 
-                  outstanding. The company has negative working capital, like many software companies.
+                  As of latest analysis, {generateCompanyContent().companyName} shows {generateCompanyContent().cash} in cash and equivalents and {generateCompanyContent().totalDebt} in total debt outstanding. The financial analysis incorporates real-time data from multiple sources including SEC filings, credit agreements, and market data APIs to provide comprehensive liquidity and capital structure assessment.
                 </p>
                 
                 <div className="border border-gray-200 rounded-lg">

@@ -209,19 +209,21 @@ const CompanyOverview = ({ companyData }) => {
 
     const metrics = {};
 
-    if (hasApiData && financials?.income?.[0]) {
+    // Revenue metrics with multiple confidence levels
+    if (hasApiData && financials?.income?.length > 0) {
       const latestIncome = financials.income[0];
       const prevIncome = financials.income[1];
       
       metrics.ltmRevenue = {
-        value: latestIncome.revenue ? `$${(latestIncome.revenue / 1000000).toFixed(1)}M` : '[Revenue Unavailable]',
+        value: latestIncome.revenue ? `$${(latestIncome.revenue / 1000000).toFixed(1)}M` : '[Revenue Data Pending]',
         change: prevIncome?.revenue ? 
           `${((latestIncome.revenue - prevIncome.revenue) / prevIncome.revenue * 100).toFixed(1)}%` : 
-          '[Change Unavailable]',
+          '[Growth Rate Pending]',
         source: `${comprehensiveData.sourceAttribution?.income?.source || 'FMP'} Income Statement API`,
         formula: 'Total Revenue for last 12 months',
-        confidence: 96,
-        endpoint: comprehensiveData.sourceAttribution?.income?.endpoint || '/v3/income-statement/{symbol}'
+        confidence: latestIncome.revenue ? 96 : 40,
+        endpoint: comprehensiveData.sourceAttribution?.income?.endpoint || '/v3/income-statement/{symbol}',
+        priority: 'high'
       };
 
       const grossProfit = latestIncome.grossProfit || (latestIncome.revenue - latestIncome.costOfRevenue);

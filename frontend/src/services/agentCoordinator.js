@@ -693,13 +693,20 @@ class DocumentProcessorAgent {
 class FinancialAnalystAgent {
   async analyzeFinancials(documentResults, companyData) {
     try {
-      // Extract financial data from processed documents
-      const documentFinancials = this.extractFinancialMetrics(documentResults);
+      // Enhanced financial data extraction with comprehensive document analysis
+      const companySymbol = companyData?.symbol || companyData?.ticker || companyData?.company?.ticker;
+      console.log(`[FinancialAnalyst] Starting enhanced analysis for ${companySymbol || 'unknown company'}`);
+      
+      // Use enhanced extraction method with sophisticated Gemini analysis
+      const enhancedExtractionResults = await this.extractFinancialMetrics(documentResults, companySymbol);
+      const documentFinancials = enhancedExtractionResults.financials;
+      const covenantData = enhancedExtractionResults.covenantData;
+      const subsidiaryStructure = enhancedExtractionResults.subsidiaryStructure;
       
       // Use comprehensive API data if available
       let apiFinancials = {};
-      if (companyData.comprehensiveData) {
-        apiFinancials = this.normalizeAPIFinancials(companyData.comprehensiveData);
+      if (companyData.comprehensiveData || companyData.financialStatements) {
+        apiFinancials = this.normalizeAPIFinancials(companyData.comprehensiveData || companyData);
       }
       
       // Merge document and API data (prioritize documents for accuracy)
@@ -714,6 +721,14 @@ class FinancialAnalystAgent {
       // Enhanced risk assessment with multiple data sources
       const riskMetrics = this.assessFinancialRisk(mergedFinancials, companyData.comprehensiveData);
       
+      // Enhanced distressed credit analysis
+      const distressedCreditAnalysis = this.performDistressedCreditAnalysis(
+        mergedFinancials, 
+        covenantData, 
+        subsidiaryStructure, 
+        companyData
+      );
+      
       return {
         extractedData: documentFinancials,
         apiData: apiFinancials,
@@ -721,12 +736,17 @@ class FinancialAnalystAgent {
         calculatedMetrics: calculatedMetrics,
         trends: trends,
         riskMetrics: riskMetrics,
+        covenantAnalysis: covenantData,
+        subsidiaryStructure: subsidiaryStructure,
+        distressedCreditAnalysis: distressedCreditAnalysis,
+        enhancedExtractionResults: enhancedExtractionResults,
         sourceAttribution: this.generateSourceAttribution(documentFinancials, apiFinancials),
-        confidence: this.calculateAnalysisConfidence(documentFinancials, apiFinancials),
+        confidence: this.calculateAnalysisConfidence(documentFinancials, apiFinancials, enhancedExtractionResults.confidence),
         lastUpdated: new Date()
       };
     } catch (error) {
-      throw new Error(`Financial analysis failed: ${error.message}`);
+      console.error(`[FinancialAnalyst] Enhanced analysis failed:`, error);
+      throw new Error(`Enhanced financial analysis failed: ${error.message}`);
     }
   }
 

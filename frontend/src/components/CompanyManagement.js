@@ -130,10 +130,10 @@ const CompanyManagement = ({ onSelectCompany, onCreateNew, companies = [], onDel
 
           {/* Company Cards */}
           {filteredCompanies.map((company, index) => {
-            const StatusIcon = getStatusIcon(company.status);
+            const StatusIcon = getStatusIcon(company?.status || 'analyzing');
             return (
               <motion.div
-                key={company.id}
+                key={company?.id || index}
                 className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all cursor-pointer group"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -151,9 +151,9 @@ const CompanyManagement = ({ onSelectCompany, onCreateNew, companies = [], onDel
                       </div>
                       <div>
                         <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-                          {company.name}
+                          {company?.name || '[Company Name]'}
                         </h3>
-                        <p className="text-sm text-gray-600">{company.industry}</p>
+                        <p className="text-sm text-gray-600">{company?.industry || '[Industry]'}</p>
                       </div>
                     </div>
                     <button

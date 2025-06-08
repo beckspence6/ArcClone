@@ -287,7 +287,216 @@ class GeminiService {
     `;
   }
 
-  async generateInsights(companyData, question) {
+  build8KPrompt(text, fileName) {
+    return `
+      8-K CURRENT REPORT ANALYSIS
+      
+      Document: ${fileName}
+      Content: ${text.substring(0, 30000)}
+      
+      8-K forms report material events. Extract:
+      
+      1. MATERIAL EVENT IDENTIFICATION:
+         - What specific event triggered this 8-K?
+         - Date of the event
+         - Impact on financial condition or operations
+      
+      2. DEBT-RELATED EVENTS (if applicable):
+         - New debt issuance, amendment, or refinancing
+         - Covenant modifications or waivers
+         - Default notices or acceleration events
+         - Changes in credit ratings
+      
+      3. CORPORATE STRUCTURE CHANGES:
+         - Acquisitions, dispositions, or spin-offs
+         - Changes in subsidiaries or joint ventures
+         - Management changes affecting credit profile
+      
+      Return JSON:
+      {
+        "eventType": "Primary event type",
+        "eventDate": "Date of event",
+        "eventDescription": "Detailed description",
+        "debtImpact": {
+          "isDebtRelated": true/false,
+          "description": "How this affects debt structure",
+          "newDebt": "Any new debt issued",
+          "debtChanges": "Changes to existing debt"
+        },
+        "materialImpact": "Assessment of materiality",
+        "forwardLookingStatements": ["Any forward-looking statements"],
+        "confidence": 0.XX
+      }
+    `;
+  }
+
+  buildGeneralFinancialPrompt(text, fileName) {
+    return `
+      GENERAL FINANCIAL DOCUMENT ANALYSIS
+      
+      Document: ${fileName}
+      Content: ${text.substring(0, 40000)}
+      
+      Extract comprehensive financial information:
+      
+      {
+        "company": {
+          "name": "Company name",
+          "industry": "Industry",
+          "description": "Company description"
+        },
+        "financials": {
+          "revenue": "Revenue amount",
+          "grossMargin": "Gross margin %",
+          "netIncome": "Net income",
+          "totalAssets": "Total assets",
+          "totalDebt": "Total debt",
+          "cashAndEquivalents": "Cash amount",
+          "workingCapital": "Working capital"
+        },
+        "debtInformation": {
+          "totalDebt": "Total debt amount",
+          "debtBreakdown": "Description of debt types",
+          "maturityProfile": "When debt matures",
+          "interestRates": "Interest rate information"
+        },
+        "keyMetrics": {
+          "revenueGrowth": "Revenue growth rate",
+          "profitMargin": "Profit margin",
+          "debtToEquity": "Debt to equity ratio",
+          "currentRatio": "Current ratio",
+          "interestCoverage": "Interest coverage ratio"
+        },
+        "insights": ["Key insights"],
+        "risks": ["Risk factors"],
+        "confidence": 0.XX
+      }
+    `;
+  }
+
+  // Enhanced function for extracting financial data cross-referenced with API data
+  async extractFinancialData(text, companyTicker = null) {
+    try {
+      const prompt = `
+        COMPREHENSIVE FINANCIAL DATA EXTRACTION
+        
+        Company Ticker: ${companyTicker || 'Not provided'}
+        Document Text: ${text.substring(0, 40000)}
+        
+        Instructions: Extract PRECISE financial figures. If a ticker is provided, focus on data that can be cross-referenced with API data.
+        
+        Return detailed JSON:
+        {
+          "financialData": {
+            "revenue": "Exact revenue figure with period",
+            "grossProfit": "Gross profit amount",
+            "operatingIncome": "Operating income",
+            "netIncome": "Net income",
+            "ebitda": "EBITDA amount and calculation method",
+            "totalAssets": "Total assets",
+            "totalLiabilities": "Total liabilities",
+            "totalEquity": "Total equity",
+            "cashAndCashEquivalents": "Cash amount",
+            "totalDebt": "Total debt amount",
+            "longTermDebt": "Long-term debt",
+            "shortTermDebt": "Short-term debt",
+            "workingCapital": "Working capital calculation",
+            "operatingCashFlow": "Operating cash flow",
+            "freeCashFlow": "Free cash flow",
+            "capitalExpenditures": "Capex amount"
+          },
+          "ratios": {
+            "currentRatio": "Current assets / Current liabilities",
+            "quickRatio": "Quick ratio calculation",
+            "debtToEquity": "Total debt / Total equity",
+            "leverageRatio": "Total debt / EBITDA",
+            "interestCoverage": "EBITDA / Interest expense",
+            "returnOnAssets": "Net income / Total assets",
+            "returnOnEquity": "Net income / Total equity"
+          },
+          "covenantMetrics": {
+            "dscr": "Debt service coverage ratio",
+            "fixedChargeCoverage": "Fixed charge coverage ratio",
+            "tangibleNetWorth": "Tangible net worth calculation"
+          },
+          "reportingPeriod": "Period this data covers",
+          "dataQuality": "Assessment of data completeness and reliability",
+          "documentSource": "Type of document this data comes from",
+          "confidence": 0.XX
+        }
+      `;
+
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response;
+      const text_response = response.text();
+      
+      const cleanResponse = text_response.replace(/```json|```/g, '').trim();
+      return JSON.parse(cleanResponse);
+    } catch (error) {
+      console.error('Error extracting financial data:', error);
+      return {
+        financialData: {},
+        ratios: {},
+        covenantMetrics: {},
+        confidence: 0.3,
+        error: error.message
+      };
+    }
+  }
+
+  // Enhanced chat function with company-specific context
+  async chatWithAI(query, companyContext) {
+    try {
+      const companyName = companyContext?.company?.name || 'the company';
+      const ticker = companyContext?.company?.ticker;
+      const hasFinancials = companyContext?.analysisData?.financials;
+      
+      const prompt = `
+        EXPERT DISTRESSED CREDIT ANALYST RESPONSE
+        
+        Company: ${companyName}${ticker ? ` (${ticker})` : ''}
+        Query: "${query}"
+        
+        Context Available:
+        ${hasFinancials ? `Financial Data: ${JSON.stringify(companyContext.analysisData.financials)}` : 'Limited financial data available'}
+        ${companyContext?.results?.documents ? `Uploaded Documents: ${companyContext.results.documents.documents?.length || 0} documents processed` : 'No documents uploaded'}
+        
+        Instructions:
+        1. Provide a comprehensive response as a senior distressed credit analyst
+        2. Reference specific financial metrics when available
+        3. If data is unavailable, explain what data would be needed
+        4. Focus on covenant analysis, liquidity, capital structure, and recovery scenarios
+        5. Provide actionable insights and recommendations
+        6. Include confidence assessment in your analysis
+        
+        Format response with:
+        - Direct answer to the question
+        - Supporting analysis with specific data points
+        - Risk assessment and implications
+        - Recommendations for further analysis
+        
+        If the query asks for visualizations or charts, describe what should be included and provide sample data structure.
+      `;
+
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response;
+      return {
+        response: response.text(),
+        confidence: 0.88,
+        agentType: 'insights',
+        sources: companyContext?.results?.documents ? ['Uploaded Documents', 'Financial Data'] : ['Financial Data'],
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('Error in enhanced chat:', error);
+      return {
+        response: `I apologize, but I'm having difficulty analyzing that query for ${companyName}. This could be due to limited data availability or system constraints. Could you please try rephrasing your question or provide more specific details about what aspect of the distressed credit analysis you'd like to explore?`,
+        confidence: 0.5,
+        agentType: 'coordinator',
+        error: error.message
+      };
+    }
+  }
     try {
       const prompt = `
         Based on the following company data, answer this question: "${question}"

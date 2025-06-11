@@ -1750,24 +1750,6 @@ class InsightsAgent {
       };
     }
   }
-        date: secFinancials.filingDate,
-        period: secFinancials.period,
-        operatingCashFlow: secFinancials.operatingCashFlow,
-        investingCashFlow: secFinancials.investingCashFlow,
-        financingCashFlow: secFinancials.financingCashFlow,
-        source: 'SEC XBRL Filing',
-        confidence: 99
-      }],
-      metadata: {
-        source: 'SEC XBRL Filing',
-        sourceUrl: secFinancials.sourceUrl,
-        filingDate: secFinancials.filingDate,
-        accessionNumber: secFinancials.accessionNumber,
-        confidence: 99,
-        dataQuality: 'highest' // SEC data is highest quality
-      }
-    };
-  }
 
   formatSECProfile(companyData) {
     // Convert SEC company lookup data to standard profile format

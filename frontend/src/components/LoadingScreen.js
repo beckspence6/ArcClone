@@ -67,13 +67,15 @@ const LoadingScreen = ({ progress = 0, message = "Analyzing company data...", co
     }
   ];
 
-  // Simplified progress steps
+  // Enhanced progress steps with SEC integration
   const progressSteps = [
-    { label: `Initializing analysis for ${companyName}`, progress: 0 },
-    { label: 'Processing documents', progress: 25 },
-    { label: 'Analyzing financials', progress: 50 },
-    { label: 'Generating insights', progress: 75 },
-    { label: 'Finalizing dashboard', progress: 100 }
+    { label: `Initializing SEC verification for ${companyName}`, progress: 0 },
+    { label: 'Verifying company in SEC EDGAR database', progress: 15 },
+    { label: 'Processing SEC filings and documents', progress: 30 },
+    { label: 'Extracting XBRL financial data', progress: 45 },
+    { label: 'Analyzing debt covenants and structure', progress: 60 },
+    { label: 'Generating comprehensive insights', progress: 80 },
+    { label: 'Finalizing SEC-enhanced dashboard', progress: 100 }
   ];
 
   useEffect(() => {
@@ -81,11 +83,13 @@ const LoadingScreen = ({ progress = 0, message = "Analyzing company data...", co
     const step = progressSteps.findIndex(step => progress <= step.progress);
     setCurrentStep(step >= 0 ? step : progressSteps.length - 1);
     
-    // Set active agent based on progress
-    if (progress <= 25) setActiveAgent(0);
-    else if (progress <= 50) setActiveAgent(1);
-    else if (progress <= 75) setActiveAgent(2);
-    else setActiveAgent(3);
+    // Set active agent based on progress (now 6 agents)
+    if (progress <= 15) setActiveAgent(0);       // SEC Data Verification
+    else if (progress <= 30) setActiveAgent(1); // Document Processing
+    else if (progress <= 45) setActiveAgent(2); // XBRL Financial Analysis
+    else if (progress <= 60) setActiveAgent(3); // Market Research
+    else if (progress <= 80) setActiveAgent(4); // Covenant Analysis
+    else setActiveAgent(5);                      // AI Insights
   }, [progress]);
 
   return (

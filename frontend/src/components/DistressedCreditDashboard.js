@@ -46,6 +46,7 @@ import {
 } from 'recharts';
 import AgentCoordinator from '../services/agentCoordinator';
 import GeminiService from '../services/geminiService';
+import SecApiService from '../services/SecApiService';
 
 const DistressedCreditDashboard = ({ companyData }) => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -57,6 +58,9 @@ const DistressedCreditDashboard = ({ companyData }) => {
   const [selectedMetric, setSelectedMetric] = useState(null);
   const [showSourceModal, setShowSourceModal] = useState(false);
   const [enhancedMetrics, setEnhancedMetrics] = useState(null);
+  const [secCovenantData, setSecCovenantData] = useState(null);
+  const [secDebtStructure, setSecDebtStructure] = useState(null);
+  const [secSubsidiaries, setSecSubsidiaries] = useState(null);
 
   useEffect(() => {
     const fetchDistressedCreditData = async () => {

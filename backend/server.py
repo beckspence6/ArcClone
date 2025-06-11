@@ -323,17 +323,22 @@ async def fetch_sec_filings(request: SECFilingRequest):
         company_lookup = await sec_company_lookup(SECCompanyRequest(ticker=request.ticker))
         cik = company_lookup['cik']
         
-        # Fetch specific filings
-        query = f'cik:{cik} AND formType:"{request.filing_type}"'
+        # Fetch specific filings using the updated query endpoint
+        query_json = {
+            "query": {
+                "query_string": {
+                    "query": f"cik:{cik} AND formType:\"{request.filing_type}\""
+                }
+            },
+            "from": "0",
+            "size": str(request.limit),
+            "sort": [{"filedAt": {"order": "desc"}}]
+        }
         
         filings_result = await make_sec_api_request(
-            "/query",
-            {
-                "query": query,
-                "from": "0", 
-                "size": str(request.limit),
-                "sort": '[{ "filedAt": { "order": "desc" } }]'
-            }
+            "",  # Empty endpoint as we're using the base URL
+            method="POST",
+            json_data=query_json
         )
         
         if not filings_result['success']:

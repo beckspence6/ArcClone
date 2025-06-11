@@ -25,9 +25,13 @@ class SecApiService {
       }
     });
     
-    // Credit usage tracking
+    // Credit usage tracking and rate limiting
     this.creditUsage = new Map();
     this.maxCreditsPerEndpoint = 100;
+    this.requestCache = new Map(); // Cache successful requests
+    this.rateLimitBackoff = 0; // Exponential backoff for rate limiting
+    this.lastRequestTime = 0;
+    this.minRequestInterval = 100; // Minimum 100ms between requests
     
     // Cache for API responses (aggressive caching to conserve credits)
     this.cache = new Map();

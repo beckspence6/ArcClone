@@ -621,16 +621,22 @@ async def sec_full_text_search(query: str, ticker: str, limit: int = 10):
         company_lookup = await sec_company_lookup(SECCompanyRequest(ticker=ticker))
         cik = company_lookup['cik']
         
-        # Construct search query
-        search_query = f'cik:{cik} AND {query}'
+        # Construct search query using the updated query format
+        query_json = {
+            "query": {
+                "query_string": {
+                    "query": f"cik:{cik} AND {query}"
+                }
+            },
+            "from": "0",
+            "size": str(limit),
+            "sort": [{"filedAt": {"order": "desc"}}]
+        }
         
         search_result = await make_sec_api_request(
-            "/full-text-search",
-            {
-                "query": search_query,
-                "from": "0",
-                "size": str(limit)
-            }
+            "full-text-search",
+            method="POST",
+            json_data=query_json
         )
         
         if not search_result['success']:

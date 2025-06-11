@@ -22,6 +22,8 @@ import {
 } from 'lucide-react';
 import StratumLogo from './Logo';
 import FMPService from '../services/FMPService';
+import SecApiService from '../services/SecApiService';
+import AgentCoordinator from '../services/agentCoordinator';
 import toast from 'react-hot-toast';
 
 const NewOnboardingFlow = ({ onComplete }) => {

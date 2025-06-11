@@ -149,14 +149,12 @@ class SecApiService {
 
   /**
    * Enhanced Company Lookup using SEC Mapping and EDGAR Entities APIs
-   * Routes through backend for credit management
+   * Routes through backend for credit management with rate limiting
    */
   async getCompanyLookup(ticker = null, cik = null, companyName = null) {
     const cacheKey = this.getCacheKey('company_lookup', { ticker, cik, companyName });
-    const cached = this.getFromCache(cacheKey);
-    if (cached) return cached;
-
-    try {
+    
+    return await this.makeRateLimitedRequest(async () => {
       console.log(`[SecApiService] Enhanced company lookup for ${ticker || cik || companyName}`);
       
       const response = await this.backendClient.post('/api/sec/company/lookup', {
@@ -166,33 +164,23 @@ class SecApiService {
       });
 
       if (response.data.success) {
-        const result = {
+        this.incrementCredit('company_lookup');
+        return {
           success: true,
+          ticker: ticker || response.data.ticker,
           cik: response.data.cik,
-          ticker: response.data.ticker,
           companyData: response.data.company_data,
-          mapping: response.data.company_data.mapping,
-          entityDetails: response.data.company_data.entity_details,
-          recentFilings: response.data.company_data.recent_filings,
-          source: 'SEC EDGAR Entities & Mapping APIs',
-          confidence: 98,
-          creditUsage: response.data.credit_usage
+          source: 'SEC API via Backend',
+          credits_used: response.data.credits_used || 1
         };
-
-        this.setCache(cacheKey, result);
-        return result;
       } else {
-        throw new Error('Company lookup failed');
+        return {
+          success: false,
+          error: response.data.error || 'Company lookup failed',
+          source: 'SEC API via Backend'
+        };
       }
-
-    } catch (error) {
-      console.error('[SecApiService] Company lookup error:', error);
-      return {
-        success: false,
-        error: error.response?.data?.detail || error.message,
-        source: 'SEC API Error'
-      };
-    }
+    }, cacheKey);
   }
 
   /**

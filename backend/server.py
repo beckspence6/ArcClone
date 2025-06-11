@@ -221,7 +221,7 @@ async def sec_company_lookup(request: SECCompanyRequest):
         # Step 1: Get CIK using Mapping API
         if request.ticker:
             mapping_result = await make_sec_api_request(
-                f"/mapping/ticker/{request.ticker.upper()}"
+                f"mapping/ticker/{request.ticker.upper()}"
             )
             logging.info(f"[SEC] Mapping result for {request.ticker}: {mapping_result}")
             if mapping_result['success']:
@@ -237,7 +237,7 @@ async def sec_company_lookup(request: SECCompanyRequest):
         elif request.company_name:
             # Use name mapping (requires different endpoint handling)
             mapping_result = await make_sec_api_request(
-                f"/mapping/name/{request.company_name}"
+                f"mapping/name/{request.company_name}"
             )
             if mapping_result['success']:
                 # Handle both list and dict responses from SEC API
@@ -259,7 +259,7 @@ async def sec_company_lookup(request: SECCompanyRequest):
         
         # Step 2: Get detailed entity data
         entity_result = await make_sec_api_request(
-            "/edgar-entities",
+            "edgar-entities",
             {"cik": cik}
         )
         
@@ -271,14 +271,22 @@ async def sec_company_lookup(request: SECCompanyRequest):
             company_data['entity_details'] = data
         
         # Step 3: Get latest filings for immediate context
+        # Use the updated query endpoint with POST method
+        query_json = {
+            "query": {
+                "query_string": {
+                    "query": f"cik:{cik} AND formType:(\"10-K\" OR \"10-Q\")"
+                }
+            },
+            "from": "0",
+            "size": "5",
+            "sort": [{"filedAt": {"order": "desc"}}]
+        }
+        
         filings_result = await make_sec_api_request(
-            "/query",
-            {
-                "query": f"cik:{cik} AND formType:(\"10-K\" OR \"10-Q\")",
-                "from": "0",
-                "size": "5",
-                "sort": '[{ "filedAt": { "order": "desc" } }]'
-            }
+            "",  # Empty endpoint as we're using the base URL
+            method="POST",
+            json_data=query_json
         )
         
         if filings_result['success']:

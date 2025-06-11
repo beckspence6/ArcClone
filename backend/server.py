@@ -585,7 +585,7 @@ async def extract_xbrl_data(accession_number: str):
     """Extract XBRL financial data from SEC filings"""
     try:
         xbrl_result = await make_sec_api_request(
-            "/xbrl-to-json",
+            "xbrl-to-json",
             {"accession-no": accession_number}
         )
         

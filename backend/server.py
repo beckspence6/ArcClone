@@ -128,19 +128,37 @@ def get_sec_credit_status():
     
     return status
 
-async def make_sec_api_request(endpoint: str, params: Dict[str, Any] = None):
+async def make_sec_api_request(endpoint: str, params: Dict[str, Any] = None, method: str = "GET", json_data: Dict[str, Any] = None):
     """Make a request to SEC API with credit tracking"""
     try:
         # Track credit usage
         usage = track_sec_credit_usage(endpoint)
         
         # Prepare request
-        url = f"{SEC_BASE_URL}{endpoint}"
+        if endpoint.startswith("/"):
+            url = f"{SEC_BASE_URL}{endpoint}"
+        else:
+            url = f"{SEC_BASE_URL}/{endpoint}"
+            
         request_params = params or {}
-        request_params['token'] = SEC_API_KEY
         
-        # Make request
-        response = requests.get(url, params=request_params, timeout=30)
+        # Add token to params for GET requests or to URL for POST requests
+        if method.upper() == "GET":
+            request_params['token'] = SEC_API_KEY
+        else:
+            if "?" in url:
+                url += f"&token={SEC_API_KEY}"
+            else:
+                url += f"?token={SEC_API_KEY}"
+        
+        # Make request based on method
+        if method.upper() == "GET":
+            response = requests.get(url, params=request_params, timeout=30)
+        elif method.upper() == "POST":
+            headers = {"Content-Type": "application/json"}
+            response = requests.post(url, params=request_params, json=json_data, headers=headers, timeout=30)
+        else:
+            raise ValueError(f"Unsupported HTTP method: {method}")
         
         if response.status_code == 200:
             return {

@@ -1784,66 +1784,6 @@ class InsightsAgent {
       dataQuality: 'regulatory' // Regulatory filings are authoritative
     };
   }
-
-  async addSECDataToFallback(dataType, symbol) {
-    // Add SEC API as primary source in fetchWithFallback
-    try {
-      switch (dataType) {
-        case 'companyProfile':
-          const profile = await SecApiService.getCompanyProfile(symbol);
-          if (profile) {
-            return {
-              data: this.formatSECProfile(profile),
-              source: 'SEC',
-              endpoint: '10-K Extractor',
-              confidence: 97
-            };
-          }
-          break;
-          
-        case 'financialStatements':
-          const financials = await SecApiService.getXBRLFinancials(symbol);
-          if (financials) {
-            return {
-              data: this.formatSECFinancials(financials),
-              source: 'SEC',
-              endpoint: 'XBRL-to-JSON',
-              confidence: 99
-            };
-          }
-          break;
-          
-        case 'executives':
-          const executives = await SecApiService.getExecutiveData(symbol);
-          if (executives) {
-            return {
-              data: executives.executives,
-              source: 'SEC',
-              endpoint: 'Executive Compensation',
-              confidence: 96
-            };
-          }
-          break;
-          
-        case 'subsidiaries':
-          const subsidiaries = await SecApiService.getSubsidiaries(symbol);
-          if (subsidiaries) {
-            return {
-              data: subsidiaries.subsidiaries,
-              source: 'SEC',
-              endpoint: 'Company Subsidiaries',
-              confidence: 98
-            };
-          }
-          break;
-      }
-      
-      return null; // Fallback to other APIs
-    } catch (error) {
-      console.warn(`[AgentCoordinator] SEC API failed for ${dataType}:`, error);
-      return null;
-    }
-  }
 }
 
 export default new AgentCoordinator();

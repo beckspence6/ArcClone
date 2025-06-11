@@ -54,8 +54,33 @@ const CompanyOverview = ({ companyData }) => {
       try {
         setLoading(true);
         console.log(`[CompanyOverview] Fetching comprehensive data for ${companyData.company.ticker}`);
-        const data = await AgentCoordinator.orchestrateDataFetch(companyData.company.ticker);
+        
+        // Fetch comprehensive data including SEC data through AgentCoordinator
+        const data = await AgentCoordinator.orchestrateDataFetch(companyData.company.ticker, ['all']);
         setComprehensiveData(data);
+        
+        // Extract SEC-specific data if available
+        if (data.secData && data.secData.success) {
+          console.log('[CompanyOverview] SEC data found, extracting entity details');
+          setSecEntityData(data.secData.data.company);
+          setSecFilings(data.secData.data.filings);
+          setSecVerified(true);
+        } else {
+          // Fallback: Try direct SEC lookup if not available in orchestrated data
+          console.log('[CompanyOverview] Attempting direct SEC lookup');
+          const secLookup = await SecApiService.getCompanyLookup(companyData.company.ticker);
+          if (secLookup.success) {
+            setSecEntityData(secLookup);
+            setSecVerified(true);
+            
+            // Also fetch core filings
+            const coreFilings = await SecApiService.fetchCoreFilings(companyData.company.ticker);
+            if (coreFilings.success) {
+              setSecFilings(coreFilings);
+            }
+          }
+        }
+        
         setError(null);
       } catch (err) {
         console.error('[CompanyOverview] Error fetching comprehensive data:', err);

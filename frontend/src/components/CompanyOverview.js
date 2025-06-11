@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GeminiService from '../services/geminiService';
+import SecApiService from '../services/SecApiService';
 import { 
   Building2,
   MapPin,
@@ -22,7 +23,10 @@ import {
   Target,
   Layers,
   Activity,
-  Loader2
+  Loader2,
+  Shield,
+  FileText,
+  Database
 } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart } from 'recharts';
 import AgentCoordinator from '../services/agentCoordinator';

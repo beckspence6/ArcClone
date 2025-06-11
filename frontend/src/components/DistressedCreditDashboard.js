@@ -1072,71 +1072,151 @@ ${liquidityPosition.netMonthlyBurn < 0 ? `
     const covenants = generateCovenantAnalysis();
     
     return (
-      <div className="space-y-4">
-        {covenants.map((covenant, index) => {
-          const Icon = getSeverityIcon(covenant.status);
-          return (
-            <motion.div
-              key={index}
-              className="bg-white rounded-xl border border-gray-200 overflow-hidden"
-              whileHover={{ scale: 1.01 }}
-            >
-              <div className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <Icon className={`w-5 h-5 ${getSeverityColor(covenant.status).split(' ')[0]}`} />
-                      <h3 className="text-lg font-semibold text-gray-900">{covenant.name}</h3>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(covenant.status)}`}>
-                        {covenant.status}
-                      </span>
-                    </div>
-                    
-                    <div className="grid grid-cols-3 gap-4 mt-4">
-                      <div>
-                        <p className="text-sm text-gray-600">Current Value</p>
-                        <p className="text-xl font-bold text-gray-900">{covenant.current}</p>
+      <div className="space-y-6">
+        {/* SEC Covenant Data Section */}
+        {secCovenantData && secCovenantData.success && (
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-6">
+            <div className="flex items-center space-x-3 mb-4">
+              <Shield className="w-6 h-6 text-blue-600" />
+              <h3 className="text-lg font-semibold text-blue-900">SEC Filing Analysis</h3>
+              <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                Confidence: {Math.round(secCovenantData.confidence * 100)}%
+              </span>
+            </div>
+            
+            {secCovenantData.analysis?.financial_covenants && (
+              <div className="space-y-4">
+                <h4 className="font-medium text-blue-900 mb-3">Financial Covenants from SEC Filings:</h4>
+                {secCovenantData.analysis.financial_covenants.map((covenant, idx) => (
+                  <div key={idx} className="bg-white/70 rounded-lg p-4 border border-blue-100">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h5 className="font-medium text-gray-900">{covenant.name}</h5>
+                        <p className="text-sm text-gray-600 mt-1">{covenant.description}</p>
+                        <div className="mt-2 grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="text-gray-500">Threshold:</span>
+                            <span className="ml-2 font-medium">{covenant.threshold}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Testing:</span>
+                            <span className="ml-2 font-medium">{covenant.testing_frequency}</span>
+                          </div>
+                        </div>
+                        {covenant.source_section && (
+                          <p className="mt-2 text-xs text-blue-600">
+                            Source: {covenant.source_section}
+                          </p>
+                        )}
                       </div>
-                      <div>
-                        <p className="text-sm text-gray-600">Threshold</p>
-                        <p className="text-xl font-bold text-gray-900">{covenant.threshold}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600">Impact Level</p>
-                        <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(covenant.impact)}`}>
-                          {covenant.impact}
+                      <div className="ml-4">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          SEC Verified
                         </span>
                       </div>
                     </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
-                    <div className="mt-4 text-sm text-gray-600">
-                      <p><strong>Formula:</strong> {covenant.formula}</p>
-                      <p><strong>Source:</strong> {covenant.source}</p>
-                      {covenant.explanation && (
-                        <p className="mt-2">{covenant.explanation}</p>
-                      )}
+            {secCovenantData.analysis?.negative_covenants && (
+              <div className="mt-6 space-y-4">
+                <h4 className="font-medium text-blue-900 mb-3">Negative Covenants:</h4>
+                {secCovenantData.analysis.negative_covenants.map((covenant, idx) => (
+                  <div key={idx} className="bg-orange-50 rounded-lg p-4 border border-orange-200">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h5 className="font-medium text-gray-900">{covenant.restriction}</h5>
+                        <p className="text-sm text-gray-600 mt-1">{covenant.description}</p>
+                        {covenant.source_section && (
+                          <p className="mt-2 text-xs text-orange-600">
+                            Source: {covenant.source_section}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  
-                  <div className="text-right">
-                    <div className={`flex items-center space-x-1 ${
-                      covenant.trend === 'improving' ? 'text-green-600' :
-                      covenant.trend === 'declining' ? 'text-red-600' :
-                      covenant.trend === 'calculated' ? 'text-blue-600' :
-                      'text-gray-600'
-                    }`}>
-                      {covenant.trend === 'improving' ? <TrendingUp className="w-4 h-4" /> :
-                       covenant.trend === 'declining' ? <TrendingDown className="w-4 h-4" /> :
-                       covenant.trend === 'calculated' ? <Calculator className="w-4 h-4" /> :
-                       <Activity className="w-4 h-4" />}
-                      <span className="text-sm font-medium capitalize">{covenant.trend}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Standard Covenant Analysis */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-900">Computed Covenant Analysis</h3>
+            {!secCovenantData && (
+              <span className="text-sm text-gray-500">Based on financial data calculations</span>
+            )}
+          </div>
+          
+          {covenants.map((covenant, index) => {
+            const Icon = getSeverityIcon(covenant.status);
+            return (
+              <motion.div
+                key={index}
+                className="bg-white rounded-xl border border-gray-200 overflow-hidden"
+                whileHover={{ scale: 1.01 }}
+              >
+                <div className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <Icon className={`w-5 h-5 ${getSeverityColor(covenant.status).split(' ')[0]}`} />
+                        <h3 className="text-lg font-semibold text-gray-900">{covenant.name}</h3>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(covenant.status)}`}>
+                          {covenant.status}
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-4 mt-4">
+                        <div>
+                          <p className="text-sm text-gray-600">Current Value</p>
+                          <p className="text-xl font-bold text-gray-900">{covenant.current}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">Threshold</p>
+                          <p className="text-xl font-bold text-gray-900">{covenant.threshold}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">Impact Level</p>
+                          <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(covenant.impact)}`}>
+                            {covenant.impact}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 text-sm text-gray-600">
+                        <p><strong>Formula:</strong> {covenant.formula}</p>
+                        <p><strong>Source:</strong> {covenant.source}</p>
+                        {covenant.explanation && (
+                          <p className="mt-2">{covenant.explanation}</p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="text-right">
+                      <div className={`flex items-center space-x-1 ${
+                        covenant.trend === 'improving' ? 'text-green-600' :
+                        covenant.trend === 'declining' ? 'text-red-600' :
+                        covenant.trend === 'calculated' ? 'text-blue-600' :
+                        'text-gray-600'
+                      }`}>
+                        {covenant.trend === 'improving' ? <TrendingUp className="w-4 h-4" /> :
+                         covenant.trend === 'declining' ? <TrendingDown className="w-4 h-4" /> :
+                         covenant.trend === 'calculated' ? <Calculator className="w-4 h-4" /> :
+                         <Activity className="w-4 h-4" />}
+                        <span className="text-sm font-medium capitalize">{covenant.trend}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          );
-        })}
+              </motion.div>
+            );
+          })}
+        </div>
       </div>
     );
   };

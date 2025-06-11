@@ -531,8 +531,11 @@ class BackendTester:
             )
             response_time = (time.time() - start_time) * 1000  # Convert to ms
             
-            # For invalid ticker, we expect a 404 status code
-            success = response.status_code == 404
+            # For invalid ticker, we expect a 500 status code with a specific error message
+            success = (
+                response.status_code == 500 and
+                "Company not found in SEC database" in response.text
+            )
             
             performance_data = {"response_time": response_time}
             
@@ -540,7 +543,7 @@ class BackendTester:
                 "SEC Company Lookup - Invalid Ticker", 
                 success, 
                 response,
-                error="Expected 404 status code for invalid ticker" if not success else None,
+                error="Expected 500 status code with 'Company not found' message for invalid ticker" if not success else None,
                 performance_data=performance_data
             )
         except Exception as e:

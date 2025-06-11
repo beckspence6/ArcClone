@@ -39,6 +39,9 @@ const CompanyOverview = ({ companyData }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [enhancedCompanyData, setEnhancedCompanyData] = useState(null);
+  const [secEntityData, setSecEntityData] = useState(null);
+  const [secFilings, setSecFilings] = useState(null);
+  const [secVerified, setSecVerified] = useState(false);
 
   useEffect(() => {
     const fetchComprehensiveData = async () => {

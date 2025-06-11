@@ -78,6 +78,74 @@ const NewOnboardingFlow = ({ onComplete }) => {
     }
   };
 
+  // SEC Company Verification Functions
+  const handleSECCompanyLookup = async (ticker) => {
+    if (!ticker || ticker.length < 1) return;
+    
+    setSearchingCompanies(true);
+    try {
+      console.log('[Onboarding] Starting SEC company lookup for:', ticker);
+      
+      // Step 1: SEC Company Lookup
+      const companyLookup = await SecApiService.getCompanyLookup(ticker.toUpperCase());
+      
+      if (companyLookup.success) {
+        setSecCompanyData(companyLookup);
+        
+        // Step 2: Fetch Core SEC Filings
+        const coreFilings = await SecApiService.fetchCoreFilings(ticker.toUpperCase());
+        if (coreFilings.success) {
+          setSecFilings(coreFilings);
+        }
+        
+        // Update form data with SEC verification
+        setFormData(prev => ({
+          ...prev,
+          companyTicker: ticker.toUpperCase(),
+          secVerified: true,
+          companyName: companyLookup.companyData?.mapping?.name || companyLookup.companyData?.entity_details?.name,
+          cik: companyLookup.cik
+        }));
+        
+        toast.success(`✅ SEC verification complete for ${companyLookup.companyData?.mapping?.name || ticker}`);
+      } else {
+        toast.error('Company not found in SEC database. Please verify the ticker symbol.');
+        setFormData(prev => ({ ...prev, secVerified: false }));
+      }
+    } catch (error) {
+      console.error('[Onboarding] SEC lookup error:', error);
+      toast.error('SEC verification failed. Please try again.');
+      setFormData(prev => ({ ...prev, secVerified: false }));
+    } finally {
+      setSearchingCompanies(false);
+    }
+  };
+
+  const handleCompanySearch = async (searchTerm) => {
+    if (!searchTerm || searchTerm.length < 2) {
+      setCompanySearchResults([]);
+      return;
+    }
+
+    setSearchingCompanies(true);
+    try {
+      // Search using FMP for company suggestions, then verify with SEC
+      const results = await FMPService.searchCompanies(searchTerm);
+      if (results && results.length > 0) {
+        const enhancedResults = results.slice(0, 5).map(company => ({
+          ...company,
+          verified: false // Will be verified when selected
+        }));
+        setCompanySearchResults(enhancedResults);
+      }
+    } catch (error) {
+      console.error('[Onboarding] Company search error:', error);
+      setCompanySearchResults([]);
+    } finally {
+      setSearchingCompanies(false);
+    }
+  };
+
   const handleComplete = async () => {
     setIsLoading(true);
     

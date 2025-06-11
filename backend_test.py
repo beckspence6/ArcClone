@@ -841,12 +841,17 @@ class BackendTester:
         self.test_enhanced_document_analysis()
         self.test_secapi_key_access()
         
-        # Run SEC API tests
+        # Run SEC API tests with delays to avoid rate limiting
         self.test_sec_health_endpoint()
+        time.sleep(1)
         self.test_sec_company_lookup_valid_tickers()
+        time.sleep(2)
         self.test_sec_company_lookup_invalid_ticker()
+        time.sleep(2)
         self.test_sec_company_lookup_single_letter_ticker()
+        time.sleep(2)
         self.test_sec_company_lookup_response_format()
+        time.sleep(2)
         self.test_sec_company_lookup_concurrent_requests()
         
         # Print summary

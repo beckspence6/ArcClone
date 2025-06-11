@@ -37,7 +37,9 @@ const NewOnboardingFlow = ({ onComplete }) => {
     notifications: true,
     marketUpdates: false,
     companyTicker: '',  // For SEC company mapping
-    secVerified: false  // Track SEC verification status
+    secVerified: false,  // Track SEC verification status
+    companyName: '',     // Store verified company name
+    verificationMethod: null // Track how company was verified
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

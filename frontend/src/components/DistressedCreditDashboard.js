@@ -75,7 +75,11 @@ const DistressedCreditDashboard = ({ companyData }) => {
         setLoading(true);
         console.log(`[DistressedCreditDashboard] Fetching distressed credit data for ${companyData.company.ticker}`);
         
-        const data = await AgentCoordinator.orchestrateDataFetch(companyData.company.ticker, ['all']);
+        // Fetch comprehensive data including SEC covenant and debt analysis
+        const data = await AgentCoordinator.orchestrateDataFetch(
+          companyData.company.ticker, 
+          ['all', 'covenants', 'debtStructure', 'subsidiaries']
+        );
         
         // Cross-reference with user documents for enhanced credit analysis
         const enhancedData = await AgentCoordinator.crossReferenceDocuments(
@@ -86,6 +90,41 @@ const DistressedCreditDashboard = ({ companyData }) => {
         
         console.log('[DistressedCreditDashboard] Enhanced data received:', enhancedData);
         setComprehensiveData(enhancedData);
+        
+        // Extract SEC-specific covenant and debt structure data
+        if (enhancedData.secData && enhancedData.secData.success) {
+          if (enhancedData.secData.data.covenants) {
+            setSecCovenantData(enhancedData.secData.data.covenants);
+            console.log('[DistressedCreditDashboard] SEC covenant data loaded');
+          }
+          
+          if (enhancedData.secData.data.debtStructure) {
+            setSecDebtStructure(enhancedData.secData.data.debtStructure);
+            console.log('[DistressedCreditDashboard] SEC debt structure data loaded');
+          }
+          
+          if (enhancedData.secData.data.subsidiaries) {
+            setSecSubsidiaries(enhancedData.secData.data.subsidiaries);
+            console.log('[DistressedCreditDashboard] SEC subsidiary data loaded');
+          }
+        } else {
+          // Fallback: Fetch SEC-specific data directly if not available in orchestrated data
+          console.log('[DistressedCreditDashboard] Fetching SEC-specific data directly');
+          try {
+            const [covenantData, debtData, subsidiaryData] = await Promise.all([
+              AgentCoordinator.getSECCovenantData(companyData.company.ticker),
+              AgentCoordinator.getSECDebtStructure(companyData.company.ticker),
+              SecApiService.getSubsidiaryData(companyData.company.ticker)
+            ]);
+            
+            if (covenantData && covenantData.success) setSecCovenantData(covenantData);
+            if (debtData && debtData.success) setSecDebtStructure(debtData);
+            if (subsidiaryData && subsidiaryData.success) setSecSubsidiaries(subsidiaryData);
+          } catch (secError) {
+            console.warn('[DistressedCreditDashboard] SEC data fetch warning:', secError);
+          }
+        }
+        
         setError(null);
       } catch (err) {
         console.error('[DistressedCreditDashboard] Error fetching data:', err);

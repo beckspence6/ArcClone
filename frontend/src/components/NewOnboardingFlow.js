@@ -47,6 +47,16 @@ const NewOnboardingFlow = ({ onComplete }) => {
   const [secFilings, setSecFilings] = useState(null);
   const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
 
+  const handleCompanySelect = (company) => {
+    setFormData({
+      ...formData,
+      company: company.name,
+      companyTicker: company.symbol,
+      selectedCompany: company
+    });
+    setShowCompanyDropdown(false);
+  };
+
   const steps = [
     { id: 'welcome', title: 'Welcome to Stratum' },
     { id: 'account', title: 'Create Your Account' },

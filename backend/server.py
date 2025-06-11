@@ -692,3 +692,13 @@ async def health_check():
         "features": ["sec_integration", "ai_analysis", "credit_management"],
         "sec_credits": get_sec_credit_status()
     }
+
+# Direct health check endpoint (for testing)
+@app.get("/api/health")
+async def app_health_check():
+    return {
+        "status": "healthy",
+        "version": "2.0.0",
+        "features": ["sec_integration", "ai_analysis", "credit_management"],
+        "sec_credits": get_sec_credit_status()
+    }

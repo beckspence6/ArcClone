@@ -541,6 +541,113 @@ const NewOnboardingFlow = ({ onComplete }) => {
     </motion.div>
   );
 
+  const renderCompanyStep = () => (
+    <motion.div
+      className="space-y-8 max-w-md mx-auto"
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+    >
+      <div className="text-center">
+        <h2 className="text-3xl font-bold text-white mb-4">SEC Company Verification</h2>
+        <p className="text-gray-300">Verify your company in the SEC database for accurate regulatory data</p>
+      </div>
+
+      <div className="space-y-6">
+        {/* Company Ticker Input */}
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">Company Ticker Symbol</label>
+          <div className="relative">
+            <input
+              type="text"
+              value={formData.companyTicker}
+              onChange={(e) => {
+                const ticker = e.target.value.toUpperCase();
+                setFormData({ ...formData, companyTicker: ticker });
+                if (ticker.length >= 1) {
+                  handleSECCompanyLookup(ticker);
+                }
+              }}
+              className="w-full px-4 py-3 pl-10 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent backdrop-blur-lg"
+              placeholder="e.g., AAPL, TSLA, MSFT"
+            />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            {searchingCompanies && (
+              <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-400 w-5 h-5 animate-spin" />
+            )}
+          </div>
+          <p className="text-gray-400 text-sm mt-2">
+            Enter the stock ticker symbol for SEC database lookup and filing verification
+          </p>
+        </div>
+
+        {/* SEC Verification Status */}
+        {formData.companyTicker && (
+          <div className={`bg-white/10 backdrop-blur-lg rounded-xl p-6 border ${
+            formData.secVerified ? 'border-green-500/30 bg-green-500/10' : 'border-white/20'
+          }`}>
+            <div className="flex items-start space-x-3">
+              {formData.secVerified ? (
+                <Check className="w-5 h-5 text-green-400 mt-0.5" />
+              ) : (
+                <AlertCircle className="w-5 h-5 text-yellow-400 mt-0.5" />
+              )}
+              <div className="flex-1">
+                <h3 className={`text-lg font-semibold mb-1 ${
+                  formData.secVerified ? 'text-green-300' : 'text-yellow-300'
+                }`}>
+                  {formData.secVerified ? 'SEC Verification Complete' : 'Pending SEC Verification'}
+                </h3>
+                {formData.secVerified ? (
+                  <div className="space-y-2 text-sm">
+                    <p className="text-green-200">
+                      ✓ Company found in SEC EDGAR database
+                    </p>
+                    {secCompanyData && (
+                      <>
+                        <p className="text-white">
+                          <strong>Company:</strong> {secCompanyData.companyData?.mapping?.name || 'Unknown'}
+                        </p>
+                        <p className="text-gray-300">
+                          <strong>CIK:</strong> {secCompanyData.cik}
+                        </p>
+                      </>
+                    )}
+                    {secFilings && (
+                      <p className="text-gray-300">
+                        <strong>Recent Filings:</strong> {secFilings.totalFilings} filings found (10-K, 10-Q)
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-yellow-200 text-sm">
+                    Enter a valid ticker symbol to verify SEC registration and retrieve regulatory filings
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* SEC Data Benefits */}
+        <div className="bg-blue-500/20 backdrop-blur-lg rounded-xl p-6 border border-blue-500/30">
+          <div className="flex items-start space-x-3">
+            <Shield className="w-5 h-5 text-blue-400 mt-0.5" />
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-2">SEC Data Advantages</h3>
+              <ul className="text-blue-200 text-sm space-y-1">
+                <li>• Most accurate financial data from XBRL filings</li>
+                <li>• Comprehensive covenant and debt structure analysis</li>
+                <li>• Real-time subsidiary and ownership mapping</li>
+                <li>• Executive compensation and insider trading data</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+
   const renderPreferencesStep = () => (
     <motion.div
       className="space-y-8 max-w-md mx-auto"

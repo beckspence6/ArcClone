@@ -228,10 +228,20 @@ async def sec_company_lookup(request: SECCompanyRequest):
                 # Handle both list and dict responses from SEC API
                 data = mapping_result['data']
                 logging.info(f"[SEC] Mapping data type: {type(data)}, content: {data}")
-                if isinstance(data, list) and len(data) > 0:
-                    data = data[0]  # Take first result if it's a list
-                company_data['mapping'] = data
-                cik = data.get('cik') if isinstance(data, dict) else None
+                if isinstance(data, list):
+                    if len(data) > 0:
+                        data = data[0]  # Take first result if it's a list
+                        company_data['mapping'] = data
+                        cik = data.get('cik') if isinstance(data, dict) else None
+                    else:
+                        # Empty list means no results found
+                        raise HTTPException(
+                            status_code=404,
+                            detail="Company not found in SEC database"
+                        )
+                else:
+                    company_data['mapping'] = data
+                    cik = data.get('cik') if isinstance(data, dict) else None
             else:
                 cik = None
         elif request.company_name:

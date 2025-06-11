@@ -100,6 +100,54 @@ class SecApiService {
   }
 
   /**
+   * Rate-limited request wrapper with exponential backoff
+   */
+  async makeRateLimitedRequest(requestFn, cacheKey = null) {
+    // Check cache first
+    if (cacheKey) {
+      const cached = this.getFromCache(cacheKey);
+      if (cached) return cached;
+    }
+
+    // Implement minimum request interval
+    const now = Date.now();
+    const timeSinceLastRequest = now - this.lastRequestTime;
+    if (timeSinceLastRequest < this.minRequestInterval) {
+      await new Promise(resolve => setTimeout(resolve, this.minRequestInterval - timeSinceLastRequest));
+    }
+
+    // Apply exponential backoff if rate limited
+    if (this.rateLimitBackoff > 0) {
+      console.log(`[SecApiService] Applying backoff: ${this.rateLimitBackoff}ms`);
+      await new Promise(resolve => setTimeout(resolve, this.rateLimitBackoff));
+    }
+
+    try {
+      this.lastRequestTime = Date.now();
+      const result = await requestFn();
+      
+      // Reset backoff on success
+      this.rateLimitBackoff = 0;
+      
+      // Cache successful results
+      if (cacheKey && result.success) {
+        this.setCache(cacheKey, result);
+      }
+      
+      return result;
+    } catch (error) {
+      if (error.response?.status === 429 || error.message.includes('rate limit')) {
+        // Exponential backoff: 1s, 2s, 4s, 8s, max 16s
+        this.rateLimitBackoff = Math.min(this.rateLimitBackoff === 0 ? 1000 : this.rateLimitBackoff * 2, 16000);
+        console.warn(`[SecApiService] Rate limited, next backoff: ${this.rateLimitBackoff}ms`);
+        
+        throw new Error(`Rate limited. Retrying with ${this.rateLimitBackoff/1000}s backoff.`);
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Enhanced Company Lookup using SEC Mapping and EDGAR Entities APIs
    * Routes through backend for credit management
    */

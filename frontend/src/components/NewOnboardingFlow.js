@@ -678,7 +678,7 @@ const NewOnboardingFlow = ({ onComplete }) => {
           >
             {currentStep === 0 && renderWelcomeStep()}
             {currentStep === 1 && renderAccountStep()}
-            {currentStep === 2 && renderSECCompanyStep()}
+            {currentStep === 2 && renderCompanyStep()}
             {currentStep === 3 && renderPreferencesStep()}
           </motion.div>
         </AnimatePresence>

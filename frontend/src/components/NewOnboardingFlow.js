@@ -45,6 +45,7 @@ const NewOnboardingFlow = ({ onComplete }) => {
   const [companySearchResults, setCompanySearchResults] = useState([]);
   const [secCompanyData, setSecCompanyData] = useState(null);
   const [secFilings, setSecFilings] = useState(null);
+  const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
 
   const steps = [
     { id: 'welcome', title: 'Welcome to Stratum' },

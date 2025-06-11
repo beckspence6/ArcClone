@@ -463,6 +463,306 @@ class BackendTester:
             )
         except Exception as e:
             return self.log_test("SEC-API.io Key Access", False, error=str(e))
+    
+    def test_sec_company_lookup_valid_tickers(self):
+        """Test SEC company lookup with valid ticker symbols"""
+        valid_tickers = ["AAPL", "TSLA", "MSFT", "PLTR"]
+        results = []
+        
+        for ticker in valid_tickers:
+            try:
+                print(f"    Testing SEC company lookup for {ticker}...")
+                
+                start_time = time.time()
+                response = self.session.post(
+                    f"{API_URL}/sec/company/lookup",
+                    json={"ticker": ticker}
+                )
+                response_time = (time.time() - start_time) * 1000  # Convert to ms
+                
+                # Check if response is successful and contains expected data
+                success = (
+                    response.status_code == 200 and
+                    response.json().get("success") == True and
+                    response.json().get("ticker") == ticker and
+                    response.json().get("cik") is not None and
+                    "company_data" in response.json()
+                )
+                
+                # Validate company_data structure
+                if success:
+                    company_data = response.json().get("company_data", {})
+                    success = (
+                        "mapping" in company_data and
+                        "entity_details" in company_data
+                    )
+                
+                performance_data = {"response_time": response_time}
+                
+                test_result = self.log_test(
+                    f"SEC Company Lookup - {ticker}", 
+                    success, 
+                    response,
+                    error=f"Invalid response structure for {ticker}" if not success else None,
+                    performance_data=performance_data
+                )
+                results.append(test_result)
+                
+                # Small delay to avoid rate limiting
+                time.sleep(0.5)
+                
+            except Exception as e:
+                results.append(self.log_test(f"SEC Company Lookup - {ticker}", False, error=str(e)))
+        
+        # Overall test passes if all individual ticker tests pass
+        return all(results)
+    
+    def test_sec_company_lookup_invalid_ticker(self):
+        """Test SEC company lookup with invalid ticker symbols"""
+        try:
+            invalid_ticker = "INVALID123"
+            
+            print(f"    Testing SEC company lookup for invalid ticker {invalid_ticker}...")
+            
+            start_time = time.time()
+            response = self.session.post(
+                f"{API_URL}/sec/company/lookup",
+                json={"ticker": invalid_ticker}
+            )
+            response_time = (time.time() - start_time) * 1000  # Convert to ms
+            
+            # For invalid ticker, we expect a 404 status code
+            success = response.status_code == 404
+            
+            performance_data = {"response_time": response_time}
+            
+            return self.log_test(
+                "SEC Company Lookup - Invalid Ticker", 
+                success, 
+                response,
+                error="Expected 404 status code for invalid ticker" if not success else None,
+                performance_data=performance_data
+            )
+        except Exception as e:
+            return self.log_test("SEC Company Lookup - Invalid Ticker", False, error=str(e))
+    
+    def test_sec_company_lookup_single_letter_ticker(self):
+        """Test SEC company lookup with single letter ticker (previously causing 500 error)"""
+        try:
+            ticker = "H"  # Hyatt Hotels Corporation
+            
+            print(f"    Testing SEC company lookup for single letter ticker {ticker}...")
+            
+            start_time = time.time()
+            response = self.session.post(
+                f"{API_URL}/sec/company/lookup",
+                json={"ticker": ticker}
+            )
+            response_time = (time.time() - start_time) * 1000  # Convert to ms
+            
+            # Check if response is successful and contains expected data
+            success = (
+                response.status_code == 200 and
+                response.json().get("success") == True and
+                response.json().get("ticker") == ticker and
+                response.json().get("cik") is not None and
+                "company_data" in response.json()
+            )
+            
+            performance_data = {"response_time": response_time}
+            
+            return self.log_test(
+                "SEC Company Lookup - Single Letter Ticker", 
+                success, 
+                response,
+                error="Failed to handle single letter ticker" if not success else None,
+                performance_data=performance_data
+            )
+        except Exception as e:
+            return self.log_test("SEC Company Lookup - Single Letter Ticker", False, error=str(e))
+    
+    def test_sec_company_lookup_response_format(self):
+        """Test SEC company lookup response format validation"""
+        try:
+            ticker = "AAPL"
+            
+            print(f"    Testing SEC company lookup response format for {ticker}...")
+            
+            response = self.session.post(
+                f"{API_URL}/sec/company/lookup",
+                json={"ticker": ticker}
+            )
+            
+            if response.status_code != 200:
+                return self.log_test(
+                    "SEC Company Lookup - Response Format", 
+                    False, 
+                    response, 
+                    "Failed to get successful response"
+                )
+            
+            # Validate response structure
+            data = response.json()
+            
+            # Check top-level structure
+            top_level_valid = (
+                "success" in data and
+                "ticker" in data and
+                "cik" in data and
+                "company_data" in data and
+                "credit_usage" in data
+            )
+            
+            if not top_level_valid:
+                return self.log_test(
+                    "SEC Company Lookup - Response Format", 
+                    False, 
+                    response, 
+                    "Invalid top-level response structure"
+                )
+            
+            # Check company_data structure
+            company_data = data.get("company_data", {})
+            company_data_valid = (
+                "mapping" in company_data and
+                "entity_details" in company_data and
+                "recent_filings" in company_data
+            )
+            
+            if not company_data_valid:
+                return self.log_test(
+                    "SEC Company Lookup - Response Format", 
+                    False, 
+                    response, 
+                    "Invalid company_data structure"
+                )
+            
+            # Check mapping data (this is where the list/dict handling was fixed)
+            mapping = company_data.get("mapping", {})
+            mapping_valid = isinstance(mapping, dict) and "cik" in mapping
+            
+            if not mapping_valid:
+                return self.log_test(
+                    "SEC Company Lookup - Response Format", 
+                    False, 
+                    response, 
+                    "Invalid mapping structure"
+                )
+            
+            return self.log_test(
+                "SEC Company Lookup - Response Format", 
+                True, 
+                response
+            )
+        except Exception as e:
+            return self.log_test("SEC Company Lookup - Response Format", False, error=str(e))
+    
+    def test_sec_company_lookup_concurrent_requests(self):
+        """Test SEC company lookup with multiple concurrent requests"""
+        try:
+            tickers = ["AAPL", "TSLA", "MSFT", "PLTR"]
+            
+            print(f"    Testing SEC company lookup with concurrent requests...")
+            
+            import concurrent.futures
+            
+            def fetch_company_data(ticker):
+                try:
+                    start_time = time.time()
+                    response = self.session.post(
+                        f"{API_URL}/sec/company/lookup",
+                        json={"ticker": ticker}
+                    )
+                    response_time = (time.time() - start_time) * 1000  # Convert to ms
+                    
+                    return {
+                        "ticker": ticker,
+                        "status_code": response.status_code,
+                        "success": response.status_code == 200,
+                        "response_time": response_time
+                    }
+                except Exception as e:
+                    return {
+                        "ticker": ticker,
+                        "success": False,
+                        "error": str(e)
+                    }
+            
+            # Use ThreadPoolExecutor to make concurrent requests
+            with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+                future_to_ticker = {executor.submit(fetch_company_data, ticker): ticker for ticker in tickers}
+                results = []
+                
+                for future in concurrent.futures.as_completed(future_to_ticker):
+                    ticker = future_to_ticker[future]
+                    try:
+                        result = future.result()
+                        results.append(result)
+                    except Exception as e:
+                        results.append({
+                            "ticker": ticker,
+                            "success": False,
+                            "error": str(e)
+                        })
+            
+            # Check if all requests were successful
+            all_successful = all(result.get("success") for result in results)
+            
+            # Calculate average response time
+            response_times = [result.get("response_time") for result in results if "response_time" in result]
+            avg_response_time = statistics.mean(response_times) if response_times else 0
+            
+            performance_data = {
+                "concurrent_requests": len(tickers),
+                "successful_requests": sum(1 for result in results if result.get("success")),
+                "avg_response_time": f"{avg_response_time:.2f}ms"
+            }
+            
+            return self.log_test(
+                "SEC Company Lookup - Concurrent Requests", 
+                all_successful, 
+                results,
+                error="Some concurrent requests failed" if not all_successful else None,
+                performance_data=performance_data
+            )
+        except Exception as e:
+            return self.log_test("SEC Company Lookup - Concurrent Requests", False, error=str(e))
+    
+    def test_sec_health_endpoint(self):
+        """Test the SEC health endpoint"""
+        try:
+            print(f"    Testing SEC health endpoint...")
+            
+            start_time = time.time()
+            response = self.session.get(f"{API_URL}/health")
+            response_time = (time.time() - start_time) * 1000  # Convert to ms
+            
+            # Check if response is successful and contains expected data
+            success = (
+                response.status_code == 200 and
+                "status" in response.json() and
+                response.json().get("status") == "healthy" and
+                "version" in response.json() and
+                "features" in response.json() and
+                "sec_credits" in response.json()
+            )
+            
+            # Check if SEC integration is listed in features
+            if success and "features" in response.json():
+                features = response.json().get("features", [])
+                success = "sec_integration" in features
+            
+            performance_data = {"response_time": response_time}
+            
+            return self.log_test(
+                "SEC Health Endpoint", 
+                success, 
+                response,
+                error="Invalid health endpoint response" if not success else None,
+                performance_data=performance_data
+            )
+        except Exception as e:
+            return self.log_test("SEC Health Endpoint", False, error=str(e))
 
     def run_all_tests(self):
         """Run all tests and return results"""
@@ -483,6 +783,14 @@ class BackendTester:
         self.test_agent_coordinator_singleton()
         self.test_enhanced_document_analysis()
         self.test_secapi_key_access()
+        
+        # Run SEC API tests
+        self.test_sec_health_endpoint()
+        self.test_sec_company_lookup_valid_tickers()
+        self.test_sec_company_lookup_invalid_ticker()
+        self.test_sec_company_lookup_single_letter_ticker()
+        self.test_sec_company_lookup_response_format()
+        self.test_sec_company_lookup_concurrent_requests()
         
         # Print summary
         print("\n📊 Test Summary:")

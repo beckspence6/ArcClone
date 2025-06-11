@@ -244,7 +244,11 @@ async def sec_company_lookup(request: SECCompanyRequest):
         )
         
         if entity_result['success']:
-            company_data['entity_details'] = entity_result['data']
+            # Handle both list and dict responses
+            data = entity_result['data']
+            if isinstance(data, list) and len(data) > 0:
+                data = data[0]  # Take first result if it's a list
+            company_data['entity_details'] = data
         
         # Step 3: Get latest filings for immediate context
         filings_result = await make_sec_api_request(
@@ -258,7 +262,14 @@ async def sec_company_lookup(request: SECCompanyRequest):
         )
         
         if filings_result['success']:
-            company_data['recent_filings'] = filings_result['data']
+            # Handle both list and dict responses
+            data = filings_result['data']
+            if isinstance(data, dict) and 'filings' in data:
+                company_data['recent_filings'] = data
+            elif isinstance(data, list):
+                company_data['recent_filings'] = {'filings': data}
+            else:
+                company_data['recent_filings'] = data
         
         return {
             "success": True,

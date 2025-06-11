@@ -35,10 +35,16 @@ const NewOnboardingFlow = ({ onComplete }) => {
     lastName: '',
     role: 'analyst',
     notifications: true,
-    marketUpdates: false
+    marketUpdates: false,
+    companyTicker: '',  // For SEC company mapping
+    secVerified: false  // Track SEC verification status
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [searchingCompanies, setSearchingCompanies] = useState(false);
+  const [companySearchResults, setCompanySearchResults] = useState([]);
+  const [secCompanyData, setSecCompanyData] = useState(null);
+  const [secFilings, setSecFilings] = useState(null);
 
   const steps = [
     { id: 'welcome', title: 'Welcome to Stratum' },

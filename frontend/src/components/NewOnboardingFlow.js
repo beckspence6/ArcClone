@@ -189,6 +189,8 @@ const NewOnboardingFlow = ({ onComplete }) => {
         return formData.email && formData.password && formData.firstName && formData.lastName;
       case 2:
         return formData.companyTicker && formData.secVerified;
+      case 3:
+        return true;
       default:
         return true;
     }

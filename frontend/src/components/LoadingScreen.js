@@ -125,8 +125,24 @@ const LoadingScreen = ({ progress = 0, message = "Analyzing company data...", co
             {progressSteps[currentStep]?.label || message}
           </h2>
           <p className="text-gray-600 text-lg">
-            Our AI is conducting comprehensive distressed credit analysis
+            {activeAgent !== null && agents[activeAgent]?.secSpecific 
+              ? 'Leveraging SEC regulatory data for maximum accuracy'
+              : 'Our AI is conducting comprehensive distressed credit analysis'
+            }
           </p>
+          
+          {/* SEC Data Indicator */}
+          {activeAgent !== null && agents[activeAgent]?.secSpecific && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+              className="mt-4 inline-flex items-center space-x-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium"
+            >
+              <Shield className="w-4 h-4" />
+              <span>SEC Regulatory Data</span>
+            </motion.div>
+          )}
         </motion.div>
 
         {/* Elegant Progress Bar */}

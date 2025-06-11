@@ -618,9 +618,44 @@ const CompanyOverview = ({ companyData }) => {
                 <p className="text-blue-100 text-sm max-w-3xl leading-relaxed">
                   {company.description}
                 </p>
+                
+                {/* SEC Verification Status */}
+                {secVerified && (
+                  <div className="mt-4 inline-flex items-center space-x-2 bg-green-500/20 text-green-100 px-3 py-1 rounded-full text-sm">
+                    <Shield className="w-4 h-4" />
+                    <span>SEC Verified</span>
+                    {secEntityData?.cik && (
+                      <>
+                        <span>•</span>
+                        <span>CIK: {secEntityData.cik}</span>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
+            
+            {/* SEC Entity Information */}
             <div className="text-right">
+              {secVerified && secEntityData && (
+                <div className="mb-4 bg-white/10 rounded-lg p-3 text-left">
+                  <div className="flex items-center space-x-2 text-blue-100 mb-2">
+                    <Database className="w-4 h-4" />
+                    <span className="text-sm font-medium">SEC Entity Data</span>
+                  </div>
+                  <div className="space-y-1 text-xs text-blue-200">
+                    {secEntityData.companyData?.entity_details?.fiscal_year_end && (
+                      <div>Fiscal Year End: {secEntityData.companyData.entity_details.fiscal_year_end}</div>
+                    )}
+                    {secEntityData.companyData?.entity_details?.state_of_incorporation && (
+                      <div>Incorporation: {secEntityData.companyData.entity_details.state_of_incorporation}</div>
+                    )}
+                    {secFilings && (
+                      <div>Recent Filings: {secFilings.totalFilings} found</div>
+                    )}
+                  </div>
+                </div>
+              )}
               <div className="flex items-center space-x-2 text-blue-100 mb-2">
                 <Eye className="w-4 h-4" />
                 <span className="text-sm">Data Confidence: {company.profileConfidence}%</span>

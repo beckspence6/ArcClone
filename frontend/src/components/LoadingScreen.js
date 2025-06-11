@@ -7,7 +7,10 @@ import {
   TrendingUp,
   Zap,
   CheckCircle,
-  Building2
+  Building2,
+  Shield,
+  Search,
+  Database
 } from 'lucide-react';
 import StratumLogo from './Logo';
 

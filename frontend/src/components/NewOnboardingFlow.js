@@ -537,27 +537,38 @@ const NewOnboardingFlow = ({ onComplete }) => {
                 {formData.secVerified ? (
                   <div className="space-y-2 text-sm">
                     <p className="text-green-200">
-                      ✓ Company found in SEC EDGAR database
+                      ✓ Company verified and publicly traded
                     </p>
-                    {secCompanyData && (
-                      <>
-                        <p className="text-white">
-                          <strong>Company:</strong> {secCompanyData.companyData?.mapping?.name || 'Unknown'}
-                        </p>
-                        <p className="text-gray-300">
-                          <strong>CIK:</strong> {secCompanyData.cik}
-                        </p>
-                      </>
+                    <p className="text-white">
+                      <strong>Company:</strong> {formData.companyName || 'Unknown'}
+                    </p>
+                    <p className="text-gray-300">
+                      <strong>Ticker:</strong> {formData.companyTicker}
+                    </p>
+                    {formData.verificationMethod && (
+                      <p className="text-xs text-blue-300">
+                        <strong>Verified via:</strong> {
+                          formData.verificationMethod === 'SEC_DIRECT' ? 'SEC EDGAR Database' :
+                          formData.verificationMethod === 'FMP_PRIMARY' ? 'Financial Markets API (NYSE/NASDAQ)' :
+                          formData.verificationMethod === 'FMP_SEARCH' ? 'Market Search API' :
+                          'Multi-source verification'
+                        }
+                      </p>
+                    )}
+                    {secCompanyData?.cik && (
+                      <p className="text-gray-300">
+                        <strong>SEC CIK:</strong> {secCompanyData.cik}
+                      </p>
                     )}
                     {secFilings && (
                       <p className="text-gray-300">
-                        <strong>Recent Filings:</strong> {secFilings.totalFilings} filings found
+                        <strong>Recent SEC Filings:</strong> {secFilings.totalFilings} found
                       </p>
                     )}
                   </div>
                 ) : (
                   <p className="text-yellow-200 text-sm">
-                    Enter a valid ticker symbol to verify SEC registration
+                    Enter a valid ticker symbol to verify company registration
                   </p>
                 )}
               </div>

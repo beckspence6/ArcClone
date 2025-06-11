@@ -18,35 +18,52 @@ const LoadingScreen = ({ progress = 0, message = "Analyzing company data...", co
   const [currentStep, setCurrentStep] = useState(0);
   const [activeAgent, setActiveAgent] = useState(null);
 
-  // Simplified, elegant agent representation
+  // Enhanced agents with SEC-specific functionality
   const agents = [
+    { 
+      name: 'SEC Data Verification', 
+      icon: Shield, 
+      color: 'from-blue-500 to-blue-600',
+      description: 'Verifying company in SEC EDGAR database',
+      elegantColor: 'bg-blue-500',
+      secSpecific: true
+    },
     { 
       name: 'Document Processing', 
       icon: FileText, 
-      color: 'from-blue-500 to-blue-600',
-      description: 'Extracting key financials',
-      elegantColor: 'bg-blue-500'
+      color: 'from-green-500 to-green-600',
+      description: 'Processing SEC filings and user documents',
+      elegantColor: 'bg-green-500'
     },
     { 
-      name: 'Financial Analysis', 
-      icon: BarChart3, 
-      color: 'from-green-500 to-green-600',
-      description: 'Building capital structure',
-      elegantColor: 'bg-green-500'
+      name: 'XBRL Financial Analysis', 
+      icon: Database, 
+      color: 'from-purple-500 to-purple-600',
+      description: 'Extracting XBRL financial data from SEC filings',
+      elegantColor: 'bg-purple-500',
+      secSpecific: true
     },
     { 
       name: 'Market Research', 
       icon: TrendingUp, 
-      color: 'from-purple-500 to-purple-600',
-      description: 'Gathering market data',
-      elegantColor: 'bg-purple-500'
+      color: 'from-orange-500 to-orange-600',
+      description: 'Gathering comprehensive market data',
+      elegantColor: 'bg-orange-500'
+    },
+    { 
+      name: 'Covenant Analysis', 
+      icon: Search, 
+      color: 'from-red-500 to-red-600',
+      description: 'AI analysis of debt covenants from SEC filings',
+      elegantColor: 'bg-red-500',
+      secSpecific: true
     },
     { 
       name: 'AI Insights', 
       icon: Brain, 
-      color: 'from-orange-500 to-orange-600',
-      description: 'Generating distressed credit insights',
-      elegantColor: 'bg-orange-500'
+      color: 'from-indigo-500 to-indigo-600',
+      description: 'Generating comprehensive distressed credit insights',
+      elegantColor: 'bg-indigo-500'
     }
   ];
 

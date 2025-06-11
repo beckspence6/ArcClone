@@ -206,8 +206,12 @@ async def sec_company_lookup(request: SECCompanyRequest):
                 f"/mapping/ticker/{request.ticker.upper()}"
             )
             if mapping_result['success']:
-                company_data['mapping'] = mapping_result['data']
-                cik = mapping_result['data'].get('cik')
+                # Handle both list and dict responses from SEC API
+                data = mapping_result['data']
+                if isinstance(data, list) and len(data) > 0:
+                    data = data[0]  # Take first result if it's a list
+                company_data['mapping'] = data
+                cik = data.get('cik') if isinstance(data, dict) else None
             else:
                 cik = None
         elif request.company_name:
@@ -216,8 +220,12 @@ async def sec_company_lookup(request: SECCompanyRequest):
                 f"/mapping/name/{request.company_name}"
             )
             if mapping_result['success']:
-                company_data['mapping'] = mapping_result['data']
-                cik = mapping_result['data'].get('cik')
+                # Handle both list and dict responses from SEC API
+                data = mapping_result['data']
+                if isinstance(data, list) and len(data) > 0:
+                    data = data[0]  # Take first result if it's a list
+                company_data['mapping'] = data
+                cik = data.get('cik') if isinstance(data, dict) else None
             else:
                 cik = None
         else:

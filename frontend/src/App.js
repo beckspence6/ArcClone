@@ -21,6 +21,106 @@ import LoadingScreen from './components/LoadingScreen';
 import AgentCoordinator from './services/agentCoordinator';
 
 function App() {
+  // Helper methods for document data integration
+  const mergeDocumentFinancials = (existingFinancials, documentsResult) => {
+    if (!documentsResult?.documents) return existingFinancials;
+
+    const documentFinancials = {};
+    documentsResult.documents.forEach(doc => {
+      if (doc.analysis?.financialMetrics) {
+        doc.analysis.financialMetrics.forEach(metric => {
+          const key = metric.metric.toLowerCase();
+          documentFinancials[key] = {
+            value: metric.value,
+            source: `Document: ${doc.fileName}`,
+            confidence: 0.8,
+            extracted: true
+          };
+        });
+      }
+    });
+
+    return {
+      ...existingFinancials,
+      ...documentFinancials,
+      documentSources: true
+    };
+  };
+
+  const mergeDocumentMetrics = (existingMetrics, documentsResult) => {
+    if (!documentsResult?.documents) return existingMetrics;
+
+    const extractedMetrics = [];
+    documentsResult.documents.forEach(doc => {
+      if (doc.analysis?.financialMetrics) {
+        doc.analysis.financialMetrics.forEach(metric => {
+          extractedMetrics.push({
+            name: metric.metric,
+            value: metric.value,
+            source: `Document: ${doc.fileName}`,
+            category: 'financial',
+            extracted: true
+          });
+        });
+      }
+    });
+
+    return [
+      ...(existingMetrics || []),
+      ...extractedMetrics
+    ];
+  };
+
+  const extractDocumentCovenants = (documentsResult) => {
+    if (!documentsResult?.documents) return [];
+
+    const covenants = [];
+    documentsResult.documents.forEach(doc => {
+      if (doc.analysis?.covenants) {
+        doc.analysis.covenants.forEach(covenant => {
+          covenants.push({
+            description: covenant.description,
+            source: `Document: ${doc.fileName}`,
+            confidence: covenant.confidence || 0.7,
+            extracted: true
+          });
+        });
+      }
+    });
+
+    return covenants;
+  };
+
+  const getValueFromDocuments = (documentsResult, metricType) => {
+    if (!documentsResult?.documents) return null;
+
+    for (const doc of documentsResult.documents) {
+      if (doc.analysis?.financialMetrics) {
+        const metric = doc.analysis.financialMetrics.find(m => 
+          m.metric.toLowerCase().includes(metricType.toLowerCase())
+        );
+        if (metric) return metric.value;
+      }
+    }
+    return null;
+  };
+
+  const countExtractedFinancials = (documentsResult) => {
+    if (!documentsResult?.documents) return 0;
+    
+    return documentsResult.documents.reduce((total, doc) => {
+      return total + (doc.analysis?.financialMetrics?.length || 0);
+    }, 0);
+  };
+
+  const countExtractedCovenants = (documentsResult) => {
+    if (!documentsResult?.documents) return 0;
+    
+    return documentsResult.documents.reduce((total, doc) => {
+      return total + (doc.analysis?.covenants?.length || 0);
+    }, 0);
+  };
+
   const [currentView, setCurrentView] = useState('landing');
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState(null);

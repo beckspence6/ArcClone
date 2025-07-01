@@ -302,9 +302,9 @@ function App() {
           processedDocuments: analysisResult?.results?.documents || []
         },
         lastAnalyzed: new Date().toISOString(),
-        totalDebt: this.getValueFromDocuments(analysisResult?.results?.documents, 'debt') || 
+        totalDebt: getValueFromDocuments(analysisResult?.results?.documents, 'debt') || 
                    analysisResult?.financials?.totalDebt || 'N/A',
-        liquidity: this.getValueFromDocuments(analysisResult?.results?.documents, 'cash') || 
+        liquidity: getValueFromDocuments(analysisResult?.results?.documents, 'cash') || 
                    analysisResult?.financials?.cashAndEquivalents || 'N/A',
         nextMaturity: '2025', // Would be extracted from analysis
         riskFlags: analysisResult?.insights?.riskFactors?.slice(0, 3) || [],

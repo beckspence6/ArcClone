@@ -23,6 +23,7 @@ import {
 import StratumLogo from './Logo';
 import FMPService from '../services/FMPService';
 import SecApiService from '../services/SecApiService';
+import MultiAPIService from '../services/MultiAPIService';
 import AgentCoordinator from '../services/agentCoordinator';
 import toast from 'react-hot-toast';
 

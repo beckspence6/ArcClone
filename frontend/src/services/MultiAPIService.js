@@ -709,49 +709,96 @@ class MultiAPIService {
   }
 
   /**
-   * Get API health status
+   * Comprehensive API health status with usage tracking
    */
   async getAPIStatus() {
     const status = {};
     
-    for (const service of this.services) {
+    for (const [key, api] of Object.entries(this.apis)) {
       try {
-        // Quick test call for each service
-        const testSymbol = 'AAPL';
-        let testResult;
-        
-        if (service.name === 'FMP') {
-          testResult = await FMPService.getCompanyProfile(testSymbol);
-          status[service.name] = {
-            available: !!(testResult && testResult.length > 0),
-            priority: service.priority,
-            dailyLimit: service.rateLimitDaily
-          };
-        } else if (service.name === 'AlphaVantage') {
-          testResult = await this.getAlphaVantageProfile(testSymbol);
-          status[service.name] = {
-            available: testResult.success,
-            priority: service.priority,
-            dailyLimit: service.rateLimitDaily
-          };
-        } else if (service.name === 'YahooFinance') {
-          testResult = await this.getYahooProfile(testSymbol);
-          status[service.name] = {
-            available: testResult.success,
-            priority: service.priority,
-            dailyLimit: service.rateLimitDaily
-          };
+        const usagePercent = api.dailyLimit ? 
+          Math.round((api.currentUsage / api.dailyLimit) * 100) :
+          api.monthlyLimit ? Math.round((api.currentUsage / api.monthlyLimit) * 100) : 0;
+
+        status[api.name] = {
+          available: true,
+          priority: api.priority,
+          confidence: api.confidence,
+          usage: {
+            current: api.currentUsage,
+            limit: api.dailyLimit || api.monthlyLimit || '∞',
+            percentage: usagePercent,
+            resetTime: new Date(api.resetTime).toLocaleString()
+          },
+          rateLimitStatus: usagePercent > 90 ? 'critical' : usagePercent > 70 ? 'warning' : 'good'
+        };
+
+        // Quick health check for each API
+        if (key === 'fmp') {
+          // FMP is handled by existing service
+        } else if (key === 'alphaVantage') {
+          const testUrl = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=AAPL&apikey=${api.apiKey}`;
+          const testResponse = await axios.get(testUrl, { timeout: 5000 });
+          status[api.name].lastResponse = testResponse.status === 200 ? 'success' : 'error';
+        } else if (key === 'quandl') {
+          const testUrl = `https://www.quandl.com/api/v3/datasets/WIKI/AAPL.json?rows=1&api_key=${api.apiKey}`;
+          const testResponse = await axios.get(testUrl, { timeout: 5000 });
+          status[api.name].lastResponse = testResponse.status === 200 ? 'success' : 'error';
+        } else if (key === 'marketstack') {
+          const testUrl = `http://api.marketstack.com/v1/eod?access_key=${api.apiKey}&symbols=AAPL&limit=1`;
+          const testResponse = await axios.get(testUrl, { timeout: 5000 });
+          status[api.name].lastResponse = testResponse.status === 200 ? 'success' : 'error';
         }
+        
       } catch (error) {
-        status[service.name] = {
+        status[api.name] = {
           available: false,
           error: error.message,
-          priority: service.priority
+          priority: api.priority,
+          lastCheck: new Date().toISOString()
         };
       }
     }
     
-    return status;
+    return {
+      apis: status,
+      summary: {
+        totalAPIs: Object.keys(this.apis).length,
+        availableAPIs: Object.values(status).filter(api => api.available).length,
+        criticalAPIs: Object.values(status).filter(api => api.rateLimitStatus === 'critical').length,
+        recommendation: this.getUsageRecommendation(status)
+      }
+    };
+  }
+
+  getUsageRecommendation(status) {
+    const criticalAPIs = Object.values(status).filter(api => api.rateLimitStatus === 'critical').length;
+    const availableAPIs = Object.values(status).filter(api => api.available).length;
+    
+    if (criticalAPIs > 2) {
+      return 'Consider upgrading API plans or reduce usage frequency';
+    } else if (availableAPIs < 3) {
+      return 'Multiple APIs unavailable - rely on document uploads';
+    } else {
+      return 'API usage is healthy';
+    }
+  }
+
+  /**
+   * Get usage summary for dashboard
+   */
+  getUsageSummary() {
+    const summary = {};
+    Object.entries(this.apis).forEach(([key, api]) => {
+      summary[api.name] = {
+        used: api.currentUsage,
+        limit: api.dailyLimit || api.monthlyLimit || '∞',
+        percentage: api.dailyLimit ? 
+          Math.round((api.currentUsage / api.dailyLimit) * 100) :
+          api.monthlyLimit ? Math.round((api.currentUsage / api.monthlyLimit) * 100) : 0
+      };
+    });
+    return summary;
   }
 }
 

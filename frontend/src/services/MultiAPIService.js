@@ -182,55 +182,102 @@ class MultiAPIService {
   }
 
   /**
-   * Get company profile with intelligent fallback
+   * Enhanced company profile with intelligent 6-API fallback strategy
    */
   async getCompanyProfile(symbol) {
-    console.log(`[MultiAPI] Getting company profile for ${symbol}`);
+    const cacheKey = this.getCacheKey('profile', symbol);
+    const cached = this.getFromCache(cacheKey);
+    if (cached) return cached;
+
+    console.log(`[MultiAPI] Getting company profile for ${symbol} with smart fallback`);
     
-    // Try FMP first (primary)
+    // Strategy 1: Try FMP (highest quality, paid tier)
     try {
       const fmpResult = await FMPService.getCompanyProfile(symbol);
       if (fmpResult && fmpResult.length > 0) {
-        console.log('[MultiAPI] FMP success');
-        return {
+        const result = {
           success: true,
           data: fmpResult[0],
           source: 'FMP',
           confidence: 95
         };
+        this.incrementUsage('fmp');
+        this.setCache(cacheKey, result);
+        return result;
       }
     } catch (error) {
       console.log('[MultiAPI] FMP failed:', error.message);
     }
 
-    // Try Alpha Vantage
+    // Strategy 2: Try Alpha Vantage (500 requests/day)
     try {
       const avResult = await this.getAlphaVantageProfile(symbol);
       if (avResult.success) {
-        console.log('[MultiAPI] Alpha Vantage success');
+        this.incrementUsage('alphaVantage');
+        this.setCache(cacheKey, avResult);
         return avResult;
       }
     } catch (error) {
       console.log('[MultiAPI] Alpha Vantage failed:', error.message);
     }
 
-    // Try Yahoo Finance
+    // Strategy 3: Try Quandl (50,000 requests/day - premium)
+    try {
+      const quandlResult = await this.getQuandlProfile(symbol);
+      if (quandlResult.success) {
+        this.incrementUsage('quandl');
+        this.setCache(cacheKey, quandlResult);
+        return quandlResult;
+      }
+    } catch (error) {
+      console.log('[MultiAPI] Quandl failed:', error.message);
+    }
+
+    // Strategy 4: Try Marketstack (100/month - use sparingly)
+    const availableAPI = this.getAvailableAPI();
+    if (availableAPI && availableAPI[0] === 'marketstack') {
+      try {
+        const marketstackResult = await this.getMarketstackProfile(symbol);
+        if (marketstackResult.success) {
+          this.incrementUsage('marketstack');
+          this.setCache(cacheKey, marketstackResult);
+          return marketstackResult;
+        }
+      } catch (error) {
+        console.log('[MultiAPI] Marketstack failed:', error.message);
+      }
+    }
+
+    // Strategy 5: Try Yahoo Finance (unlimited unofficial)
     try {
       const yahooResult = await this.getYahooProfile(symbol);
       if (yahooResult.success) {
-        console.log('[MultiAPI] Yahoo Finance success');
+        this.incrementUsage('yahoo');
+        this.setCache(cacheKey, yahooResult);
         return yahooResult;
       }
     } catch (error) {
       console.log('[MultiAPI] Yahoo Finance failed:', error.message);
     }
 
-    // All APIs failed
+    // Strategy 6: Try SEC API (final fallback)
+    try {
+      const secResult = await this.getSECProfile(symbol);
+      if (secResult.success) {
+        this.incrementUsage('sec');
+        this.setCache(cacheKey, secResult);
+        return secResult;
+      }
+    } catch (error) {
+      console.log('[MultiAPI] SEC API failed:', error.message);
+    }
+
+    // All APIs exhausted
     return {
       success: false,
-      error: 'All financial APIs unavailable',
+      error: 'All 6 APIs exhausted or rate limited',
       source: 'MultiAPI',
-      fallbackMessage: 'Consider upgrading API plans or using document upload'
+      suggestion: 'Try again in 1 hour or upload company documents for analysis'
     };
   }
 

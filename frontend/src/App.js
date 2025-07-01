@@ -422,11 +422,9 @@ function App() {
     }
   };
 
-  const showSidebar = user && 
+  const showNavigation = user && 
     currentView !== 'landing' && 
     currentView !== 'onboarding' && 
-    currentView !== 'company-management' && 
-    currentView !== 'add-company' &&
     currentView !== 'dashboard-loading' &&
     !isAnalyzing;
 

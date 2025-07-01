@@ -187,16 +187,35 @@ function App() {
             ticker: ticker
           },
           ...analysisResult,
-          // Override with real analysis results while preserving company info
-          financials: analysisResult?.financials || newCompany.analysisData.financials,
-          keyMetrics: analysisResult?.keyMetrics || newCompany.analysisData.keyMetrics
+          // Integrate document-extracted financial data
+          financials: this.mergeDocumentFinancials(
+            analysisResult?.financials || newCompany.analysisData.financials,
+            analysisResult?.results?.documents
+          ),
+          keyMetrics: this.mergeDocumentMetrics(
+            analysisResult?.keyMetrics || newCompany.analysisData.keyMetrics,
+            analysisResult?.results?.documents
+          ),
+          // Store covenant data from documents
+          covenants: this.extractDocumentCovenants(analysisResult?.results?.documents),
+          // Store processed documents with analysis
+          processedDocuments: analysisResult?.results?.documents || []
         },
         lastAnalyzed: new Date().toISOString(),
-        totalDebt: analysisResult?.financials?.totalDebt || 'N/A',
-        liquidity: analysisResult?.financials?.cashAndEquivalents || 'N/A',
+        totalDebt: this.getValueFromDocuments(analysisResult?.results?.documents, 'debt') || 
+                   analysisResult?.financials?.totalDebt || 'N/A',
+        liquidity: this.getValueFromDocuments(analysisResult?.results?.documents, 'cash') || 
+                   analysisResult?.financials?.cashAndEquivalents || 'N/A',
         nextMaturity: '2025', // Would be extracted from analysis
         riskFlags: analysisResult?.insights?.riskFactors?.slice(0, 3) || [],
-        documents: companyData.files // Store uploaded documents
+        documents: companyData.files, // Store uploaded documents
+        // Add document extraction summary
+        documentStats: {
+          documentsProcessed: analysisResult?.results?.documents?.documents?.length || 0,
+          financialsExtracted: this.countExtractedFinancials(analysisResult?.results?.documents),
+          covenantsExtracted: this.countExtractedCovenants(analysisResult?.results?.documents),
+          lastProcessed: new Date().toISOString()
+        }
       };
 
       setCompanies(prev => prev.map(c => 

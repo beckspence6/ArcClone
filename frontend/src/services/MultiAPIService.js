@@ -282,16 +282,16 @@ class MultiAPIService {
   }
 
   /**
-   * Alpha Vantage company overview
+   * Enhanced Alpha Vantage company overview with real API key
    */
   async getAlphaVantageProfile(symbol) {
-    const url = `https://www.alphavantage.co/query?function=OVERVIEW&symbol=${symbol}&apikey=demo`;
+    const url = `https://www.alphavantage.co/query?function=OVERVIEW&symbol=${symbol}&apikey=${this.apis.alphaVantage.apiKey}`;
     
     try {
       const response = await axios.get(url, { timeout: 10000 });
       const data = response.data;
       
-      if (data.Symbol) {
+      if (data.Symbol && data.Name) {
         return {
           success: true,
           data: {
@@ -304,7 +304,10 @@ class MultiAPIService {
             peRatio: data.PERatio,
             website: data.OfficialSite,
             currency: 'USD',
-            exchange: data.Exchange
+            exchange: data.Exchange,
+            employees: data.FullTimeEmployees,
+            dividendYield: data.DividendYield,
+            eps: data.EPS
           },
           source: 'Alpha Vantage',
           confidence: 85
@@ -312,6 +315,119 @@ class MultiAPIService {
       }
       
       return { success: false, error: 'No data found' };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Quandl company profile (premium financial data)
+   */
+  async getQuandlProfile(symbol) {
+    // Quandl uses different datasets, trying WIKI prices first
+    const url = `https://www.quandl.com/api/v3/datatables/SHARADAR/TICKERS.json?ticker=${symbol}&api_key=${this.apis.quandl.apiKey}`;
+    
+    try {
+      const response = await axios.get(url, { timeout: 15000 });
+      const data = response.data;
+      
+      if (data.datatable && data.datatable.data && data.datatable.data.length > 0) {
+        const companyData = data.datatable.data[0];
+        const columns = data.datatable.columns;
+        
+        // Map columns to values
+        const companyInfo = {};
+        columns.forEach((col, index) => {
+          companyInfo[col.name] = companyData[index];
+        });
+        
+        return {
+          success: true,
+          data: {
+            symbol: companyInfo.ticker,
+            companyName: companyInfo.name,
+            sector: companyInfo.sector,
+            industry: companyInfo.industry,
+            exchange: companyInfo.exchange,
+            currency: companyInfo.currency,
+            description: `${companyInfo.name} operates in the ${companyInfo.industry} sector`,
+            marketCap: companyInfo.marketcap,
+            employees: companyInfo.employees
+          },
+          source: 'Quandl',
+          confidence: 90
+        };
+      }
+      
+      return { success: false, error: 'No data found' };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Marketstack company profile (limited use - 100/month)
+   */
+  async getMarketstackProfile(symbol) {
+    const url = `http://api.marketstack.com/v1/eod?access_key=${this.apis.marketstack.apiKey}&symbols=${symbol}&limit=1`;
+    
+    try {
+      const response = await axios.get(url, { timeout: 10000 });
+      const data = response.data;
+      
+      if (data.data && data.data.length > 0) {
+        const stockData = data.data[0];
+        
+        return {
+          success: true,
+          data: {
+            symbol: stockData.symbol,
+            companyName: stockData.symbol, // Marketstack doesn't provide company names in EOD
+            exchange: stockData.exchange,
+            currency: 'USD',
+            price: stockData.close,
+            volume: stockData.volume,
+            date: stockData.date,
+            description: `Stock listed on ${stockData.exchange}`
+          },
+          source: 'Marketstack',
+          confidence: 75,
+          note: 'Limited data - primarily for stock prices'
+        };
+      }
+      
+      return { success: false, error: 'No data found' };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * SEC API integration
+   */
+  async getSECProfile(symbol) {
+    try {
+      // This would call your existing SEC service
+      const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/sec/company/lookup`, {
+        ticker: symbol
+      });
+      
+      if (response.data.success) {
+        return {
+          success: true,
+          data: {
+            symbol: symbol,
+            companyName: response.data.company_data?.mapping?.name,
+            cik: response.data.cik,
+            sector: response.data.company_data?.entity_details?.sic_description,
+            description: response.data.company_data?.entity_details?.business_description
+          },
+          source: 'SEC',
+          confidence: 99
+        };
+      }
+      
+      return { success: false, error: 'SEC lookup failed' };
     } catch (error) {
       return { success: false, error: error.message };
     }

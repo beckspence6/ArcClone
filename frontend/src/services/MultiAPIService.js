@@ -467,70 +467,163 @@ class MultiAPIService {
   }
 
   /**
-   * Get financial statements with fallback
+   * Enhanced financial statements with 6-API fallback
    */
   async getFinancialStatements(symbol) {
+    const cacheKey = this.getCacheKey('financials', symbol);
+    const cached = this.getFromCache(cacheKey);
+    if (cached) return cached;
+
     console.log(`[MultiAPI] Getting financial statements for ${symbol}`);
     
-    // Try FMP first
+    // Strategy 1: Try FMP (most comprehensive)
     try {
       const fmpResult = await FMPService.getFinancialStatements(symbol);
       if (fmpResult && fmpResult.income && fmpResult.income.length > 0) {
-        return {
+        const result = {
           success: true,
           data: fmpResult,
           source: 'FMP',
           confidence: 95
         };
+        this.incrementUsage('fmp');
+        this.setCache(cacheKey, result);
+        return result;
       }
     } catch (error) {
       console.log('[MultiAPI] FMP financials failed:', error.message);
     }
 
-    // Try Alpha Vantage income statement
+    // Strategy 2: Try Alpha Vantage (comprehensive financial data)
     try {
-      const avResult = await this.getAlphaVantageIncomeStatement(symbol);
+      const avResult = await this.getAlphaVantageFinancials(symbol);
       if (avResult.success) {
+        this.incrementUsage('alphaVantage');
+        this.setCache(cacheKey, avResult);
         return avResult;
       }
     } catch (error) {
       console.log('[MultiAPI] Alpha Vantage financials failed:', error.message);
     }
 
+    // Strategy 3: Try Quandl (premium financial data)
+    try {
+      const quandlResult = await this.getQuandlFinancials(symbol);
+      if (quandlResult.success) {
+        this.incrementUsage('quandl');
+        this.setCache(cacheKey, quandlResult);
+        return quandlResult;
+      }
+    } catch (error) {
+      console.log('[MultiAPI] Quandl financials failed:', error.message);
+    }
+
     return {
       success: false,
-      error: 'Financial statements unavailable',
+      error: 'Financial statements unavailable from all sources',
       source: 'MultiAPI',
-      fallbackMessage: 'Upload company documents for financial analysis'
+      fallbackMessage: 'Upload company financial documents for analysis'
     };
   }
 
   /**
-   * Alpha Vantage income statement
+   * Alpha Vantage comprehensive financial statements
    */
-  async getAlphaVantageIncomeStatement(symbol) {
-    const url = `https://www.alphavantage.co/query?function=INCOME_STATEMENT&symbol=${symbol}&apikey=demo`;
+  async getAlphaVantageFinancials(symbol) {
+    const promises = [
+      axios.get(`https://www.alphavantage.co/query?function=INCOME_STATEMENT&symbol=${symbol}&apikey=${this.apis.alphaVantage.apiKey}`),
+      axios.get(`https://www.alphavantage.co/query?function=BALANCE_SHEET&symbol=${symbol}&apikey=${this.apis.alphaVantage.apiKey}`),
+      axios.get(`https://www.alphavantage.co/query?function=CASH_FLOW&symbol=${symbol}&apikey=${this.apis.alphaVantage.apiKey}`)
+    ];
+
+    try {
+      const [incomeRes, balanceRes, cashFlowRes] = await Promise.all(promises);
+      
+      const income = incomeRes.data.annualReports?.[0];
+      const balance = balanceRes.data.annualReports?.[0];
+      const cashFlow = cashFlowRes.data.annualReports?.[0];
+
+      if (income || balance || cashFlow) {
+        return {
+          success: true,
+          data: {
+            income: income ? [{
+              date: income.fiscalDateEnding,
+              revenue: income.totalRevenue,
+              grossProfit: income.grossProfit,
+              operatingIncome: income.operatingIncome,
+              netIncome: income.netIncome,
+              source: 'Alpha Vantage'
+            }] : [],
+            balance: balance ? [{
+              date: balance.fiscalDateEnding,
+              totalAssets: balance.totalAssets,
+              totalLiabilities: balance.totalLiabilities,
+              totalEquity: balance.totalShareholderEquity,
+              cash: balance.cashAndCashEquivalentsAtCarryingValue,
+              source: 'Alpha Vantage'
+            }] : [],
+            cashFlow: cashFlow ? [{
+              date: cashFlow.fiscalDateEnding,
+              operatingCashFlow: cashFlow.operatingCashflow,
+              investingCashFlow: cashFlow.cashflowFromInvestment,
+              financingCashFlow: cashFlow.cashflowFromFinancing,
+              source: 'Alpha Vantage'
+            }] : []
+          },
+          source: 'Alpha Vantage',
+          confidence: 85
+        };
+      }
+      
+      return { success: false, error: 'No financial data found' };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Quandl financial data
+   */
+  async getQuandlFinancials(symbol) {
+    const url = `https://www.quandl.com/api/v3/datatables/SHARADAR/SF1.json?ticker=${symbol}&dimension=ARY&api_key=${this.apis.quandl.apiKey}`;
     
     try {
       const response = await axios.get(url, { timeout: 15000 });
       const data = response.data;
       
-      if (data.annualReports && data.annualReports.length > 0) {
-        const latest = data.annualReports[0];
+      if (data.datatable && data.datatable.data && data.datatable.data.length > 0) {
+        const financialData = data.datatable.data[0];
+        const columns = data.datatable.columns;
+        
+        // Map columns to values
+        const metrics = {};
+        columns.forEach((col, index) => {
+          metrics[col.name] = financialData[index];
+        });
+        
         return {
           success: true,
           data: {
             income: [{
-              date: latest.fiscalDateEnding,
-              revenue: latest.totalRevenue,
-              grossProfit: latest.grossProfit,
-              operatingIncome: latest.operatingIncome,
-              netIncome: latest.netIncome,
-              source: 'Alpha Vantage'
+              date: metrics.datekey,
+              revenue: metrics.revenue,
+              grossProfit: metrics.gp,
+              operatingIncome: metrics.opinc,
+              netIncome: metrics.netinc,
+              source: 'Quandl'
+            }],
+            balance: [{
+              date: metrics.datekey,
+              totalAssets: metrics.assets,
+              totalLiabilities: metrics.liabilities,
+              totalEquity: metrics.equity,
+              cash: metrics.cashneq,
+              source: 'Quandl'
             }]
           },
-          source: 'Alpha Vantage',
-          confidence: 85
+          source: 'Quandl',
+          confidence: 90
         };
       }
       

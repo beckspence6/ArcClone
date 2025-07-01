@@ -312,8 +312,8 @@ function App() {
         // Add document extraction summary
         documentStats: {
           documentsProcessed: analysisResult?.results?.documents?.documents?.length || 0,
-          financialsExtracted: this.countExtractedFinancials(analysisResult?.results?.documents),
-          covenantsExtracted: this.countExtractedCovenants(analysisResult?.results?.documents),
+          financialsExtracted: countExtractedFinancials(analysisResult?.results?.documents),
+          covenantsExtracted: countExtractedCovenants(analysisResult?.results?.documents),
           lastProcessed: new Date().toISOString()
         }
       };

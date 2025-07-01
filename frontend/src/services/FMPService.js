@@ -3,7 +3,7 @@ import axios from 'axios';
 class FMPService {
   constructor() {
     this.baseURL = 'https://financialmodelingprep.com/api';
-    this.apiKey = process.env.REACT_APP_FMP_API_KEY;
+    this.apiKey = process.env.REACT_APP_FMP_API_KEY || '4tvz7Dri04iBP37qDsXSpPHbQ0QTZZDO';
     console.log('[FMPService] API Key loaded:', this.apiKey ? 'PRESENT' : 'UNDEFINED');
     this.cache = new Map();
     this.cacheTimeout = 300000; // 5 minutes

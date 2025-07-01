@@ -520,10 +520,18 @@ const NewOnboardingFlow = ({ onComplete }) => {
                       <p className="text-xs text-blue-300">
                         <strong>Verified via:</strong> {
                           formData.verificationMethod === 'SEC_DIRECT' ? 'SEC EDGAR Database' :
-                          formData.verificationMethod === 'FMP_PRIMARY' ? 'Financial Markets API (NYSE/NASDAQ)' :
-                          formData.verificationMethod === 'FMP_SEARCH' ? 'Market Search API' :
+                          formData.verificationMethod === 'MULTI_API_FMP' ? 'Financial Modeling Prep API' :
+                          formData.verificationMethod === 'MULTI_API_ALPHA VANTAGE' ? 'Alpha Vantage API' :
+                          formData.verificationMethod === 'MULTI_API_QUANDL' ? 'Quandl Financial Data API' :
+                          formData.verificationMethod === 'MULTI_API_MARKETSTACK' ? 'Marketstack API' :
+                          formData.verificationMethod === 'MULTI_API_YAHOO FINANCE' ? 'Yahoo Finance API' :
                           'Multi-source verification'
                         }
+                        {formData.verificationConfidence && (
+                          <span className="ml-2 text-green-300">
+                            ({formData.verificationConfidence}% confidence)
+                          </span>
+                        )}
                       </p>
                     )}
                     {secCompanyData?.cik && (

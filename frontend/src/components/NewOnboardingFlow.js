@@ -81,65 +81,60 @@ const NewOnboardingFlow = ({ onComplete }) => {
     }
   };
 
-  // Enhanced SEC Company Verification with FMP fallback for better UX
+  // Enhanced Company Verification with Multi-API Strategy for Ultimate Reliability
   const handleSECCompanyLookup = async (ticker) => {
     if (!ticker || ticker.length < 1) return;
     
     setSearchingCompanies(true);
     try {
-      console.log('[Onboarding] Starting company verification for:', ticker);
+      console.log('[Onboarding] Starting multi-API company verification for:', ticker);
       
-      // Strategy 1: Try FMP first (higher rate limits, faster response)
-      try {
-        console.log('[Onboarding] Attempting FMP company lookup first...');
-        const fmpProfile = await FMPService.getCompanyProfile(ticker.toUpperCase());
+      // Strategy: Use MultiAPIService which handles FMP → Alpha Vantage → Yahoo Finance fallbacks
+      const companyResult = await MultiAPIService.getCompanyProfile(ticker.toUpperCase());
+      
+      if (companyResult.success) {
+        console.log(`[Onboarding] ${companyResult.source} verification successful:`, companyResult.data.companyName);
         
-        if (fmpProfile && fmpProfile.length > 0) {
-          const company = fmpProfile[0];
-          console.log('[Onboarding] FMP verification successful:', company.companyName);
-          
-          // FMP success = Company is publicly traded = SEC registered
-          setFormData(prev => ({
-            ...prev,
-            companyTicker: ticker.toUpperCase(),
-            secVerified: true,
-            companyName: company.companyName,
-            verificationMethod: 'FMP_PRIMARY'
-          }));
-          
-          // Try to get SEC data in background (optional, non-blocking)
-          setTimeout(async () => {
-            try {
-              const secLookup = await SecApiService.getCompanyLookup(ticker.toUpperCase());
-              if (secLookup.success) {
-                setSecCompanyData(secLookup);
-                console.log('[Onboarding] Background SEC data retrieved successfully');
+        // Multi-API success = Company is verified and publicly traded
+        setFormData(prev => ({
+          ...prev,
+          companyTicker: ticker.toUpperCase(),
+          secVerified: true,
+          companyName: companyResult.data.companyName,
+          verificationMethod: `MULTI_API_${companyResult.source.toUpperCase()}`,
+          verificationConfidence: companyResult.confidence
+        }));
+        
+        // Try to get SEC data in background (optional, non-blocking)
+        setTimeout(async () => {
+          try {
+            const secLookup = await SecApiService.getCompanyLookup(ticker.toUpperCase());
+            if (secLookup.success) {
+              setSecCompanyData(secLookup);
+              console.log('[Onboarding] Background SEC data retrieved successfully');
+              
+              // Also try to fetch core filings
+              const coreFilings = await SecApiService.fetchCoreFilings(ticker.toUpperCase());
+              if (coreFilings.success) {
+                setSecFilings(coreFilings);
               }
-            } catch (secError) {
-              console.log('[Onboarding] Background SEC lookup failed (non-critical):', secError.message);
             }
-          }, 1000);
-          
-          toast.success(`✅ Company verified: ${company.companyName} (NYSE/NASDAQ listed)`);
-          return;
-        }
-      } catch (fmpError) {
-        console.log('[Onboarding] FMP lookup failed, trying SEC...', fmpError.message);
+          } catch (secError) {
+            console.log('[Onboarding] Background SEC lookup failed (non-critical):', secError.message);
+          }
+        }, 2000);
+        
+        toast.success(`✅ Company verified: ${companyResult.data.companyName} (${companyResult.source} API)`);
+        return;
       }
       
-      // Strategy 2: Try SEC API (as backup)
+      // Multi-API failed, try SEC as final fallback
+      console.log('[Onboarding] Multi-API failed, attempting SEC as final fallback...');
       try {
-        console.log('[Onboarding] Attempting SEC company lookup...');
         const companyLookup = await SecApiService.getCompanyLookup(ticker.toUpperCase());
         
         if (companyLookup.success) {
           setSecCompanyData(companyLookup);
-          
-          // Also fetch core filings if SEC lookup succeeds
-          const coreFilings = await SecApiService.fetchCoreFilings(ticker.toUpperCase());
-          if (coreFilings.success) {
-            setSecFilings(coreFilings);
-          }
           
           setFormData(prev => ({
             ...prev,
@@ -147,7 +142,8 @@ const NewOnboardingFlow = ({ onComplete }) => {
             secVerified: true,
             companyName: companyLookup.companyData?.mapping?.name || companyLookup.companyData?.entity_details?.name,
             cik: companyLookup.cik,
-            verificationMethod: 'SEC_DIRECT'
+            verificationMethod: 'SEC_DIRECT',
+            verificationConfidence: 95
           }));
           
           toast.success(`✅ SEC verification complete for ${companyLookup.companyData?.mapping?.name || ticker}`);
@@ -157,40 +153,12 @@ const NewOnboardingFlow = ({ onComplete }) => {
         console.log('[Onboarding] SEC lookup failed:', secError.message);
         
         if (secError.message.includes('rate limit') || secError.message.includes('429')) {
-          // Rate limited - provide helpful feedback
-          toast.error('SEC API temporarily rate limited. Try a different ticker or wait a moment.');
+          toast.error('All APIs temporarily rate limited. Try a different ticker or wait a moment.');
         }
-      }
-      
-      // Strategy 3: Try basic company search as final fallback
-      try {
-        console.log('[Onboarding] Attempting basic company search...');
-        const searchResults = await FMPService.searchCompanies(ticker);
-        
-        if (searchResults && searchResults.length > 0) {
-          const match = searchResults.find(company => 
-            company.symbol === ticker.toUpperCase()
-          );
-          
-          if (match) {
-            setFormData(prev => ({
-              ...prev,
-              companyTicker: ticker.toUpperCase(),
-              secVerified: true,
-              companyName: match.name,
-              verificationMethod: 'FMP_SEARCH'
-            }));
-            
-            toast.success(`✅ Company found: ${match.name} (Market listed)`);
-            return;
-          }
-        }
-      } catch (searchError) {
-        console.log('[Onboarding] Company search failed:', searchError.message);
       }
       
       // All strategies failed
-      toast.error(`Company "${ticker}" not found. Please verify the ticker symbol.`);
+      toast.error(`Company "${ticker}" not found. Please verify the ticker symbol or try uploading company documents.`);
       setFormData(prev => ({ 
         ...prev, 
         secVerified: false,

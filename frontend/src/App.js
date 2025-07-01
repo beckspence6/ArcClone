@@ -288,16 +288,16 @@ function App() {
           },
           ...analysisResult,
           // Integrate document-extracted financial data
-          financials: this.mergeDocumentFinancials(
+          financials: mergeDocumentFinancials(
             analysisResult?.financials || newCompany.analysisData.financials,
             analysisResult?.results?.documents
           ),
-          keyMetrics: this.mergeDocumentMetrics(
+          keyMetrics: mergeDocumentMetrics(
             analysisResult?.keyMetrics || newCompany.analysisData.keyMetrics,
             analysisResult?.results?.documents
           ),
           // Store covenant data from documents
-          covenants: this.extractDocumentCovenants(analysisResult?.results?.documents),
+          covenants: extractDocumentCovenants(analysisResult?.results?.documents),
           // Store processed documents with analysis
           processedDocuments: analysisResult?.results?.documents || []
         },

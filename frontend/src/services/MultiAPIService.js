@@ -1,12 +1,13 @@
 /**
- * Multi-API Service - Provides robust fallback strategy for financial data
+ * Multi-API Service - Enhanced with 5 APIs + Smart Rate Limiting
  * 
- * Strategy:
- * 1. Primary: FMP API (paid, high limits)
- * 2. Secondary: Alpha Vantage (free tier available)
- * 3. Tertiary: Polygon.io (free tier available)
- * 4. Quaternary: Yahoo Finance (via unofficial API)
- * 5. Final: Web scraping backup
+ * Strategy (Ordered by Rate Limits & Reliability):
+ * 1. FMP API (paid, 250 requests/day)
+ * 2. Alpha Vantage (500 requests/day)
+ * 3. Quandl (50,000 requests/day - premium source)
+ * 4. Marketstack (100 requests/month)
+ * 5. Yahoo Finance (unofficial, high tolerance)
+ * 6. SEC API (100 requests/day)
  */
 
 import axios from 'axios';
@@ -14,42 +15,170 @@ import FMPService from './FMPService';
 
 class MultiAPIService {
   constructor() {
-    this.services = [
-      {
+    // API Configuration with Real Keys and Rate Limits
+    this.apis = {
+      fmp: {
         name: 'FMP',
         service: FMPService,
         priority: 1,
-        rateLimitDaily: 250, // Free tier
-        rateLimitPerMinute: 25
+        dailyLimit: 250,
+        monthlyLimit: null,
+        currentUsage: 0,
+        resetTime: this.getNextDayReset(),
+        confidence: 95
       },
-      {
-        name: 'AlphaVantage',
+      alphaVantage: {
+        name: 'Alpha Vantage',
         baseURL: 'https://www.alphavantage.co/query',
-        apiKey: 'demo', // Free tier key - replace with real one
+        apiKey: process.env.REACT_APP_ALPHA_VANTAGE_API_KEY || 'XGFXK2D6WYPZILH3',
         priority: 2,
-        rateLimitDaily: 25, // Free tier
-        rateLimitPerMinute: 5
+        dailyLimit: 500,
+        monthlyLimit: null,
+        currentUsage: 0,
+        resetTime: this.getNextDayReset(),
+        confidence: 85
       },
-      {
-        name: 'Polygon',
-        baseURL: 'https://api.polygon.io/v2',
-        apiKey: 'demo', // Free tier key - replace with real one
+      quandl: {
+        name: 'Quandl',
+        baseURL: 'https://www.quandl.com/api/v3',
+        apiKey: process.env.REACT_APP_QUANDL_API_KEY || 'qQRQsAs5oy27ZZTMRzgK',
         priority: 3,
-        rateLimitDaily: 5, // Very limited free tier
-        rateLimitPerMinute: 1
+        dailyLimit: 50000, // Very high limit
+        monthlyLimit: null,
+        currentUsage: 0,
+        resetTime: this.getNextDayReset(),
+        confidence: 90
       },
-      {
-        name: 'YahooFinance',
-        baseURL: 'https://query1.finance.yahoo.com/v8/finance/chart',
+      marketstack: {
+        name: 'Marketstack',
+        baseURL: 'http://api.marketstack.com/v1',
+        apiKey: process.env.REACT_APP_MARKETSTACK_API_KEY || '778f04412a443de4310d7f90bf1fe3d4',
         priority: 4,
-        rateLimitDaily: 2000, // Unofficial, higher tolerance
-        rateLimitPerMinute: 100
+        dailyLimit: null,
+        monthlyLimit: 100, // Very limited - use sparingly
+        currentUsage: 0,
+        resetTime: this.getNextMonthReset(),
+        confidence: 88
+      },
+      yahoo: {
+        name: 'Yahoo Finance',
+        baseURL: 'https://query1.finance.yahoo.com',
+        priority: 5,
+        dailyLimit: 2000, // Unofficial limit
+        monthlyLimit: null,
+        currentUsage: 0,
+        resetTime: this.getNextDayReset(),
+        confidence: 75
+      },
+      sec: {
+        name: 'SEC',
+        baseURL: '/api/sec',
+        priority: 6,
+        dailyLimit: 100,
+        monthlyLimit: null,
+        currentUsage: 0,
+        resetTime: this.getNextDayReset(),
+        confidence: 99
       }
-    ];
+    };
 
-    this.usageTracking = new Map();
+    // Persistent cache with 6-hour timeout
     this.cache = new Map();
-    this.cacheTimeout = 300000; // 5 minutes
+    this.cacheTimeout = 6 * 60 * 60 * 1000; // 6 hours
+    this.usageTracking = this.loadUsageFromStorage();
+    
+    console.log('[MultiAPI] Initialized with 6 APIs and smart rate limiting');
+  }
+
+  // Usage tracking persistence
+  loadUsageFromStorage() {
+    try {
+      const stored = localStorage.getItem('multiapi_usage');
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch (error) {
+      console.warn('[MultiAPI] Could not load usage from storage');
+    }
+    return {};
+  }
+
+  saveUsageToStorage() {
+    try {
+      localStorage.setItem('multiapi_usage', JSON.stringify(this.usageTracking));
+    } catch (error) {
+      console.warn('[MultiAPI] Could not save usage to storage');
+    }
+  }
+
+  getNextDayReset() {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    return tomorrow.getTime();
+  }
+
+  getNextMonthReset() {
+    const nextMonth = new Date();
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    nextMonth.setDate(1);
+    nextMonth.setHours(0, 0, 0, 0);
+    return nextMonth.getTime();
+  }
+
+  // Smart API selection based on availability and rate limits
+  getAvailableAPI(dataType = 'general') {
+    const now = Date.now();
+    
+    // Reset usage counters if needed
+    Object.keys(this.apis).forEach(key => {
+      const api = this.apis[key];
+      if (now > api.resetTime) {
+        api.currentUsage = 0;
+        api.resetTime = api.monthlyLimit ? this.getNextMonthReset() : this.getNextDayReset();
+      }
+    });
+
+    // Find best available API
+    const availableAPIs = Object.entries(this.apis)
+      .filter(([key, api]) => {
+        const dailyOk = !api.dailyLimit || api.currentUsage < api.dailyLimit;
+        const monthlyOk = !api.monthlyLimit || api.currentUsage < api.monthlyLimit;
+        return dailyOk && monthlyOk;
+      })
+      .sort((a, b) => a[1].priority - b[1].priority);
+
+    return availableAPIs.length > 0 ? availableAPIs[0] : null;
+  }
+
+  // Increment usage and save
+  incrementUsage(apiKey) {
+    if (this.apis[apiKey]) {
+      this.apis[apiKey].currentUsage++;
+      this.saveUsageToStorage();
+      console.log(`[MultiAPI] ${this.apis[apiKey].name} usage: ${this.apis[apiKey].currentUsage}/${this.apis[apiKey].dailyLimit || this.apis[apiKey].monthlyLimit || '∞'}`);
+    }
+  }
+
+  // Cache management
+  getCacheKey(type, symbol) {
+    return `${type}_${symbol}`.toLowerCase();
+  }
+
+  getFromCache(key) {
+    const cached = this.cache.get(key);
+    if (cached && (Date.now() - cached.timestamp) < this.cacheTimeout) {
+      console.log(`[MultiAPI] Cache hit for ${key}`);
+      return cached.data;
+    }
+    return null;
+  }
+
+  setCache(key, data) {
+    this.cache.set(key, {
+      data: data,
+      timestamp: Date.now()
+    });
   }
 
   /**

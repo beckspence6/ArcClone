@@ -828,6 +828,87 @@ class GeminiService {
       confidence: 0.8
     };
   }
+
+  // Fallback method to extract structured data from natural language responses
+  parseNaturalLanguageResponse(text, fileName, docType) {
+    console.log('[GeminiService] Parsing natural language response for', fileName);
+    
+    const analysis = {
+      success: true,
+      documentType: docType,
+      financialMetrics: [],
+      covenants: [],
+      keyInsights: [],
+      extractionStats: {
+        financialsFound: 0,
+        covenantsFound: 0,
+        totalInsights: 0
+      }
+    };
+
+    // Extract financial metrics from text
+    const financialPatterns = [
+      /revenue[:\s]*\$?([\d,\.]+)/gi,
+      /sales[:\s]*\$?([\d,\.]+)/gi,
+      /income[:\s]*\$?([\d,\.]+)/gi,
+      /assets[:\s]*\$?([\d,\.]+)/gi,
+      /debt[:\s]*\$?([\d,\.]+)/gi,
+      /cash[:\s]*\$?([\d,\.]+)/gi,
+      /ebitda[:\s]*\$?([\d,\.]+)/gi
+    ];
+
+    financialPatterns.forEach(pattern => {
+      const matches = text.match(pattern);
+      if (matches) {
+        matches.forEach(match => {
+          analysis.financialMetrics.push({
+            metric: match.split(/[:\s]/)[0],
+            value: match.split(/[:\s]/)[1],
+            source: `Document: ${fileName}`,
+            extracted: true
+          });
+        });
+      }
+    });
+
+    // Extract covenant-related information
+    const covenantKeywords = ['covenant', 'restrict', 'agreement', 'maintain', 'ratio', 'threshold'];
+    const sentences = text.split(/[.!?]+/);
+    
+    sentences.forEach(sentence => {
+      const lowerSentence = sentence.toLowerCase();
+      if (covenantKeywords.some(keyword => lowerSentence.includes(keyword))) {
+        analysis.covenants.push({
+          description: sentence.trim(),
+          source: `Document: ${fileName}`,
+          confidence: 0.7,
+          extracted: true
+        });
+      }
+    });
+
+    // Extract key insights (first few meaningful sentences)
+    const meaningfulSentences = sentences
+      .filter(s => s.length > 20 && s.length < 200)
+      .slice(0, 5);
+    
+    analysis.keyInsights = meaningfulSentences.map(insight => ({
+      insight: insight.trim(),
+      source: `Document: ${fileName}`,
+      category: 'general'
+    }));
+
+    // Update stats
+    analysis.extractionStats = {
+      financialsFound: analysis.financialMetrics.length,
+      covenantsFound: analysis.covenants.length,
+      totalInsights: analysis.keyInsights.length
+    };
+
+    console.log(`[GeminiService] Extracted ${analysis.financialMetrics.length} financials, ${analysis.covenants.length} covenants from natural language`);
+    
+    return analysis;
+  }
 }
 
 export default new GeminiService();

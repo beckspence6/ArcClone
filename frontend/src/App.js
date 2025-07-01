@@ -428,6 +428,14 @@ function App() {
     currentView !== 'dashboard-loading' &&
     !isAnalyzing;
 
+  const showSidebar = user && 
+    currentView !== 'landing' && 
+    currentView !== 'onboarding' && 
+    currentView !== 'company-management' && 
+    currentView !== 'add-company' &&
+    currentView !== 'dashboard-loading' &&
+    !isAnalyzing;
+
   // Helper methods for document data integration
 
 

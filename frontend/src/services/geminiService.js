@@ -29,16 +29,27 @@ class GeminiService {
       const response = await result.response;
       const text_response = response.text();
       
-      // Clean the response and parse JSON
-      const cleanResponse = text_response.replace(/```json|```/g, '').trim();
-      const analysis = JSON.parse(cleanResponse);
+      console.log('[GeminiService] Raw response:', text_response.substring(0, 200) + '...');
+      
+      // Clean the response and attempt JSON parsing with fallback
+      let analysis;
+      try {
+        const cleanResponse = text_response.replace(/```json|```/g, '').trim();
+        analysis = JSON.parse(cleanResponse);
+      } catch (jsonError) {
+        console.warn('[GeminiService] JSON parsing failed, creating structured response from text');
+        
+        // Fallback: Extract data from natural language response
+        analysis = this.parseNaturalLanguageResponse(text_response, fileName, docType);
+      }
       
       // Add document metadata
       analysis.documentMetadata = {
         fileName: fileName,
         documentType: docType,
         analyzedAt: new Date().toISOString(),
-        extractionMethod: 'Gemini Advanced Analysis'
+        extractionMethod: 'Gemini Advanced Analysis',
+        rawResponse: text_response.length > 500 ? text_response.substring(0, 500) + '...' : text_response
       };
       
       return analysis;
